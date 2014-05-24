@@ -1,0 +1,3 @@
+Hello Server ! 
+I am Client.
+This is a file that i send to you .
