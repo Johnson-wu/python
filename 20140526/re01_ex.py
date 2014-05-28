@@ -42,5 +42,6 @@ phone = '2014-05-26 # This is phone number.'
 phone = re.sub(r'# .*', '', phone)
 print(phone)
 
+# \D 匹配非数字
 phone = re.sub(r'\D', '', phone, count=2)
 print(phone)
