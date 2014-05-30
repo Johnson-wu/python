@@ -33,8 +33,9 @@ def dump_db():
 				subprocess.call('cd %s && ls |grep "^\w\{6\}[01]"|xargs rm -f' % BACKUP_PATH,shell=True)
 			
 		dmp_name = generate_filename(date,HT_IDENT)
-
-		if date[8:] in ('13','23') and os.path.exists(BACKUP_PATH + '/' + dmp_name):
+		#print(date)
+		if date[8:] in ('13','23') and not os.path.exists(BACKUP_PATH + '/' + dmp_name):
+			print(date[8:])
 			# subprocess.call('%s/pg_dump -i -h %s -p %s -U %s %s > %s/%s' % (PGDUMP_CMD_PATH,LOCALHOST,PORT,DB_USER,DB_NAME,BACKUP_PATH,dmp_name),shell=True)
 			subprocess.call('%s/pg_dump -i -h %s -p %s -U %s %s|gzip > %s/%s' % (PGDUMP_CMD_PATH,LOCALHOST,PORT,DB_USER,DB_NAME,BACKUP_PATH,dmp_name),shell=True)
 			# 备份完成后，复制一份到WAIT_TRANS_PATH目录中
@@ -56,7 +57,7 @@ def center_dump_db():
 			
 		dmp_name = generate_filename(date,CENTER_IDENT)
 
-		if date[8:] in ('13','23') and os.path.exists(CENTER_BACKUP_PATH + '/' + dmp_name):
+		if date[8:] in ('13','23') and not os.path.exists(CENTER_BACKUP_PATH + '/' + dmp_name):
 			# subprocess.call('%s/pg_dump -i -h %s -p %s -U %s %s > %s/%s' % (PGDUMP_CMD_PATH,LOCALHOST,PORT,DB_USER,DB_NAME,BACKUP_PATH,dmp_name),shell=True)
 			subprocess.call('%s/pg_dump -i -h %s -p %s -U %s %s|gzip > %s/%s' % (PGDUMP_CMD_PATH,LOCALHOST,PORT,DB_USER,DB_NAME,CENTER_BACKUP_PATH,dmp_name),shell=True)
 		else:
@@ -67,6 +68,7 @@ def center_dump_db():
 # 每天中午13点，晚上23点这两个时段，对数据库进行更新。在更新前检查数据库是否被占用，如果是则杀掉相应进程，然后再更新。
 def update_db():
 	while True:
+		date = datetime.datetime.now().strftime('%Y%m%d%H')
 		if date[8:] in ('13','23'):
 			# 查找waiting_update目录，如果有文件，则更新。否则，continue
 			filelist = os.listdir(WAIT_UPDATE_PATH)
@@ -104,6 +106,6 @@ def update_db():
 
 
 
-# threading.Thread(target=dump_db,args=()).start()
-threading.Thread(target=center_dump_db,args=()).start()
+threading.Thread(target=dump_db,args=()).start()
+# threading.Thread(target=center_dump_db,args=()).start()
 # threading.Thread(target=update_db,args=()).start()
