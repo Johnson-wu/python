@@ -5,6 +5,7 @@ import pexpect
 import datetime,os,time as timer
 from constant import *
 
+
 def transfer_dmp():
 	while True:
 		date = datetime.datetime.now().strftime('%Y%m%d%H')
