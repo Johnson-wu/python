@@ -2,37 +2,40 @@
 
 import subprocess,threading
 import pexpect
-import datetime,os,time as timer
+import datetime,os,time
 from constant import *
 
 
-def transfer_dmp():
+def transfer_dmp(from_path,to_path,remote_user,remote_pwd,remote_addr):
 	while True:
 		date = datetime.datetime.now().strftime('%Y%m%d%H')
 
 		# 遍历waiting_transfer目录，如果非空则代表有文件需要传送，否则continue
-		filelist = os.listdir(WAIT_TRANS_PATH)
+		filelist = os.listdir(from_path)
 		if len(filelist) > 0 :
+			# 去除文件扩展名
 			# name_without_ext = os.path.splitext(filelist[0])[0]
 	
 			if date[8:] in ('13','23'):	
 				try:
 					#print 'Begin to transfer'
 					# 将文件传送到远端的WAIT_UPDATE_PATH目录，当远端更新数据库之前会将文件复制一份到BACKUP_PATH目录做为备份
-					child = pexpect.spawn('scp %s/%s root@%s:%s/%s' % (WAIT_TRANS_PATH,filelist[0],CENTER_ADDRESS,WAIT_UPDATE_PATH,filelist[0]))
-					returncode = child.expect('%s@%s\'s password:' % (CENTER_USER,CENTER_ADDRESS))
+					child = pexpect.spawn('scp %s/%s root@%s:%s/%s' % (from_path,filelist[0],remote_addr,to_path,filelist[0]))
+					returncode = child.expect('%s@%s\'s password:' % (remote_user,remote_addr))
 					if returncode == 0:
-						child.sendline(CENTER_PWD)
+						child.sendline(remote_pwd)
 						child.expect(pexpect.EOF)
 						#print 'Transfer finished'
 						# 传送完成，清空待传送目录
-						subprocess.call('rm -f %s' % WAIT_TRANS_PATH + '/*',shell=True)
+						subprocess.call('rm -f %s' % from_path + '/*',shell=True)
 					else:
-						continue
+						pass
 				except Exception,e:
 					print e
 		else:
-			continue
-		timer.sleep(60);
+			pass
+		time.sleep(60);
 
-threading.Thread(target=transfer_dmp,args=()).start()
+# args: from_path,to_path,remote_user,remote_pwd,remote_addr
+# 将会同的数据库备份文件传输到平台保存
+threading.Thread(target=transfer_dmp,args=(WAIT_TRANS_PATH,WAIT_UPDATE_PATH,CENTER_USER,CENTER_PWD,CENTER_ADDRESS)).start()
