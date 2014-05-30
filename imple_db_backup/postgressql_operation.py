@@ -49,16 +49,16 @@ def dump_db(identifier, db_name, backup_path, db_address=LOCALHOST):
 
 
 # 每天中午13点，晚上23点这两个时段，对数据库进行更新。在更新前检查数据库是否被占用，如果是则杀掉相应进程，然后再更新。
-def update_db(db_name, db_address=LOCALHOST):
+def update_db(update_path, backup_path, db_name, db_address=LOCALHOST):
 	while True:
 		date = datetime.datetime.now().strftime('%Y%m%d%H')
 		if date[8:] in ('13','23'):
 			# 查找waiting_update目录，如果有文件，则更新。否则，continue
-			filelist = os.listdir(WAIT_UPDATE_PATH)
+			filelist = os.listdir(update_path)
 			if len(filelist) > 0:
 				try:
 					# 有待更新文件，先复制一份到BACKUP_PATH,做为备份
-					subprocess.call('cp %s/%s %s/%s' % (WAIT_UPDATE_PATH,filelist[0],BACKUP_PATH,filelist[0]),shell=True)
+					subprocess.call('cp %s/%s %s/%s' % (update_path,filelist[0],backup_path,filelist[0]),shell=True)
 					# 杀掉占用数据库的进程
 					kill_process(db_name)
 					# 更新数据库
@@ -75,9 +75,9 @@ def update_db(db_name, db_address=LOCALHOST):
 					kill_process('template1')
 					subprocess.call('%s/createdb -h %s -p %s -U %s %s' % (PGDUMP_CMD_PATH,LOCALHOST,PORT,DB_USER,db_name),shell=True)
 
-					subprocess.call('gunzip -c %s/%s | %s/psql -h %s -p %s -U %s %s' % (WAIT_UPDATE_PATH,filelist[0],PGDUMP_CMD_PATH,LOCALHOST,PORT,DB_USER,db_name), shell=True)
+					subprocess.call('gunzip -c %s/%s | %s/psql -h %s -p %s -U %s %s' % (update_path,filelist[0],PGDUMP_CMD_PATH,LOCALHOST,PORT,DB_USER,db_name), shell=True)
 					# 更新完成，清空待更新目录
-					subprocess.call('rm -f %s' % WAIT_UPDATE_PATH + '/*',shell=True)
+					subprocess.call('rm -f %s' % update_path + '/*',shell=True)
 				except Exception, e:
 					print e	
 			else:
@@ -94,5 +94,6 @@ threading.Thread(target=dump_db,args=(HT_IDENT, DB_NAME, BACKUP_PATH)).start()
 # 平台数据库备份，暂时不保存一份到其他主机
 threading.Thread(target=dump_db,args=(CENTER_IDENT, DB_NAME, CENTER_BACKUP_PATH)).start()
 
+# args: update_path, backup_path, db_name
 # 启动保存在平台的会同数据库镜像的更新
-# threading.Thread(target=update_db,args=(CENTER_BACKUP_DB_NAME,)).start()
+# threading.Thread(target=update_db,args=(WAIT_UPDATE_PATH, BACKUP_PATH, CENTER_BACKUP_DB_NAME)).start()
