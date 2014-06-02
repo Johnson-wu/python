@@ -5,6 +5,7 @@ import datetime,time
 import re,os
 import threading
 from constant import *
+import logging
 
 def generate_filename(date, identifier):
 	# return date + '_' + identifier + '.dmp'
@@ -23,7 +24,7 @@ def kill_process(name, role='postgres'):
 
 
 # 数据库备份：每天中午1点，晚上23点这两个时段对数据库进行备份。备份的文件名由 日期、所在单位标识 组成
-def dump_db(identifier, db_name, backup_path, db_address=LOCALHOST):
+def dump_db(logger, identifier, db_name, backup_path, db_address=LOCALHOST):
 	while True:
 		date = datetime.datetime.now().strftime('%Y%m%d%H')
 		try:
@@ -49,7 +50,7 @@ def dump_db(identifier, db_name, backup_path, db_address=LOCALHOST):
 
 
 # 每天中午13点，晚上23点这两个时段，对数据库进行更新。在更新前检查数据库是否被占用，如果是则杀掉相应进程，然后再更新。
-def update_db(update_path, backup_path, db_name, db_address=LOCALHOST):
+def update_db(logger, update_path, backup_path, db_name, db_address=LOCALHOST):
 	while True:
 		date = datetime.datetime.now().strftime('%Y%m%d%H')
 		if date[8:] in ('13','23'):
@@ -87,13 +88,17 @@ def update_db(update_path, backup_path, db_name, db_address=LOCALHOST):
 		time.sleep(60)
 
 
+if __name__ == '__main__':
+	logger = logging.getLogger('db_backup')
+	logging.basicConfig(filename=os.path.join(LOG_PATH,'db_backup.log'), level=logging.WARN, format='%(asctime)s - %(levelname)s: %(message)s')
+	# args: identifier, db_name, backup_path
+	# 会同数据库备份，同时会保存一份到中心
+	threading.Thread(target=dump_db,args=(logger, HT_IDENT, DB_NAME, BACKUP_PATH)).start()
+	# 平台数据库备份，暂时不保存一份到其他主机
+	threading.Thread(target=dump_db,args=(logger, CENTER_IDENT, DB_NAME, CENTER_BACKUP_PATH)).start()
 
-# args: identifier, db_name, backup_path
-# 会同数据库备份，同时会保存一份到中心
-threading.Thread(target=dump_db,args=(HT_IDENT, DB_NAME, BACKUP_PATH)).start()
-# 平台数据库备份，暂时不保存一份到其他主机
-threading.Thread(target=dump_db,args=(CENTER_IDENT, DB_NAME, CENTER_BACKUP_PATH)).start()
+	# args: update_path, backup_path, db_name
+	# 启动保存在平台的会同数据库镜像的更新
+	# threading.Thread(target=update_db,args=(WAIT_UPDATE_PATH, BACKUP_PATH, CENTER_BACKUP_DB_NAME)).start()
 
-# args: update_path, backup_path, db_name
-# 启动保存在平台的会同数据库镜像的更新
-# threading.Thread(target=update_db,args=(WAIT_UPDATE_PATH, BACKUP_PATH, CENTER_BACKUP_DB_NAME)).start()
+

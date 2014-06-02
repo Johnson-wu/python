@@ -4,9 +4,10 @@ import subprocess,threading
 import pexpect
 import datetime,os,time
 from constant import *
+import logging
 
 
-def transfer_dmp(from_path,to_path,remote_user,remote_pwd,remote_addr):
+def transfer_dmp(logger,from_path,to_path,remote_user,remote_pwd,remote_addr):
 	while True:
 		date = datetime.datetime.now().strftime('%Y%m%d%H')
 
@@ -34,8 +35,15 @@ def transfer_dmp(from_path,to_path,remote_user,remote_pwd,remote_addr):
 					print e
 		else:
 			pass
-		time.sleep(60);
+		time.sleep(60)
 
-# args: from_path,to_path,remote_user,remote_pwd,remote_addr
-# 将会同的数据库备份文件传输到平台保存
-threading.Thread(target=transfer_dmp,args=(WAIT_TRANS_PATH,WAIT_UPDATE_PATH,CENTER_USER,CENTER_PWD,CENTER_ADDRESS)).start()
+
+
+if __name__ == '__main__':
+	logger = logging.getLogger('db_backup')
+	logging.basicConfig(filename=os.path.join(LOG_PATH,'db_backup.log'), level=logging.WARN, format='%(asctime)s - %(levelname)s: %(message)s')
+	# args: from_path,to_path,remote_user,remote_pwd,remote_addr
+	# 将会同的数据库备份文件传输到平台保存
+	threading.Thread(target=transfer_dmp,args=(logger,WAIT_TRANS_PATH,WAIT_UPDATE_PATH,CENTER_USER,CENTER_PWD,CENTER_ADDRESS)).start()
+
+
