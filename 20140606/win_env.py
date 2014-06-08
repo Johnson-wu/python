@@ -58,7 +58,7 @@ if __name__ == '__main__':
 	env2.setEnv('TEST', os.path.expanduser(r'~\tests'))
 	print(env2.getEnv('TEST'))
 
-	env2 = Win32Env('test')
+	# env2 = Win32Env('test')
 
 
 
