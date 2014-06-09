@@ -2,8 +2,6 @@
 
 PGDUMP_CMD_PATH = '/usr/lib/postgresql/9.1/bin'
 
-LOG_PATH = '/home/why/script/im'
-
 LOCALHOST = 'localhost'
 
 PORT = '5432'
