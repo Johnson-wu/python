@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 
 MAIL_HOST = 'smtp.163.com'
 USERNAME = 'wu_yi_fan2013'
-PASSWORD = '830824wujing'
+PASSWORD = ''
 MAIL_DOMAIN = '163.com'
 MAIL_FROM = USERNAME + '@' + MAIL_DOMAIN
 MAIL_TO = 'wujingjingjing@163.com'

@@ -9,7 +9,7 @@ from smtplib import SMTP_SSL
 HOST = 'smtp.qq.com'
 SENDER = 'wu_yi_fan2013@qq.com'
 USER = 'wu_yi_fan2013'
-PWD = '830824wujing'
+PWD = ''
 RECIPS = ['wujingjingjing@163.com','wu_yi_fan2013@163.com']
 
 # multipart alternative : text and html

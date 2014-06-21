@@ -5,7 +5,7 @@ import imaplib
 SEND_SERVER = 'smtp.qq.com'
 RETR_SERVER = 'imap.qq.com'
 USER = 'wu_yi_fan2013'
-PWD = '830824wujing'
+PWD = ''
 
 imap = imaplib.IMAP4_SSL('imap.qq.com')
 imap.login(USER,PWD)
