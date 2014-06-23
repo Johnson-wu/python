@@ -15,7 +15,12 @@ class MyThread(threading.Thread):
 		self.name = name
 
 	def run(self):
-		self.func(*self.args)
+		print '%s func start at %s' % (self.name, ctime())
+		self.result = self.func(*self.args)
+		print '%s func end at %s' % (self.name, ctime())
+
+	def getResult(self):
+		return self.result
 
 
 def loop(index, nsec):
