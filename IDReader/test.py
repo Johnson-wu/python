@@ -3,6 +3,7 @@
 from ctypes import *
 import threading
 import time
+import json
 
 PATH = 'E:\\IDReader\\'
 
@@ -38,7 +39,31 @@ def getIDInfos():
 				print 'name:%s---gender:%s---folk:%s---birthday:%s---code:%s---addr:%s---agency:%s---expireStart:%s---expireEnd:%s '\
 						 % (p_name.value.decode('gbk').encode('utf-8').strip(),p_gender.value.decode('gbk').encode('utf-8'),p_folk.value.decode('gbk').encode('utf-8'),\
 						 	p_birthday,p_code,p_addr.value.decode('gbk').encode('utf-8'),p_agency.value.decode('gbk').encode('utf-8'),p_expireStart,p_expireEnd) 
-		time.sleep(0.5)
+				
+				dic = {
+					'name': p_name.value,
+					'gender': p_gender.value,
+					'folk': p_folk.value,
+					'birthday': p_birthday.value,
+					'address': p_addr.value,
+					'agency': p_agency.value,
+					'expireStart': p_expireStart.value,
+					'expireEnd': p_expireEnd.value
+				}
+
+				# 将一个字典实例序列化为一个json字串
+				# Serialize obj to a JSON formatted str using this conversion table.
+			    # If ensure_ascii is False, the result may contain non-ASCII characters and the return value may be a unicode instance.
+				json_str = json.dumps(dic,ensure_ascii=False)
+				print json_str
+
+				# 对json字串反序列化为为一个python object
+				# Deserialize s (a str or unicode instance containing a JSON document) to a Python object using this conversion table
+				json_obj = json.loads(json_str,encoding='gbk')
+
+				# 取出字典中的某个key对应的value
+				print json_obj['name']
+		time.sleep(1)
 
 
 if __name__ == '__main__':
