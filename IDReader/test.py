@@ -31,7 +31,8 @@ def insertIDInfo(conn,dic,loger):
 		# dic['birthday'] = date
 		conn = postgres.connect(CONNECT_PARAM)
 		cur = conn.cursor()
-		cur.execute('INSERT INTO gnuhealth_registration (name,sex,birthday,speciality,registration_type,pinyin) VALUES(%s,%s,%s,%s,%s,%s)',(dic['name'],dic['gender'],postgres.Date(year,month,day),63,1,'a'))
+		cur.execute('INSERT INTO gnuhealth_registration (name,sex,birthday,speciality,registration_type,pinyin) VALUES(%s,%s,%s,%s,%s,%s)',\
+						(dic['name'],dic['gender'],postgres.Date(year,month,day),63,1,'a'))
 		# cur.execute('INSERT INTO gnuhealth_registration (name,sex,birthday,speciality,registration_type,pinyin) VALUES(%s,%s,%s,%s,%s,%s)',(dic['name'],dic['gender'],dic['birthday'],63,1,'a'))
 		print 'insert successfully...'
 		conn.commit()

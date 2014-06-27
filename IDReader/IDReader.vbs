@@ -1,0 +1,1 @@
+createobject ("WScript.Shell").run "cmd /c python E:\GitHub\python\IDReader\test.py",0 
