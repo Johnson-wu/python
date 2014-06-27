@@ -1,5 +1,5 @@
 #coding:utf-8
-
+import datetime
 # print b'\xce\xe2\xbe\xa4'.decode('gb2312')
 
 st = '\xce\xe2\xbe\xa4'
@@ -20,3 +20,12 @@ print st.decode('gbk').encode('utf-8')
 
 # # 取出字典中的某个key对应的value
 # print json_obj['name']
+
+date = datetime.date(1990,12,2)
+print type(date)
+
+yr = int('1990')
+mo = int('12')
+day = int('2')
+date2 = datetime.date(yr,mo,day)
+print type(date2),date2
