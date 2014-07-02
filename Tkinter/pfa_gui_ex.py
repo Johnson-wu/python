@@ -30,6 +30,8 @@ MyButton = partial(Tkinter.Button,root)
 CritButton = partial(MyButton, command=critCB, bg='white', fg='red')
 WarnButton = partial(MyButton, command=warnCB, bg='goldenrod1')
 ReguButton = partial(MyButton, command=infoCB, bg='white')
+testButton = partial(MyButton, command=infoCB, bg='white')
+testButton(text='test').pack()
 
 for eachSign in SIGNS:
 	print eachSign
