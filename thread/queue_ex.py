@@ -7,7 +7,7 @@ from method3_subclass import MyThread
 import atexit
 
 def writeQ(queue):
-	print 'producing object for Q...',queue.put('xxx',1)
+	print 'producing object for Q...',queue.put('candy',1)
 	print 'size now ',queue.qsize()
 
 def readQ(queue):
