@@ -43,22 +43,25 @@ def htmlparser(url, f):
 # html5lib : only parse anchor
 def html5libparse(url, f):
 	# 没有simpletree这个属性
-	output(urljoin(url, x.attributes['href']) \
-		for x in parse(f) if isinstance(x, treebuilders.simpletree.Element) and \
-		x.name == 'a')
+	# output(urljoin(url, x.attributes['href']) \
+	# 	for x in parse(f, treebuilder='etree') if isinstance(x, treebuilders.etree.Element) and \
+	# 	x.name == 'a')
+	for x in parse(f):
+		# print type(x)
+		print x.tag
 
 def process(url, data):
-	print '\n*** simple BS BeautifulSoup'
-	simpleBS(url, data)
-	data.seek(0)
-	print '\n*** faster BS BeautifulSoup'
-	fasterBS(url, data)
-	data.seek(0)
-	print '\n*** HTMLParser'
-	htmlparser(url, data)
-	data.seek(0)
+	# print '\n*** simple BS BeautifulSoup'
+	# simpleBS(url, data)
+	# data.seek(0)
+	# print '\n*** faster BS BeautifulSoup'
+	# fasterBS(url, data)
+	# data.seek(0)
+	# print '\n*** HTMLParser'
+	# htmlparser(url, data)
+	# data.seek(0)
 	print '\n*** HTML5lib'
-	# html5libparse(url, data)
+	html5libparse(url, data)
 
 def _main():
 	for url in URLs:
