@@ -29,6 +29,7 @@ You have <B>%s</B> Friends</body></html>
 
 form = cgi.FieldStorage()
 # who = form['person']    # 返回的是instances of FieldStorage or MiniFieldStorage，包含了key和value
+print form
 who = form['person'].value
 howmany = form['howmany'].value
-print resulthtml % (who, who, howmany)
+print resulthtml % (form, who, howmany)
