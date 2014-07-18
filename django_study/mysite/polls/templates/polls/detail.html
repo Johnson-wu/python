@@ -1,8 +1,16 @@
 {{ poll.question }}
+
+{% if error_message %}<p><strong>{{error_message}}</strong></p>{% endif %}
+
 {% if poll.choice_set.all %}
-	{% for choice in poll.choice_set.all %}
-		<p>{{ choice.choice_text }}</p>
-	{% endfor %}
+<form action="{% url 'polls:vote' poll.id %}" methond="post">
+{% csrf_token %}
+{% for choice in poll.choice_set.all %}
+	<input type="radio" name="choice" id="choice{{forloop.counter}}" value="{{choice.id}}"/>
+	<label for="choice{{forloop.counter}}">{{ choice.choice_text }}</label><br/>
+{% endfor %}
+	<input type="submit" value="Vote"/>
+</form>
 {% else %}
 	<p>This poll does not have choice option.</p>
 {% endif %}
