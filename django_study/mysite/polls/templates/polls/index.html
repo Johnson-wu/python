@@ -1,0 +1,9 @@
+{% if lastest_poll_orderby_date %}
+	<ul>
+		{% for p in lastest_poll_orderby_date %}
+			<li><a href="/polls/{{ p.id }}">{{ p.question }}</a></li>
+		{% endfor %}
+	</ul>
+{% else %}
+	<p>There is no data avaliable</p>
+{% endif %}
