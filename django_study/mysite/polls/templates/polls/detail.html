@@ -1,1 +1,8 @@
-{{ poll }}
+{{ poll.question }}
+{% if poll.choice_set.all %}
+	{% for choice in poll.choice_set.all %}
+		<p>{{ choice.choice_text }}</p>
+	{% endfor %}
+{% else %}
+	<p>This poll does not have choice option.</p>
+{% endif %}
