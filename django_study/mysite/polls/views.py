@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.views import generic
+from django.utils import timezone
 
 from polls.models import Poll,Choice
 
@@ -12,7 +13,9 @@ class IndexView(generic.ListView):
     context_object_name = 'lastest_poll_orderby_date'
 
     def get_queryset(self):
-        return Poll.objects.order_by('-pub_date')
+        polls = Poll.objects.filter(pub_date__lte=timezone.now()).order_by('-pub_date')
+        # return polls and polls or 'No polls are available'
+        return polls
 
 
 class DetailView(generic.DetailView):
