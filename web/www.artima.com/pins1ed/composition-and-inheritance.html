@@ -1,0 +1,1364 @@
+<html>
+<head>
+<title>Composition and Inheritance</title>
+<meta name="description" content="
+" />
+<meta name="keywords" content="scala" />
+<meta name="author" content="Martin Odersky, Lex Spoon, and Bill Venners" />
+<link rel="stylesheet" type="text/css" href="/artima.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+</head>
+<body><table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="bottom">
+<a href="/index.jsp"><img src="/images/a7.gif" alt="The Artima Developer Community" border="0" width="550" height="43" /></a>
+</td>
+</table>
+<table width="100%" bgcolor="#333333">
+<tr>
+<td align="center">
+<div class="ml">
+<a href="/articles" class="hl">Articles</a>&nbsp;|
+<a href="/news/index.jsp" class="hl">News</a>&nbsp;|
+<a href="/weblogs/index.jsp" class="hl">Weblogs</a>&nbsp;|
+<a href="/buzz/index.jsp" class="hl">Buzz</a>&nbsp;|
+<a href="/shop/catalog" class="hl">Books</a>&nbsp;|
+<a href="/forums/index.jsp" class="hl">Forums</a>
+</div>
+</td>
+</tr>
+</table>
+<table width="100%" bgcolor="#AACCFF">
+<tr>
+<td align="center">
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/composition-and-inheritanceP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/control-abstraction.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/scalas-hierarchy.html">Next</a>
+</div>
+</td>
+</tr>
+</table>
+<BR>
+<div class="vegies">
+<div class="tc">
+<span class="sts">Chapter 10 of Programming in Scala, First Edition</span><br />
+<span class="ts">Composition and Inheritance</span><br />
+<span class="as">by Martin Odersky, Lex Spoon, and Bill Venners</span><br />
+<span class="pd">December 10, 2008</span><br />
+</div>
+
+
+
+
+<p><a href="functional-objects.html">Chapter 6</a> introduced some basic object-oriented aspects of Scala. This chapter
+will pick up where <a href="functional-objects.html">Chapter 6</a> left off and dive with much greater detail into Scala's
+support for object-oriented programming.
+We'll compare two fundamental relationships between classes: composition and inheritance.
+Composition means one class holds a reference to another, using the referenced class to help it fulfill its mission.
+Inheritance is the superclass/subclass relationship. In addition to these topics, we'll discuss abstract classes, parameterless
+methods, extending classes, overriding methods and fields, parametric fields, invoking superclass constructors, polymorphism
+and dynamic binding, final members and classes, and factory objects and methods.</p>
+
+<h3><a name="10.1"></a>10.1 A two-dimensional layout library <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.1">link</a>]</span></h3>
+
+
+<p>As a running example in this chapter, we'll create a library
+for building and rendering two-dimensional layout elements. 
+Each element will represent a
+rectangle filled with text. 
+For convenience, the library will provide factory methods 
+named "<span class="code">elem</span>" that construct new elements from passed data.
+For example, you'll be able
+to create a layout element containing a string using a factory method with 
+the following signature:
+<pre>
+  elem(s:&nbsp;<span class="typename">String</span>):&nbsp;<span class="typename">Element</span>
+</pre><!-- -->
+As you can see, elements will be modeled with a type named <span class="code">Element</span>.
+You'll be able to call <span class="code">above</span> or <span class="code">beside</span> on an element, passing in a second
+element, to get a new element that combines the two.
+For example, the following expression would construct a larger element consisting 
+of two columns, each with a height of two:
+<pre>
+  <span class="vem">val</span>&nbsp;column1&nbsp;=&nbsp;elem(<span class="quotedstring">"hello"</span>)&nbsp;above&nbsp;elem(<span class="quotedstring">"***"</span>)
+  <span class="vem">val</span>&nbsp;column2&nbsp;=&nbsp;elem(<span class="quotedstring">"***"</span>)&nbsp;above&nbsp;elem(<span class="quotedstring">"world"</span>)
+  column1&nbsp;beside&nbsp;column2
+</pre><!-- -->
+Printing the result of this expression would give:
+<pre>
+  hello&nbsp;***&nbsp;&nbsp;
+  &nbsp;***&nbsp;world
+</pre><!-- -->
+Layout elements are a good example of a system in which objects can be constructed
+from simple parts with the aid of composing operators. In this chapter,
+we'll define classes that enable element objects to be constructed from arrays,
+lines, and rectangles&mdash;the simple parts. We'll also define composing operators
+<span class="code">above</span> and <span class="code">beside</span>. Such composing operators are also often called <span style="font-style:italic">
+combinators</span> because they combine elements of some domain into new
+elements<a id="i-649047625-1"></a>.</p>
+
+<p>Thinking in terms of combinators is generally a good way to approach
+library design: it pays to think about the fundamental ways to
+construct objects in an application domain. What are the simple
+objects? In what ways can more interesting objects be constructed out
+of simpler ones? How do combinators hang together?  What are the most
+general combinations? Do they satisfy any interesting laws? If you
+have good answers to these questions, your library design is on track.</p>
+
+<h3><a name="10.2"></a>10.2 Abstract classes <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.2">link</a>]</span></h3>
+
+
+<p><a name="sec:abstract-classes"></a></p>
+
+<p>Our first task is to define type
+<span class="code">Element</span>, which represents layout elements. 
+Since elements are
+two dimensional rectangles of characters, it makes sense to include a member,
+<span class="code">contents</span>, that refers to the contents of a layout
+element<a id="i-860903178-1"></a>.
+The contents can be represented as an array of strings, where each string represents a line.
+Hence, the type of the result returned by <span class="code">contents</span> will be <span class="code">Array[String]</span>. <a href="composition-and-inheritance.html#lst:abstract-method-class">Listing 10.1</a> shows what
+it will look like.</p>
+
+<p><a name="lst:abstract-method-class"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 10.1 - Defining an abstract method and class.</h5>
+
+
+<p>In this class, <span class="code">contents</span> is declared as a method that has no implementation.
+In other words, the method is an <span style="font-style:italic">abstract</span> member of class <span class="code">Element</span>. A class with abstract
+members must itself be declared abstract, which is done by writing an
+<span class="code">abstract</span> modifier in front of the <span class="code">class</span>
+keyword<a id="i1203833450-1"></a><a id="i-860903178-2"></a>: 
+<pre>
+  <span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Element</span>&nbsp;...
+</pre><!-- -->
+The <span class="code">abstract</span> modifier signifies that the class 
+may have abstract members that do not have an implementation. 
+As a result, you cannot instantiate an abstract class. If you try to do so,
+you'll get a compiler error:<a id="i-983091129-1"></a>
+<pre>
+  scala&gt;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Element</span>
+  <span class="output">&lt;console&gt;:5:&nbsp;error:&nbsp;class&nbsp;Element&nbsp;is&nbsp;abstract;</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;cannot&nbsp;be&nbsp;instantiated</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;new&nbsp;Element</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+</pre><!-- --></p>
+
+<p><!-- -->Later in this chapter you'll see how to create subclasses of class <span class="code">Element</span>, which you'll be able to instantiate because they fill in the 
+missing definition for <span class="code">contents</span>.</p>
+
+<p>Note that the <span class="code">contents</span> method in class <span class="code">Element</span> does not carry an <span class="code">abstract</span>
+modifier.  A method is abstract if it does not have an implementation
+(<i>i.e.</i>, no equals sign or body). Unlike Java, no abstract modifier is necessary (or allowed)
+on method declarations. Methods that do have an implementation are called <span style="font-style:italic">
+concrete</span><a id="i-141831446-1"></a>.<a id="i-1171687261-1"></a></p>
+
+<p>Another bit of terminology distinguishes between <span style="font-style:italic">
+declarations</span> and <span style="font-style:italic">definitions</span>.  Class <span class="code">Element</span> <a href="glossary.html#g1542341994"><em>declares</em></a>
+the abstract method <span class="code">contents</span>, but currently <a href="glossary.html#g-1335633477"><em>defines</em></a> no
+concrete methods. In the next section, however, we'll enhance
+<span class="code">Element</span> by defining some concrete methods.</p>
+
+<h3><a name="10.3"></a>10.3 Defining parameterless methods <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.3">link</a>]</span></h3>
+
+
+<p><a name="sec:uniform-access-principle"></a></p>
+
+<p>As a next step, we'll add methods to <span class="code">Element</span> that reveal its width and height,
+as shown in
+<a href="composition-and-inheritance.html#lst:parameterless-methods">Listing 10.2</a>.<a id="i1448211194-1"></a><a id="i1133207124-1"></a>
+The <span class="code">height</span> method returns the number of lines in <span class="code">contents</span>.
+The <span class="code">width</span> method returns the length of the first line, or, if there
+are no lines in the element, zero. (This means you cannot define an
+element with a height of zero and a non-zero width.)</p>
+
+<p><a name="lst:parameterless-methods"></a></p>
+
+<pre>
+  <span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;height:&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;contents.length
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;width:&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;<span class="vem">if</span>&nbsp;(height&nbsp;==&nbsp;<span class="literal">0</span>)&nbsp;<span class="literal">0</span>&nbsp;<span class="vem">else</span>&nbsp;contents(<span class="literal">0</span>).length
+  }
+</pre><!-- -->
+
+
+<h5>Listing 10.2 - Defining parameterless methods <span class="code">width</span> and <span class="code">height</span>.</h5>
+
+
+<p>Note that none of <span class="code">Element</span>'s three methods has a parameter list, not even an empty one.
+For example, instead of:
+<pre>
+  <span class="vem">def</span>&nbsp;width():&nbsp;<span class="typename">Int</span>
+</pre><!-- -->
+the method is defined without parentheses: 
+<pre>
+  <span class="vem">def</span>&nbsp;width:&nbsp;<span class="typename">Int</span>
+</pre><!-- -->
+Such <a href="glossary.html#g-1903107585"><em>parameterless methods</em></a> are quite common in Scala.<a id="i-1718164274-2"></a><a id="i1976561855-2"></a>
+By contrast, methods defined with empty parentheses, such as <span class="code">def</span>&nbsp;<span class="code">height():</span>&nbsp;<span class="code">Int</span>, 
+are called <em>empty-paren methods</em>.<a id="i1343251059-1"></a><a id="i1617330716-1"></a><a id="i1755483330-1"></a>
+The recommended convention is to use a parameterless method whenever there are no parameters
+<em>and</em> the method accesses mutable state only by reading fields of
+the containing object (in particular, it does not change mutable state).</p>
+
+<p>This convention supports the <span style="font-style:italic">uniform access principle</span>,<a href="composition-and-inheritance.html#footnote10-1">[1]</a> which
+says that client code should not be affected by a decision to
+implement an attribute as a field or method<a id="i758262274-1"></a>. For instance, we
+could have chosen to implement <span class="code">width</span> and <span class="code">height</span> as fields
+instead of methods, simply by changing the <span class="code">def</span> in each definition
+to a <span class="code">val</span>:
+<pre>
+  <span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;height&nbsp;=&nbsp;contents.length
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;width&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(height&nbsp;==&nbsp;<span class="literal">0</span>)&nbsp;<span class="literal">0</span>&nbsp;<span class="vem">else</span>&nbsp;contents(<span class="literal">0</span>).length
+  }
+</pre><!-- -->
+The two pairs of definitions are completely equivalent from a client's
+point of view. 
+The only difference is that field accesses might be
+slightly faster than method invocations, because the field values are
+pre-computed when the class is initialized, instead of being computed
+on each method call. On the other hand, the fields require extra
+memory space in each <span class="code">Element</span> object. So it depends on the usage profile 
+of a class whether an attribute is better represented as a field or method, 
+and that usage profile might change over time.
+The point is that clients of
+the <span class="code">Element</span> class should not be affected when its internal implementation changes.</p>
+
+<p>In particular, a client of class <span class="code">Element</span> should 
+not need to be rewritten if a field of that class gets changed
+into an access function so long as the access function is <span style="font-style:italic">pure</span>, 
+<i>i.e.</i>, it does not have any side effects and does not depend on mutable
+state<a id="i-242056329-1"></a>. 
+The client should not need to care either way.</p>
+
+<p>So far so good. But there's still a slight complication that has to do
+with the way Java handles things. The problem is that Java does not
+implement the uniform access principle.
+So it's <span class="code">string.length()</span> in Java, not <span class="code">string.length</span> (even though it's
+<span class="code">array.length</span>, not <span class="code">array.length()</span>). Needless to say, this is very confusing.</p>
+
+<p>To bridge that gap, Scala is very liberal when it comes to
+mixing parameterless and empty-paren methods.
+In particular,
+you can override a parameterless method with an empty-paren method, and 
+<i>vice versa</i>.
+You can also leave off the empty parentheses on an invocation of any function that
+takes no arguments.
+For instance, the following two lines are both legal in Scala:
+<pre>
+  <span class="typename">Array</span>(<span class="literal">1</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>).toString
+  <span class="quotedstring">"abc"</span>.length
+</pre><!-- --></p>
+
+<p>In principle it's possible to leave out all empty parentheses in
+Scala function calls. However, it is recommended to still write the empty parentheses
+when the invoked method represents more than a property of its receiver object.
+For instance, empty parentheses are appropriate if the method
+performs I/O, or writes reassignable variables (<span class="code">var</span>s), or reads 
+<span class="code">var</span>s other than the receiver's fields, 
+either directly or indirectly by using mutable objects. 
+That way, the parameter
+list acts as a visual clue that some interesting computation is
+triggered by the call. For instance:
+<pre>
+  <span class="quotedstring">"hello"</span>.length&nbsp;&nbsp;<span class="comment">//&nbsp;no&nbsp;()&nbsp;because&nbsp;no&nbsp;side-effect</span>
+  println()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;better&nbsp;to&nbsp;not&nbsp;drop&nbsp;the&nbsp;()</span>
+</pre><!-- -->
+To summarize, it is encouraged style in Scala to define methods that take no parameters and have no side effects
+as parameterless methods, <i>i.e.</i>, leaving off the empty parentheses.
+On the other hand, you should never
+define a method that has side-effects without parentheses, because then invocations of that method
+would look like a field selection. So your clients might be surprised to see
+the side effects. Similarly, whenever you invoke a function that has side effects, be sure
+to include the empty parentheses when you write the invocation. Another way
+to think about this is if the function you're calling
+performs an operation, use the parentheses, but if it merely provides
+access to a property, leave the parentheses off.</p>
+
+<h3><a name="10.4"></a>10.4 Extending classes <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.4">link</a>]</span></h3>
+
+
+<p><a name="sec:extending-classes"></a></p>
+
+<p>We still need to be able to create new element objects.  You have
+already seen that "<span class="code">new</span>&nbsp;<span class="code">Element</span>" cannot be used for this because
+class <span class="code">Element</span> is abstract. To instantiate an element, therefore, we
+will need to create a subclass that extends <span class="code">Element</span> and implements
+the abstract <span class="code">contents</span> method. <a href="composition-and-inheritance.html#lst:defining-subclass">Listing 10.3</a>
+shows one possible way to do
+that:<a id="i-1408184354-1"></a><a id="i-1305664359-1"></a></p>
+
+<p><a name="lst:defining-subclass"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ArrayElement</span>(conts:&nbsp;<span class="typename">Array[String]</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>&nbsp;=&nbsp;conts
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 10.3 - Defining <span class="code">ArrayElement</span> as a subclass of <span class="code">Element</span>.</h5>
+
+
+<p>Class <span class="code">ArrayElement</span> is defined to <span style="font-style:italic">extend</span> class <span class="code">Element</span>. Just like in Java, 
+you use an extends clause after the class name to express this:
+<pre>
+  ...&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;...
+</pre><!-- -->
+Such an extends clause has two
+effects: it makes class <span class="code">ArrayElement</span> <span style="font-style:italic">inherit</span> all non-private
+members from class <span class="code">Element</span>, and it makes the type <span class="code">ArrayElement</span> a
+<span style="font-style:italic">subtype</span> of the type <span class="code">Element</span>.
+Given <span class="code">ArrayElement</span> extends <span class="code">Element</span>, class <span class="code">ArrayElement</span> is called a <span style="font-style:italic">
+subclass</span> of class <span class="code">Element</span>.<a id="i-1485346100-1"></a>  Conversely, <span class="code">Element</span> is a <em>superclass</em>
+of <span class="code">ArrayElement</span>.<a id="i1436252235-1"></a></p>
+
+<p>If you leave out an <span class="code">extends</span>
+clause, the Scala compiler implicitly assumes your class extends from
+<span class="code">scala.AnyRef</span>, which on the Java platform is the same as class
+<span class="code">java.lang.Object</span>. Thus, class <span class="code">Element</span> implicitly extends class <span class="code">AnyRef</span>. You can see these inheritance relationships in 
+<a href="composition-and-inheritance.html#fig:element-family">Figure 10.1</a>.</p>
+
+<div class="figure"><a name="fig:element-family"></a>
+
+
+<p><img src="images/ArrayElement.jpg" alt="image images/ArrayElement.jpg"/></p>
+
+</div>
+<h5> Figure 10.1 - Class diagram for <span class="code">ArrayElement</span>.</h5>
+
+
+<p><span style="font-style:italic">Inheritance</span> means that all members of the superclass are also members
+of the subclass, with two exceptions. First, private members of the
+superclass are not inherited in a subclass.  Second, a member of a
+superclass is not inherited if a member with the same name and
+parameters is already implemented in the subclass. In that case we say
+the member of the subclass <span style="font-style:italic">overrides</span> the member of the superclass.
+If the member in the subclass is concrete and the member of the superclass is abstract, 
+we also say that the concrete member <span style="font-style:italic">implements</span> the abstract one.</p>
+
+<p>For example, the <span class="code">contents</span> method in <span class="code">ArrayElement</span> overrides (or,<!-- -->
+alternatively: implements) abstract method <span class="code">contents</span> in class
+<span class="code">Element</span>.<a href="composition-and-inheritance.html#footnote10-2">[2]</a>
+By contrast, class <span class="code">ArrayElement</span> inherits the 
+<span class="code">width</span> and <span class="code">height</span> methods from class <span class="code">Element</span>.
+For example, given an <span class="code">ArrayElement</span> <span class="code">ae</span>, you can query its width
+using <span class="code">ae.width</span>, as if <span class="code">width</span> were defined in class
+<span class="code">ArrayElement</span>: 
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;ae&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="typename">Array</span>(<span class="quotedstring">"hello"</span>,&nbsp;<span class="quotedstring">"world"</span>))
+  <span class="output">ae:&nbsp;ArrayElement&nbsp;=&nbsp;ArrayElement@d94e60</span>
+  <br />  scala&gt;&nbsp;ae.width
+  <span class="output">res1:&nbsp;Int&nbsp;=&nbsp;5</span>
+</pre><!-- --></p>
+
+<p><span style="font-style:italic">Subtyping</span> means that a value of the subclass can be used 
+wherever a value of the superclass is required. For example:
+<pre>
+  <span class="vem">val</span>&nbsp;e:&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="typename">Array</span>(<span class="quotedstring">"hello"</span>))
+</pre><!-- -->
+Variable <span class="code">e</span> is defined to be of type <span class="code">Element</span>, so its initializing value 
+should also be an <span class="code">Element</span>. In fact, the initializing value's type is <span class="code">ArrayElement</span>.
+This is OK, because class <span class="code">ArrayElement</span> extends class <span class="code">Element</span>, and as a result, the type
+<span class="code">ArrayElement</span> is compatible with the type <span class="code">Element</span>.<a href="composition-and-inheritance.html#footnote10-3">[3]</a></p>
+
+<p><a href="composition-and-inheritance.html#fig:element-family">Figure 10.1</a> also shows the <em>composition</em> relationship that exists between <span class="code">ArrayElement</span> and
+<span class="code">Array[String]</span><a id="i-838923862-1"></a>. This relationship is called composition because class <span class="code">ArrayElement</span> is "composed" out of
+class <span class="code">Array[String]</span>, in that the Scala compiler will place into the binary class it generates for <span class="code">ArrayElement</span> a field 
+that holds a reference to the passed <span class="code">conts</span> array. We'll discuss some design considerations concerning composition and inheritance
+later in this chapter, in <a href="composition-and-inheritance.html#sec:using-compo-inherit">Section 10.11</a>.</p>
+
+<h3><a name="10.5"></a>10.5 Overriding methods and fields <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.5">link</a>]</span></h3>
+
+
+<p><a name="sec:two-name-spaces"></a></p>
+
+<p>The uniform access principle is just one aspect where Scala treats<a id="i-1224666293-1"></a><a id="i496223825-1"></a><a id="i1471166698-1"></a>
+fields and methods more uniformly than Java. Another difference is
+that in Scala, fields and methods belong to the same namespace. This
+makes it possible for a field to override a parameterless method.
+For instance, you could change the implementation of <span class="code">contents</span> in class
+<span class="code">ArrayElement</span> from a method to a field without having to modify the 
+abstract method definition of <span class="code">contents</span> in class <span class="code">Element</span>, as shown
+in <a href="composition-and-inheritance.html#lst:overriding-with-field">Listing 10.4</a>:</p>
+
+<p><a name="lst:overriding-with-field"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ArrayElement</span>(conts:&nbsp;<span class="typename">Array[String]</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>&nbsp;=&nbsp;conts
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 10.4 - Overriding a parameterless method with a field.</h5>
+
+
+<p>Field <span class="code">contents</span> (defined with a <span class="code">val</span>) in this version of <span class="code">ArrayElement</span> is a perfectly good
+implementation of the parameterless method <span class="code">contents</span> (declared with a <span class="code">def</span>) in class
+<span class="code">Element</span>.</p>
+
+<p>On the other hand, in Scala it is forbidden to define a field and 
+method with the same name in the same class, whereas it is allowed in
+Java.
+For example, this Java class would compile just fine:
+<pre>
+  //&nbsp;This&nbsp;is&nbsp;Java
+  class&nbsp;CompilesFine&nbsp;{
+  &nbsp;&nbsp;private&nbsp;int&nbsp;f&nbsp;=&nbsp;0;
+  &nbsp;&nbsp;public&nbsp;int&nbsp;f()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;1;
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+But the corresponding Scala class would not compile:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">WontCompile</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;f&nbsp;=&nbsp;<span class="literal">0</span>&nbsp;<span class="comment">//&nbsp;Won't&nbsp;compile,&nbsp;because&nbsp;a&nbsp;field&nbsp;</span>
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;f&nbsp;=&nbsp;<span class="literal">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;and&nbsp;method&nbsp;have&nbsp;the&nbsp;same&nbsp;name</span>
+  }
+</pre><!-- -->
+Generally, Scala has just two namespaces for definitions in place of
+Java's four.<a id="i765341585-1"></a> Java's four namespaces are fields, methods, types, and packages.
+By contrast, Scala's two namespaces are:</p>
+
+<ul>
+<li>values (fields, methods, packages, and singleton objects)
+</li>
+<li>types (class and trait names)
+</li></ul>
+The reason Scala places fields
+and methods into the same namespace is precisely so you can
+override a parameterless method with a <span class="code">val</span>, something you
+can't do with Java.<a href="composition-and-inheritance.html#footnote10-4">[4]</a>
+
+
+<h3><a name="10.6"></a>10.6 Defining parametric fields <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.6">link</a>]</span></h3>
+
+
+<p><a name="sec:parametric-fields"></a></p>
+
+<p>Consider again the definition of class <span class="code">ArrayElement</span> shown in the previous section. It has a<a id="i-590826255-2"></a>
+parameter <span class="code">conts</span> whose sole purpose is to be copied into the
+<span class="code">contents</span> field. The name <span class="code">conts</span> of the parameter was chosen
+just so that it would look similar to the field name <span class="code">contents</span> without
+actually clashing with it. This is a "code smell," a sign that there may be
+some unnecessary redundancy and repetition in your code.</p>
+
+<p>You can avoid the code smell by combining the parameter and the field
+in a single <a href="glossary.html#g-1177929110"><em>parametric field</em></a> definition,<a id="i763174956-1"></a> as shown in
+<a href="composition-and-inheritance.html#lst:parametric-field">Listing 10.5</a><a id="i2138903369-2"></a>:</p>
+
+<p><a name="lst:parametric-field"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ArrayElement</span>(
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>
+  &nbsp;&nbsp;)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>
+</pre><!-- -->
+
+
+<h5>Listing 10.5 - Defining <span class="code">contents</span> as a parametric field.</h5>
+
+
+<p>Note that now the <span class="code">contents</span> parameter is prefixed by <span class="code">val</span>.
+This is a shorthand that defines at the same time
+a parameter and field with the same name. 
+Specifically, class <span class="code">ArrayElement</span> now has an (unreassignable) field <span class="code">contents</span>, which can be accessed
+from outside the class. The field is initialized with the value of the parameter.
+It's as if the class had been written as follows, where <span class="code">x123</span> is an arbitrary fresh name
+for the parameter:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">ArrayElement</span>(x123:&nbsp;<span class="typename">Array[String]</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{&nbsp;
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>&nbsp;=&nbsp;x123
+  }
+</pre><!-- -->
+You can also prefix a class parameter with <span class="code">var</span>, in which case the corresponding
+field would be reassignable.<a id="i332825445-1"></a> Finally, it is possible to add modifiers such as
+<span class="code">private</span>, <span class="code">protected</span>,<a href="composition-and-inheritance.html#footnote10-5">[5]</a> or <span class="code">override</span> to these parametric fields, just as you can
+do for any other class member.<a id="i-23781736-1"></a><a id="i1026131843-1"></a><a id="i1623377591-1"></a> Consider, for instance, the following class definitions:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">Cat</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;dangerous&nbsp;=&nbsp;<span class="vem">false</span>
+  }
+  <span class="vem">class</span>&nbsp;<span class="typename">Tiger</span>(
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">val</span>&nbsp;dangerous:&nbsp;<span class="typename">Boolean</span>,
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;age:&nbsp;<span class="typename">Int</span>
+  )&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Cat</span>
+</pre><!-- -->
+<span class="code">Tiger</span>'s definition is a shorthand for the following alternate class definition
+with an overriding member <span class="code">dangerous</span> and a <span class="code">private</span> member <span class="code">age</span>: 
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">Tiger</span>(param1:&nbsp;<span class="typename">Boolean</span>,&nbsp;param2:&nbsp;<span class="typename">Int</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Cat</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">val</span>&nbsp;dangerous&nbsp;=&nbsp;param1
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;age&nbsp;=&nbsp;param2
+  }
+</pre><!-- -->
+Both members are initialized from the corresponding parameters. We chose the
+names of those parameters, <span class="code">param1</span> and <span class="code">param2</span>, arbitrarily. The
+important thing was that they not clash with any other name in scope.</p>
+
+<h3><a name="10.7"></a>10.7 Invoking superclass constructors <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.7">link</a>]</span></h3>
+
+
+<p>You now have a complete system consisting of two classes: an abstract
+class <span class="code">Element</span>, which is extended by a concrete class
+<span class="code">ArrayElement</span>.  You might also envision other ways to express an
+element.<a id="i1670701927-1"></a><a id="i-1862849439-1"></a><a id="i685242324-1"></a> For example, clients might want to create
+a layout element consisting of a single line given by a string. Object-oriented programming makes it easy to extend a system with new
+data-variants. You can simply add subclasses. For example, <a href="composition-and-inheritance.html#lst:invoking-superclass-constructor">Listing 10.6</a> shows a <span class="code">LineElement</span> class
+that extends <span class="code">ArrayElement</span>:</p>
+
+<p><a name="lst:invoking-superclass-constructor"></a></p>
+
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">LineElement</span>(s:&nbsp;<span class="typename">String</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="typename">Array</span>(s))&nbsp;{
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;width&nbsp;=&nbsp;s.length
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;height&nbsp;=&nbsp;<span class="literal">1</span>
+  }
+</pre><!-- -->
+
+
+<h5>Listing 10.6 - Invoking a superclass constructor.</h5>
+
+
+<p>Since <span class="code">LineElement</span> extends <span class="code">ArrayElement</span>, and <span class="code">ArrayElement</span>'s constructor takes
+a parameter (an <span class="code">Array[String]</span>), 
+<span class="code">LineElement</span> needs to pass an argument to the primary constructor of its superclass.
+To invoke a superclass constructor, you simply place the argument or arguments you want
+to pass in parentheses following the name of the
+superclass.<a id="i-2005725727-1"></a> For example, class
+<span class="code">LineElement</span> passes <span class="code">Array(s)</span> to <span class="code">ArrayElement</span>'s primary constructor by placing it
+in parentheses after the superclass <span class="code">ArrayElement</span>'s name:
+<pre>
+  ...&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="typename">Array</span>(s))&nbsp;...
+</pre><!-- -->
+With the new subclass, the inheritance hierarchy for layout elements now looks as shown in
+<a href="composition-and-inheritance.html#fig:line-element">Figure 10.2</a>.</p>
+
+<div class="figure"><a name="fig:line-element"></a>
+
+
+<p><img src="images/LineElement.jpg" alt="image images/LineElement.jpg"/></p>
+
+</div>
+<h5> Figure 10.2 - Class diagram for <span class="code">LineElement</span>.</h5>
+
+
+<h3><a name="10.8"></a>10.8 Using <span class="code">override</span> modifiers <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.8">link</a>]</span></h3>
+
+
+<p><a name="sec:using-override-modifiers"></a></p>
+
+<p>Note that the definitions of <span class="code">width</span> and <span class="code">height</span> in <span class="code">LineElement</span>
+carry an <span class="code">override</span> modifier. In <a href="functional-objects.html#sec:reimp-tostring">Section 6.3</a>, you saw this
+modifier in the definition of a <span class="code">toString</span>
+method.<a id="i1201360043-2"></a>  Scala requires
+such a modifier for all members that override a concrete member in a
+parent class.  The modifier is optional if a member implements an
+abstract member with the same name. The modifier is forbidden if a
+member does not override or implement some other member in a
+base class. Since <span class="code">height</span> and <span class="code">width</span> in class <span class="code">LineElement</span> 
+override concrete definitions in class <span class="code">Element</span>, <span class="code">override</span> is required.</p>
+
+<p>This rule provides useful information for the compiler that helps avoid
+some hard-to-catch errors and makes system evolution safer.  For
+instance, if you happen to misspell the method or accidentally give it a different
+parameter list, the compiler will respond with an error message:<a id="i934798591-1"></a></p>
+
+<pre>
+  $&nbsp;scalac&nbsp;LineElement.scala&nbsp;
+  <span class="output">.../LineElement.scala:50:</span>
+  <span class="output">error:&nbsp;method&nbsp;hight&nbsp;overrides&nbsp;nothing</span>
+  <span class="output">&nbsp;&nbsp;override&nbsp;def&nbsp;hight&nbsp;=&nbsp;1</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^&nbsp;</span>
+</pre><!-- -->
+
+
+<p><!-- -->The <span class="code">override</span> convention is even more important when it comes to
+system evolution. Say you defined a library of 2D drawing
+methods. You made it publicly available, and it is widely used. In
+the next version of the library you want to add to your base class <span class="code">Shape</span> a
+new method with this signature:
+<pre>
+  <span class="vem">def</span>&nbsp;hidden():&nbsp;<span class="typename">Boolean</span>
+</pre><!-- -->
+Your new method will be used by various drawing methods to determine whether 
+a shape needs to be drawn. This could lead to a significant speedup, but
+you cannot do this without the risk of breaking client code. 
+After all, a client could have defined a subclass of <span class="code">Shape</span> with a
+different implementation of <span class="code">hidden</span>. Perhaps the client's method actually
+makes the receiver object disappear instead of testing whether the object is
+hidden. Because the two versions of <span class="code">hidden</span> override each other,
+your drawing methods would end up making objects disappear, which is
+certainly not what you want! These "accidental overrides" are the most
+common manifestation of what is called the "fragile base class" problem. The problem
+is that if you add new members to base classes (which we usually call superclasses) in a
+class hierarchy, you risk breaking client code.</p>
+
+<p>Scala cannot completely solve the fragile base class problem, but
+it improves on the situation compared to Java.<a href="composition-and-inheritance.html#footnote10-6">[6]</a> If the drawing library and 
+its clients were written in Scala, then the client's original implementation of
+<span class="code">hidden</span> could not have had an <span class="code">override</span> modifier, because at the time
+there was no other method with that name. Once you add the
+<span class="code">hidden</span> method to the second version of your shape class, a
+recompile of the client would give an error like the following:<a id="i-2133711083-1"></a>
+<pre>
+  <span class="output">.../Shapes.scala:6:&nbsp;error:&nbsp;error&nbsp;overriding&nbsp;method</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;hidden&nbsp;in&nbsp;class&nbsp;Shape&nbsp;of&nbsp;type&nbsp;()Boolean;</span>
+  <span class="output">method&nbsp;hidden&nbsp;needs&nbsp;`override'&nbsp;modifier</span>
+  <span class="output">def&nbsp;hidden():&nbsp;Boolean&nbsp;=&nbsp;</span>
+  <span class="output">^</span>
+</pre><!-- --></p>
+
+<p><!-- -->That is, instead of wrong behavior your client would get a compile-time error, which
+is usually much preferable.</p>
+
+<h3><a name="10.9"></a>10.9 Polymorphism and dynamic binding <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.9">link</a>]</span></h3>
+
+
+<p>You saw in <a href="composition-and-inheritance.html#sec:extending-classes">Section 10.4</a> that a variable of type <span class="code">Element</span> could refer
+to an object of type <span class="code">ArrayElement</span>. The name for this phenomenon is <em>polymorphism</em>, which means
+"many shapes" or "many forms." In this case, <span class="code">Element</span> objects can have many forms.<a href="composition-and-inheritance.html#footnote10-7">[7]</a>
+So far, you've seen two such forms: <span class="code">ArrayElement</span> and <span class="code">LineElement</span>. You can create more forms of <span class="code">Element</span> by defining
+new <span class="code">Element</span> subclasses. For example, here's how you could define a new form of <span class="code">Element</span> that has a given width and height
+and is filled everywhere with a given character:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">UniformElement</span>(
+  &nbsp;&nbsp;ch:&nbsp;<span class="typename">Char</span>,&nbsp;
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">val</span>&nbsp;width:&nbsp;<span class="typename">Int</span>,
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">val</span>&nbsp;height:&nbsp;<span class="typename">Int</span>&nbsp;
+  )&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">val</span>&nbsp;line&nbsp;=&nbsp;ch.toString&nbsp;*&nbsp;width
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;contents&nbsp;=&nbsp;Array.make(height,&nbsp;line)
+  }
+</pre><!-- --></p>
+
+<p>The inheritance hierarchy for class <span class="code">Element</span> now looks as shown in <a href="composition-and-inheritance.html#fig:layout-elements">Figure 10.3</a>.
+As a result, Scala will accept all of the following assignments, because the assigning expression's type
+conforms to the type of the defined variable:
+<pre>
+  <span class="vem">val</span>&nbsp;e1:&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="typename">Array</span>(<span class="quotedstring">"hello"</span>,&nbsp;<span class="quotedstring">"world"</span>))
+  <span class="vem">val</span>&nbsp;ae:&nbsp;<span class="typename">ArrayElement</span>&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">LineElement</span>(<span class="quotedstring">"hello"</span>)
+  <span class="vem">val</span>&nbsp;e2:&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;ae
+  <span class="vem">val</span>&nbsp;e3:&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">UniformElement</span>(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+</pre><!-- -->
+If you check the inheritance hierarchy, you'll find that in each of these four <span class="code">val</span> definitions, 
+the type of the expression to the right of the equals sign 
+is below the type of the <span class="code">val</span> being initialized to the left of the
+equals sign.</p>
+
+<div class="figure"><a name="fig:layout-elements"></a>
+
+
+<p><img src="images/elementFamily.jpg" alt="image images/elementFamily.jpg"/></p>
+
+</div>
+<h5> Figure 10.3 - Class hierarchy of layout elements</h5>
+
+
+<p>The other half of the story, however, is that method invocations on
+variables and expressions are <em>dynamically bound</em>.<a id="i-1297249718-1"></a>
+This means that the actual method implementation invoked is determined at run time based on the class of the object, not
+the type of the variable or expression. To demonstrate this behavior, we'll temporarily remove all existing members from our
+<span class="code">Element</span> classes and add a method named <span class="code">demo</span> to
+<span class="code">Element</span>. We'll override <span class="code">demo</span> in in <span class="code">ArrayElement</span> and <span class="code">LineElement</span>, but not in <span class="code">UniformElement</span>:
+<pre>
+  <span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;demo()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"Element's&nbsp;implementation&nbsp;invoked"</span>)
+  &nbsp;&nbsp;}
+  }
+  <br />  <span class="vem">class</span>&nbsp;<span class="typename">ArrayElement</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;demo()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"ArrayElement's&nbsp;implementation&nbsp;invoked"</span>)
+  &nbsp;&nbsp;}
+  }
+  <br />  <span class="vem">class</span>&nbsp;<span class="typename">LineElement</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">ArrayElement</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;demo()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"LineElement's&nbsp;implementation&nbsp;invoked"</span>)
+  &nbsp;&nbsp;}
+  }
+  <br />  <span class="comment">//&nbsp;UniformElement&nbsp;inherits&nbsp;Element's&nbsp;demo</span>
+  <span class="vem">class</span>&nbsp;<span class="typename">UniformElement</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;
+</pre><!-- --></p>
+
+<p>If you enter this code into the interpreter, you can then define this method that
+takes an <span class="code">Element</span> and invokes <span class="code">demo</span> on it:
+<pre>
+  <span class="vem">def</span>&nbsp;invokeDemo(e:&nbsp;<span class="typename">Element</span>)&nbsp;{
+  &nbsp;&nbsp;e.demo()
+  }
+</pre><!-- -->
+If you pass an <span class="code">ArrayElement</span> to <span class="code">invokeDemo</span>, you'll see a message indicating
+<span class="code">ArrayElement</span>'s implementation of <span class="code">demo</span> was invoked, even though the type of the
+variable, <span class="code">e</span>, on which <span class="code">demo</span> was invoked is <span class="code">Element</span>:
+<pre>
+  scala&gt;&nbsp;invokeDemo(<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>)
+  <span class="output">ArrayElement's&nbsp;implementation&nbsp;invoked</span>
+</pre><!-- -->
+Similarly, if you pass a <span class="code">LineElement</span> to <span class="code">invokeDemo</span>, you'll see a message that indicates
+<span class="code">LineElement</span>'s <span class="code">demo</span> implementation was invoked:
+<pre>
+  scala&gt;&nbsp;invokeDemo(<span class="vem">new</span>&nbsp;<span class="typename">LineElement</span>)
+  <span class="output">LineElement's&nbsp;implementation&nbsp;invoked</span>
+</pre><!-- -->
+The behavior when passing a <span class="code">UniformElement</span> may at first glance look suspicious, but it is
+correct:
+<pre>
+  scala&gt;&nbsp;invokeDemo(<span class="vem">new</span>&nbsp;<span class="typename">UniformElement</span>)
+  <span class="output">Element's&nbsp;implementation&nbsp;invoked</span>
+</pre><!-- -->
+Because <span class="code">UniformElement</span> does not override <span class="code">demo</span>, it inherits the implementation of <span class="code">demo</span> from its superclass, <span class="code">Element</span>.
+Thus, <span class="code">Element</span>'s implementation is the correct implementation of <span class="code">demo</span> to invoke when the class of the object
+is <span class="code">UniformElement</span>.</p>
+
+<h3><a name="10.10"></a>10.10 Declaring final members <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.10">link</a>]</span></h3>
+
+
+<p>Sometimes when designing an inheritance hierarchy, you want to ensure that a member cannot be overridden by subclasses.
+In Scala, as in Java, you do this by adding a <span class="code">final</span> modifier to the
+member.<a id="i-34445759-1"></a> For example, you could place a <span class="code">final</span> modifier
+on <span class="code">ArrayElement</span>'s demo method, as shown in <a href="composition-and-inheritance.html#lst:final-method">Listing 10.7</a>.</p>
+
+<p><a name="lst:final-method"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ArrayElement</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">final</span>&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;demo()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"ArrayElement's&nbsp;implementation&nbsp;invoked"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 10.7 - Declaring a final method.</h5>
+
+
+<p>Given this version of <span class="code">ArrayElement</span>, an attempt to override demo in its subclass, <span class="code">LineElement</span>, would not
+compile:<a id="i-44166214-1"></a>
+<pre>
+  <span class="output">elem.scala:18:&nbsp;error:&nbsp;error&nbsp;overriding&nbsp;method&nbsp;demo</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;in&nbsp;class&nbsp;ArrayElement&nbsp;of&nbsp;type&nbsp;()Unit;</span>
+  <span class="output">method&nbsp;demo&nbsp;cannot&nbsp;override&nbsp;final&nbsp;member</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;override&nbsp;def&nbsp;demo()&nbsp;{</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+</pre><!-- --></p>
+
+<p>You may also at times want to ensure that an entire class not be subclassed. To do this you simply declare the entire
+class final by adding a <span class="code">final</span> modifier to the class declaration. For example, <a href="composition-and-inheritance.html#lst:final-class">Listing 10.8</a> shows how you would declare <span class="code">ArrayElement</span> final:</p>
+
+<p><a name="lst:final-class"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">final</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ArrayElement</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;demo()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"ArrayElement's&nbsp;implementation&nbsp;invoked"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 10.8 - Declaring a final class.</h5>
+
+
+<p>With this version of <span class="code">ArrayElement</span>, any attempt at defining a subclass would fail to
+compile:<a id="i-1180851066-1"></a>
+<pre>
+  <span class="output">elem.scala:&nbsp;18:&nbsp;error:&nbsp;illegal&nbsp;inheritance&nbsp;from&nbsp;final&nbsp;class</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;ArrayElement</span>
+  <span class="output">&nbsp;&nbsp;class&nbsp;LineElement&nbsp;extends&nbsp;ArrayElement&nbsp;{</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+</pre><!-- --></p>
+
+<p>We'll now remove the <span class="code">final</span> modifiers and <span class="code">demo</span> methods, and go back to the earlier implementation of
+the <span class="code">Element</span> family. We'll focus our attention in the remainder of this chapter to completing a working version
+of the layout library.</p>
+
+<h3><a name="10.11"></a>10.11 Using composition and inheritance <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.11">link</a>]</span></h3>
+
+
+<p><a name="sec:using-compo-inherit"></a></p>
+
+<p>Composition and inheritance are two ways to define a new class in terms
+of another existing class.<a id="i-838923862-2"></a><a id="i-613838584-1"></a>
+If what you're after is primarily code reuse, you should in general prefer composition to inheritance. 
+Only inheritance suffers from the fragile base class problem, in which you can inadvertently
+break subclasses by changing a superclass.</p>
+
+<p>One question you can ask yourself about an inheritance relationship is whether it models an <em>is-a</em><a id="i-422624999-1"></a>
+relationship.<a href="composition-and-inheritance.html#footnote10-8">[8]</a> For example, it would be reasonable to say that
+<span class="code">ArrayElement</span> <em>is-an</em> <span class="code">Element</span>. Another question you can ask is whether clients will
+want to use the subclass type as a superclass type.<a href="composition-and-inheritance.html#footnote10-9">[9]</a>
+In the case of <span class="code">ArrayElement</span>, we do indeed expect clients will want to use an <span class="code">ArrayElement</span> as an <span class="code">Element</span>.</p>
+
+<p>If you ask these questions about the inheritance relationships shown in <a href="composition-and-inheritance.html#fig:layout-elements">Figure 10.3</a>, do
+any of the relationships seem suspicious? In particular, does it seem obvious to you that a <span class="code">LineElement</span> <em>is-an</em>
+<span class="code">ArrayElement</span>? Do you think clients would ever need to use a <span class="code">LineElement</span> as an <span class="code">ArrayElement</span>?
+In fact, we defined <span class="code">LineElement</span> as a subclass of <span class="code">ArrayElement</span> primarily to reuse <span class="code">ArrayElement</span>'s
+definition of <span class="code">contents</span>. Perhaps it would be better, therefore, to define <span class="code">LineElement</span> as a direct subclass
+of <span class="code">Element</span>, like this:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">LineElement</span>(s:&nbsp;<span class="typename">String</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;contents&nbsp;=&nbsp;<span class="typename">Array</span>(s)
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;width&nbsp;=&nbsp;s.length
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;height&nbsp;=&nbsp;<span class="literal">1</span>
+  }
+</pre><!-- -->
+In the previous version, <span class="code">LineElement</span> had an inheritance relationship with
+<span class="code">ArrayElement</span>, from which it inherited <span class="code">contents</span>. It now has a composition relationship with <span class="code">Array</span>: it holds a reference to an array
+of strings from its own <span class="code">contents</span> field.<a href="composition-and-inheritance.html#footnote10-10">[10]</a>
+Given this implementation of <span class="code">LineElement</span>, the inheritance hierarchy for <span class="code">Element</span> now looks as shown
+in <a href="composition-and-inheritance.html#fig:new-line-element">Figure 10.4</a>.</p>
+
+<div class="figure"><a name="fig:new-line-element"></a>
+
+
+<p><img src="images/elementFamily2.jpg" alt="image images/elementFamily2.jpg"/></p>
+
+</div>
+<h5> Figure 10.4 - Class hierarchy with revised <span class="code">LineElement</span>.</h5>
+
+
+<h3><a name="10.12"></a>10.12 Implementing <span class="code">above</span>, <span class="code">beside</span>, and <span class="code">toString</span> <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.12">link</a>]</span></h3>
+
+
+<p><a name="sec:impl-above-beside-tostring"></a></p>
+
+<p>As a next step, we'll implement 
+method <span class="code">above</span> in class <span class="code">Element</span>.  Putting one element
+above another means concatenating the two <span class="code">contents</span> values of the
+elements. So a first draft of method <span class="code">above</span> could look like
+this:
+<pre>
+  <span class="vem">def</span>&nbsp;above(that:&nbsp;<span class="typename">Element</span>):&nbsp;<span class="typename">Element</span>&nbsp;=
+  &nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="vem">this</span>.contents&nbsp;++&nbsp;that.contents)
+</pre><!-- -->
+The <span class="code">++</span> operation concatenates two arrays. Arrays in Scala are
+represented as Java arrays, but support many more methods<a id="i-1409164998-1"></a>.  
+Specifically, arrays in Scala inherit from a class <span class="code">scala.Seq</span>, which represents
+sequence-like structures and contains a number of methods for
+accessing and transforming sequences.<a id="i-1529225491-1"></a> Some other array methods will be
+explained in this chapter, and a comprehensive discussion
+will be given in <a href="collections.html">Chapter 17</a>.</p>
+
+<p>In fact, the code shown previously is not quite sufficient, because it does not permit you to
+put elements of different widths on top of each other. To keep things
+simple in this section, however,
+we'll leave this as is and only pass elements of the same length to <span class="code">above</span>. In <a href="composition-and-inheritance.html#sec:heighten-and-widen">Section 10.14</a>, we'll make an 
+enhancement to <span class="code">above</span> so that clients can use it to combine elements of different widths.</p>
+
+<p>The next method to implement is <span class="code">beside</span>. To put two elements
+beside each other, we'll create a new element in which every line results
+from concatenating corresponding lines of the two elements. As before,
+to keep things simple we'll start by assuming the two elements have the same height.
+This leads to the following design of method <span class="code">beside</span>:
+<pre>
+  <span class="vem">def</span>&nbsp;beside(that:&nbsp;<span class="typename">Element</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;contents&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Array[String]</span>(<span class="vem">this</span>.contents.length)
+  &nbsp;&nbsp;<span class="vem">for</span>&nbsp;(i&nbsp;&lt;-&nbsp;<span class="literal">0</span>&nbsp;until&nbsp;<span class="vem">this</span>.contents.length)&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;contents(i)&nbsp;=&nbsp;<span class="vem">this</span>.contents(i)&nbsp;+&nbsp;that.contents(i)
+  &nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(contents)
+  }
+</pre><!-- -->
+The <span class="code">beside</span> method first allocates a new array,<a id="i-1690228669-1"></a>
+<span class="code">contents</span>,<!-- --> and fills it with the concatenation of the
+corresponding array elements in <span class="code">this.contents</span> and <span class="code">that.contents</span>.
+It finally produces a new <span class="code">ArrayElement</span> containing the new <span class="code">contents</span>.</p>
+
+<p>Although this implementation of <span class="code">beside</span> works, it is in an imperative style, the telltale sign of
+which is the loop in which we index through arrays. The method could alternatively be abbreviated to one expression:
+<pre>
+  <span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(
+  &nbsp;&nbsp;<span class="vem">for</span>&nbsp;(
+  &nbsp;&nbsp;&nbsp;&nbsp;(line1,&nbsp;line2)&nbsp;&lt;-&nbsp;<span class="vem">this</span>.contents&nbsp;zip&nbsp;that.contents
+  &nbsp;&nbsp;)&nbsp;<span class="vem">yield</span>&nbsp;line1&nbsp;+&nbsp;line2
+  )
+</pre><!-- -->
+Here, the two arrays <span class="code">this.contents</span> and <span class="code">that.contents</span>
+are transformed into an array of pairs (as <span class="code">Tuple2</span>s are called)<a id="i1832062192-1"></a> using the
+<span class="code">zip</span> operator. The <span class="code">zip</span> method picks corresponding elements in its two arguments
+and forms an array of pairs. For instance, this expression:
+<pre>
+  <span class="typename">Array</span>(<span class="literal">1</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)&nbsp;zip&nbsp;<span class="typename">Array</span>(<span class="quotedstring">"a"</span>,&nbsp;<span class="quotedstring">"b"</span>)
+</pre><!-- -->
+will evaluate to:
+<pre>
+  <span class="typename">Array</span>((<span class="literal">1</span>,&nbsp;<span class="quotedstring">"a"</span>),&nbsp;(<span class="literal">2</span>,&nbsp;<span class="quotedstring">"b"</span>))
+</pre><!-- -->
+If one of the two operand arrays is longer than the other, <span class="code">zip</span> will drop
+the remaining elements. In the expression above, the third 
+element of the left operand, <span class="code">3</span>, does
+not form part of the result, because it does not have a corresponding
+element in the right operand.</p>
+
+<p>The zipped array is then iterated over by a <span class="code">for</span> expression. Here, 
+the syntax "<span class="code">for</span>&nbsp;<span class="code">((line1,</span>&nbsp;<span class="code">line2)</span>&nbsp;<span class="code">&lt;-</span> ...<span class="code">)</span>" allows you to name both
+elements of a pair in one <span style="font-style:italic">pattern</span>,
+<i>i.e.</i>, <span class="code">line1</span> stands now for the first element of the pair, and
+<span class="code">line2</span> stands for the second. Scala's pattern-matching
+system  will be described in detail
+in <a href="case-classes-and-pattern-matching.html">Chapter 15</a>.
+For now, you can just think of this as a way to define two <span class="code">val</span>s,
+<span class="code">line1</span> and <span class="code">line2</span>, for each step of the iteration.</p>
+
+<p>The <span class="code">for</span> expression has a <span class="code">yield</span> part and therefore yields a
+result. The result is of the same kind as the expression iterated
+over, <i>i.e.</i>, it is an array. Each element of the array is the result of
+concatenating the corresponding lines, <span class="code">line1</span> and <span class="code">line2</span>.
+So the end result of this code is the same as in the first version of <span class="code">beside</span>, but because
+it avoids explicit array indexing, the result is obtained in a less error-prone way.</p>
+
+<p>You still need a way to display elements. As usual, this is done by
+defining a <span class="code">toString</span> method that returns an element formatted as a string.
+Here is its definition:
+<pre>
+  <span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;toString&nbsp;=&nbsp;contents&nbsp;mkString&nbsp;<span class="quotedstring">"\n"</span>
+</pre><!-- -->
+The implementation of <span class="code">toString</span> makes use of <span class="code">mkString</span>, which is defined for
+all sequences, including arrays. As you saw in <a href="builtin-control-structures.html#sec:refactoring-imperative-code">Section 7.8</a>, an expression like "<span class="code">arr</span> <span class="code">mkString</span> <span class="code">sep</span>"
+returns a string consisting of all elements of the array <span class="code">arr</span>. Each
+element is mapped to a string by calling its <span class="code">toString</span> method. 
+A separator string <span class="code">sep</span> is inserted between consecutive element
+strings. So the expression "<span class="code">contents</span> <span class="code">mkString</span> <span class="code">"\n"</span>" formats the <span class="code">contents</span>
+array as a string, where each array element appears on a line by itself.</p>
+
+<p>Note that <span class="code">toString</span> does not carry an empty parameter list.
+This follows the recommendations for the uniform access principle, because
+<span class="code">toString</span> is a pure method that does not take any parameters.</p>
+
+<p>With the addition of these three methods, class <span class="code">Element</span> now looks as shown
+in <a href="composition-and-inheritance.html#lst:element-with-three-methods">Listing 10.9</a>.</p>
+
+<p><a name="lst:element-with-three-methods"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;width:&nbsp;<span class="typename">Int</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(height&nbsp;==&nbsp;<span class="literal">0</span>)&nbsp;<span class="literal">0</span>&nbsp;<span class="vem">else</span>&nbsp;contents(<span class="literal">0</span>).length
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;height:&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;contents.length
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;above(that:&nbsp;<span class="typename">Element</span>):&nbsp;<span class="typename">Element</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="vem">this</span>.contents&nbsp;++&nbsp;that.contents)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;beside(that:&nbsp;<span class="typename">Element</span>):&nbsp;<span class="typename">Element</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(line1,&nbsp;line2)&nbsp;&lt;-&nbsp;<span class="vem">this</span>.contents&nbsp;zip&nbsp;that.contents
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)&nbsp;<span class="vem">yield</span>&nbsp;line1&nbsp;+&nbsp;line2
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;toString&nbsp;=&nbsp;contents&nbsp;mkString&nbsp;<span class="quotedstring">"\n"</span>
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 10.9 - Class <span class="code">Element</span> with <span class="code">above</span>, <span class="code">beside</span>, and <span class="code">toString</span>.</h5>
+
+
+<h3><a name="10.13"></a>10.13 Defining a factory object <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.13">link</a>]</span></h3>
+
+
+<p>You now have a hierarchy of classes for layout elements. This<a id="i-640194953-2"></a>
+hierarchy could be presented to your clients "as is." But you might also
+choose to hide the hierarchy behind a factory object.<a id="i867568852-1"></a> A factory object
+contains methods that construct other objects. Clients would then use
+these factory methods for object construction rather than constructing
+the objects directly with <span class="code">new</span>. An advantage of this approach is
+that object creation can be centralized and the details of how objects
+are represented with classes can be hidden. This hiding will both<a id="i593484137-1"></a>
+make your library simpler for clients to understand, because
+less detail is exposed, and provide you with more opportunities
+to change your library's implementation later without breaking client code.</p>
+
+<p>The first task in constructing a factory for layout elements is to
+choose where the factory methods should be located. Should they be
+members of a singleton object or of a class? What should the
+containing object or class be called? There are many possibilities. A
+straightforward solution is to create a companion object of class
+<span class="code">Element</span> and make this be the factory object for layout
+elements. That way, you need to expose only the class/object combo of
+<span class="code">Element</span> to your clients, and you can hide the three implementation classes
+<span class="code">ArrayElement</span>, <span class="code">LineElement</span>, and <span class="code">UniformElement</span>.</p>
+
+<p><a name="lst:factory-object-and-methods"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;elem(contents:&nbsp;<span class="typename">Array[String]</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(contents)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;elem(chr:&nbsp;<span class="typename">Char</span>,&nbsp;width:&nbsp;<span class="typename">Int</span>,&nbsp;height:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">UniformElement</span>(chr,&nbsp;width,&nbsp;height)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;elem(line:&nbsp;<span class="typename">String</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">LineElement</span>(line)
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 10.10 - A factory object with factory methods.</h5>
+
+
+<p><a href="composition-and-inheritance.html#lst:factory-object-and-methods">Listing 10.10</a> is a design of the <span class="code">Element</span> object that follows this scheme.
+The <span class="code">Element</span> companion object contains three overloaded variants of an <span class="code">elem</span> method.
+Each variant constructs a different kind of layout object.</p>
+
+<p>With the advent of these factory methods, it makes sense to
+change the implementation of class <span class="code">Element</span> so that it goes through the <span class="code">elem</span> factory methods rather than
+creating new <span class="code">ArrayElement</span> instances explicitly. To call the factory methods without qualifying them with <span class="code">Element</span>,
+the name of the singleton object, we will import <span class="code">Element.elem</span> at the top of the source file. In other words, instead
+of invoking the factory methods with <span class="code">Element.elem</span> inside class <span class="code">Element</span>, we'll import <span class="code">Element.elem</span> so we can just call the factory methods
+by their simple name, <span class="code">elem</span>. <a href="composition-and-inheritance.html#lst:element-using-factory-methods">Listing 10.11</a> shows what class <span class="code">Element</span> will look like after these changes.</p>
+
+<p><a name="lst:element-using-factory-methods"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;Element.elem
+  <br />  &nbsp;&nbsp;<span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;width:&nbsp;<span class="typename">Int</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(height&nbsp;==&nbsp;<span class="literal">0</span>)&nbsp;<span class="literal">0</span>&nbsp;<span class="vem">else</span>&nbsp;contents(<span class="literal">0</span>).length
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;height:&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;contents.length
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;above(that:&nbsp;<span class="typename">Element</span>):&nbsp;<span class="typename">Element</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elem(<span class="vem">this</span>.contents&nbsp;++&nbsp;that.contents)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;beside(that:&nbsp;<span class="typename">Element</span>):&nbsp;<span class="typename">Element</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elem(
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(line1,&nbsp;line2)&nbsp;&lt;-&nbsp;<span class="vem">this</span>.contents&nbsp;zip&nbsp;that.contents
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)&nbsp;<span class="vem">yield</span>&nbsp;line1&nbsp;+&nbsp;line2
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;toString&nbsp;=&nbsp;contents&nbsp;mkString&nbsp;<span class="quotedstring">"\n"</span>
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 10.11 - Class <span class="code">Element</span> refactored to use factory methods.</h5>
+
+
+<p>In addition, given the factory methods, the subclasses <span class="code">ArrayElement</span>, <span class="code">LineElement</span> 
+and <span class="code">UniformElement</span> could now be private, because they need no longer be accessed directly by clients. In Scala, you can
+define classes and singleton objects inside other classes and singleton
+objects.<a id="i1315254152-1"></a><a id="i1968015105-1"></a><a id="i-1545427464-1"></a> One way to make the <span class="code">Element</span> subclasses private, therefore, is to
+place them inside the <span class="code">Element</span> singleton object and declare them private there. The classes will still
+be accessible to the three <span class="code">elem</span> factory methods, where they are needed. <a href="composition-and-inheritance.html#lst:hiding-implementation">Listing 10.12</a> shows how that will look.</p>
+
+<p><a name="lst:hiding-implementation"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ArrayElement</span>(
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;contents:&nbsp;<span class="typename">Array[String]</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">LineElement</span>(s:&nbsp;<span class="typename">String</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;contents&nbsp;=&nbsp;<span class="typename">Array</span>(s)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;width&nbsp;=&nbsp;s.length
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;height&nbsp;=&nbsp;<span class="literal">1</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">UniformElement</span>(
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ch:&nbsp;<span class="typename">Char</span>,
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">val</span>&nbsp;width:&nbsp;<span class="typename">Int</span>,
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">val</span>&nbsp;height:&nbsp;<span class="typename">Int</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">val</span>&nbsp;line&nbsp;=&nbsp;ch.toString&nbsp;*&nbsp;width
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;contents&nbsp;=&nbsp;Array.make(height,&nbsp;line)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;elem(contents:&nbsp;&nbsp;<span class="typename">Array[String]</span>):&nbsp;<span class="typename">Element</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(contents)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;elem(chr:&nbsp;<span class="typename">Char</span>,&nbsp;width:&nbsp;<span class="typename">Int</span>,&nbsp;height:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Element</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">UniformElement</span>(chr,&nbsp;width,&nbsp;height)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;elem(line:&nbsp;<span class="typename">String</span>):&nbsp;<span class="typename">Element</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">LineElement</span>(line)
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 10.12 - Hiding implementation with private classes.</h5>
+
+
+<h3><a name="10.14"></a>10.14 Heighten and widen <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.14">link</a>]</span></h3>
+
+
+<p><a name="sec:heighten-and-widen"></a></p>
+
+<p>We need one last enhancement.
+The version of <span class="code">Element</span> shown in <a href="composition-and-inheritance.html#lst:element-using-factory-methods">Listing 10.11</a> is not quite sufficient, because it does not allow clients to
+place elements of different widths on top of each other, or 
+place elements of different heights beside each other.
+For example, evaluating the following expression 
+would not work correctly, because the second line in the 
+combined element is longer than the first:
+<pre>
+  <span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="typename">Array</span>(<span class="quotedstring">"hello"</span>))&nbsp;above&nbsp;
+  <span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="typename">Array</span>(<span class="quotedstring">"world!"</span>))
+</pre><!-- -->
+Similarly, evaluating the following expression would not work
+properly, because the first <span class="code">ArrayElement</span> has a height of two, and the second a height of only one:
+<pre>
+  <span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="typename">Array</span>(<span class="quotedstring">"one"</span>,&nbsp;<span class="quotedstring">"two"</span>))&nbsp;beside&nbsp;
+  <span class="vem">new</span>&nbsp;<span class="typename">ArrayElement</span>(<span class="typename">Array</span>(<span class="quotedstring">"one"</span>))
+</pre><!-- --></p>
+
+<p><a href="composition-and-inheritance.html#lst:widen-heighten-methods">Listing 10.13</a> shows a private helper method, <span class="code">widen</span>, which takes
+a width and returns an <span class="code">Element</span> of that width. The result contains the contents of this
+<span class="code">Element</span>, centered, padded to the left and right by any spaces needed to achieve the required width.
+<a href="composition-and-inheritance.html#lst:widen-heighten-methods">Listing 10.13</a> also shows a similar method, <span class="code">heighten</span>, which performs
+the same function in the vertical direction. The <span class="code">widen</span> method is invoked by <span class="code">above</span> to ensure
+that <span class="code">Element</span>s placed above each other have the same width. Similarly, the <span class="code">heighten</span> method is invoked by
+<span class="code">beside</span> to ensure that elements placed beside each other have the same height.
+With these changes, the layout library is ready for use.</p>
+
+<p><a name="lst:widen-heighten-methods"></a></p>
+
+<pre>
+  <span class="vem">import</span>&nbsp;Element.elem
+  <br />  <span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Element</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;contents:&nbsp;&nbsp;<span class="typename">Array[String]</span>
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;width:&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;contents(<span class="literal">0</span>).length
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;height:&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;contents.length
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;above(that:&nbsp;<span class="typename">Element</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;this1&nbsp;=&nbsp;<span class="vem">this</span>&nbsp;widen&nbsp;that.width
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;that1&nbsp;=&nbsp;that&nbsp;widen&nbsp;<span class="vem">this</span>.width
+  &nbsp;&nbsp;&nbsp;&nbsp;elem(this1.contents&nbsp;++&nbsp;that1.contents)
+  &nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;beside(that:&nbsp;<span class="typename">Element</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;this1&nbsp;=&nbsp;<span class="vem">this</span>&nbsp;heighten&nbsp;that.height
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;that1&nbsp;=&nbsp;that&nbsp;heighten&nbsp;<span class="vem">this</span>.height
+  &nbsp;&nbsp;&nbsp;&nbsp;elem(
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;((line1,&nbsp;line2)&nbsp;&lt;-&nbsp;this1.contents&nbsp;zip&nbsp;that1.contents)&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">yield</span>&nbsp;line1&nbsp;+&nbsp;line2)
+  &nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;widen(w:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(w&nbsp;&lt;=&nbsp;width)&nbsp;<span class="vem">this</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;left&nbsp;=&nbsp;elem(<span class="quotedstring">'&nbsp;'</span>,&nbsp;(w&nbsp;-&nbsp;width)&nbsp;/&nbsp;<span class="literal">2</span>,&nbsp;height)&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">var</span>&nbsp;right&nbsp;=&nbsp;elem(<span class="quotedstring">'&nbsp;'</span>,&nbsp;w&nbsp;-&nbsp;width&nbsp;-&nbsp;left.width,&nbsp;height)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;left&nbsp;beside&nbsp;<span class="vem">this</span>&nbsp;beside&nbsp;right
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;heighten(h:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(h&nbsp;&lt;=&nbsp;height)&nbsp;<span class="vem">this</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;top&nbsp;=&nbsp;elem(<span class="quotedstring">'&nbsp;'</span>,&nbsp;width,&nbsp;(h&nbsp;-&nbsp;height)&nbsp;/&nbsp;<span class="literal">2</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">var</span>&nbsp;bot&nbsp;=&nbsp;elem(<span class="quotedstring">'&nbsp;'</span>,&nbsp;width,&nbsp;h&nbsp;-&nbsp;height&nbsp;-&nbsp;top.height)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;top&nbsp;above&nbsp;<span class="vem">this</span>&nbsp;above&nbsp;bot
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;toString&nbsp;=&nbsp;contents&nbsp;mkString&nbsp;<span class="quotedstring">"\n"</span>
+  }
+</pre><!-- -->
+
+
+<h5>Listing 10.13 - <span class="code">Element</span> with <span class="code">widen</span> and <span class="code">heighten</span> methods.</h5>
+
+
+<h3><a name="10.15"></a>10.15 Putting it all together <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.15">link</a>]</span></h3>
+
+
+<p><a name="sec:putting-it-together"></a></p>
+
+<p>A fun way to exercise almost all elements of the layout library is 
+to write a program that draws a spiral with a given number of edges. 
+This <span class="code">Spiral</span> program, shown in <a href="composition-and-inheritance.html#lst:spiral-app">Listing 10.14</a>, will do just that:</p>
+
+<p><a name="lst:spiral-app"></a></p>
+
+<pre>
+  <span class="vem">import</span>&nbsp;Element.elem
+  <br />  <span class="vem">object</span>&nbsp;<span class="typename">Spiral</span>&nbsp;{
+  <br />  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;space&nbsp;=&nbsp;elem(<span class="quotedstring">"&nbsp;"</span>)
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;corner&nbsp;=&nbsp;elem(<span class="quotedstring">"+"</span>)
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;spiral(nEdges:&nbsp;<span class="typename">Int</span>,&nbsp;direction:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(nEdges&nbsp;==&nbsp;<span class="literal">1</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elem(<span class="quotedstring">"+"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;sp&nbsp;=&nbsp;spiral(nEdges&nbsp;-&nbsp;<span class="literal">1</span>,&nbsp;(direction&nbsp;+&nbsp;<span class="literal">3</span>)&nbsp;%&nbsp;<span class="literal">4</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;verticalBar&nbsp;=&nbsp;elem(<span class="quotedstring">'|'</span>,&nbsp;<span class="literal">1</span>,&nbsp;sp.height)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;horizontalBar&nbsp;=&nbsp;elem(<span class="quotedstring">'-'</span>,&nbsp;sp.width,&nbsp;<span class="literal">1</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(direction&nbsp;==&nbsp;<span class="literal">0</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(corner&nbsp;beside&nbsp;horizontalBar)&nbsp;above&nbsp;(sp&nbsp;beside&nbsp;space)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>&nbsp;<span class="vem">if</span>&nbsp;(direction&nbsp;==&nbsp;<span class="literal">1</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(sp&nbsp;above&nbsp;space)&nbsp;beside&nbsp;(corner&nbsp;above&nbsp;verticalBar)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>&nbsp;<span class="vem">if</span>&nbsp;(direction&nbsp;==&nbsp;<span class="literal">2</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(space&nbsp;beside&nbsp;sp)&nbsp;above&nbsp;(horizontalBar&nbsp;beside&nbsp;corner)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(verticalBar&nbsp;above&nbsp;corner)&nbsp;beside&nbsp;(space&nbsp;above&nbsp;sp)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;main(args:&nbsp;<span class="typename">Array[String]</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;nSides&nbsp;=&nbsp;args(<span class="literal">0</span>).toInt
+  &nbsp;&nbsp;&nbsp;&nbsp;println(spiral(nSides,&nbsp;<span class="literal">0</span>))
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+
+
+<h5>Listing 10.14 - The <span class="code">Spiral</span> application.</h5>
+
+
+<p>Because <span class="code">Spiral</span> is a standalone object with a <span class="code">main</span> method with the
+proper signature, it is a Scala application.  <span class="code">Spiral</span> takes one
+command-line argument, an integer, and draws a spiral with the specified
+number of edges. For example, you could draw a six-edge spiral as shown
+below on the left, and larger spirals as shown to the right:
+<pre>
+  $&nbsp;scala&nbsp;Spiral&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;$&nbsp;scala&nbsp;Spiral&nbsp;11&nbsp;&nbsp;&nbsp;&nbsp;$&nbsp;scala&nbsp;Spiral&nbsp;17
+  +-----&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+----------&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+----------------
+  |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  |&nbsp;+-+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;+------+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;+------------+&nbsp;
+  |&nbsp;+&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;
+  |&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;+--+&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;+--------+&nbsp;|&nbsp;
+  +---+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;++&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;+----+&nbsp;|&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;+----+&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;|&nbsp;++&nbsp;|&nbsp;|&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;|&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+--------+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;+--+&nbsp;|&nbsp;|&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;+------+&nbsp;|&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;+----------+&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+--------------+&nbsp;
+</pre><!-- --></p>
+
+<h3><a name="10.16"></a>10.16 Conclusion <span style="font-size: .5em">[<a href="composition-and-inheritance.html#10.16">link</a>]</span></h3>
+
+
+<p>In this section, you saw  more concepts related to
+object-oriented programming in Scala.  Among others, you
+encountered abstract classes, inheritance and subtyping, class
+hierarchies, parametric fields, and method overriding.  You
+should have developed a feel for constructing a non-trivial
+class hierarchy in Scala. 
+We'll work with the layout library again in <a href="assertions-and-unit-testing.html">Chapter 14</a>.</p>
+
+<hr/>
+<h4>Footnotes for Chapter 10:</h4>
+
+
+<p><a name="footnote10-1">[1]</a> Meyer, <em>Object-Oriented Software Construction</em> <a href="bibliography.html#meyer:oo-soft-con">meyer:oo-soft-con</a><a id="i1013925756-1"></a><a id="i730601900-1"></a></p>
+
+<p><a name="footnote10-2">[2]</a> One flaw with this design is that because the returned array is mutable, clients
+could change it. For the book we'll keep things simple, but were <span class="code">ArrayElement</span> part of a real project, you might
+consider returning
+a <em>defensive copy</em> of the array instead. Another problem is we aren't currently ensuring that every <span class="code">String</span> element of the
+<span class="code">contents</span> array has the same length. This could be solved by checking the precondition in the primary constructor, and throwing
+an exception if it is violated.</p>
+
+<p><a name="footnote10-3">[3]</a> For more perspective on the difference between subclass and subtype, see the glossary entry for <a href="glossary.html#g-1867567750"><em>subtype</em></a>.</p>
+
+<p><a name="footnote10-4">[4]</a> The reason that
+packages share the same namespace as fields and methods in Scala is
+to enable you to import packages in addition to just importing
+the names of types, and the fields and methods of singleton
+objects. This is also something you can't do in Java. It will
+be described in <a href="packages-and-imports.html#sec:imports">Section 13.2</a>.</p>
+
+<p><a name="footnote10-5">[5]</a> The <span class="code">protected</span> modifier, which grants access to subclasses, will be covered in detail
+in <a href="packages-and-imports.html">Chapter 13</a>.</p>
+
+<p><a name="footnote10-6">[6]</a> In Java 1.5, an <span class="code">@Override</span> annotation was
+introduced that works similarly to Scala's <span class="code">override</span> modifier, but unlike Scala's <span class="code">override</span>, is
+not required.</p>
+
+<p><a name="footnote10-7">[7]</a> This kind
+of polymorphism is called <em>subtyping
+polymorphism</em><a id="i63796807-1"></a><a id="i367948816-1"></a>. Another
+kind of polymorphism in Scala, called <em>universal polymorphism</em>, is discussed in <a href="type-parameterization.html">Chapter 19</a>.</p>
+
+<p><a name="footnote10-8">[8]</a> Meyers, <em>Effective C++</em><a id="i-1960871386-1"></a><a id="i-1839614926-1"></a> <a href="bibliography.html#meyers:effective-cpp">meyers:effective-cpp</a></p>
+
+<p><a name="footnote10-9">[9]</a> Eckel, <em>Thinking in
+Java</em><a id="i1711840479-1"></a><a id="i-107465203-1"></a> <a href="bibliography.html#eckel:thinking-in-java">eckel:thinking-in-java</a></p>
+
+<p><a name="footnote10-10">[10]</a> Class <span class="code">ArrayElement</span> also has a composition relationship with <span class="code">Array</span>, because its parametric
+<span class="code">contents</span> field holds a reference to an array of strings. The code for <span class="code">ArrayElement</span> is shown in <a href="composition-and-inheritance.html#lst:parametric-field">Listing 10.5</a>
+<a href="composition-and-inheritance.html#lst:parametric-field">here</a>. Its composition relationship is represented in class diagrams by a diamond, as shown, for example,
+in <a href="composition-and-inheritance.html#fig:element-family">Figure 10.1</a> <a href="composition-and-inheritance.html#fig:element-family">here</a>.</p>
+
+
+
+<br clear="all">
+<p>
+<center>
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/composition-and-inheritanceP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/control-abstraction.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/scalas-hierarchy.html">Next</a>
+</div>
+</center>
+</div>
+<hr width="100%" />
+<center>
+<script type="text/javascript"><!--
+google_ad_client = "pub-3911176865765226";
+google_alternate_color = "ffffff";
+google_ad_width = 728;
+google_ad_height = 15;
+google_ad_format = "728x15_0ads_al";
+google_ad_channel = "";
+google_color_border = "ffffff";
+google_color_bg = "FFFFFF";
+google_color_link = "003090";
+google_color_text = "000000";
+google_color_url = "666666";
+//--></script>
+<script type="text/javascript"
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+<br />
+<br />
+<!-- SiteSearch Google -->
+<form method="get" action="http://www.google.com/custom">
+<table border="0" bgcolor="#ffffff">
+<tr><td nowrap="nowrap" valign="top" align="left" height="32">
+<a href="http://www.google.com/">
+<img src="http://www.google.com/logos/Logo_25wht.gif"
+border="0" alt="Google"></img></a>
+</td>
+<td nowrap="nowrap">
+<input type="hidden" name="domains" value="Artima.com"></input>
+<input type="text" name="q" size="31" maxlength="255" value=""></input>
+<input type="submit" name="sa" value="Search"></input>
+</td></tr>
+<tr>
+<td>&nbsp;</td>
+<td nowrap="nowrap">
+<font size="-1" color="#000000">
+<input type="radio" name="sitesearch" value=""></input> Web
+<input type="radio" name="sitesearch" value="Artima.com" checked="checked"></input>Artima.com
+</font>&nbsp;&nbsp;
+<input type="hidden" name="client" value="pub-3911176865765226"></input>
+<input type="hidden" name="forid" value="1"></input>
+<input type="hidden" name="ie" value="ISO-8859-1"></input>
+<input type="hidden" name="oe" value="ISO-8859-1"></input>
+<input type="hidden" name="cof" value="GALT:#008000;GL:1;DIV:#336699;VLC:663399;AH:center;BGC:FFFFFF;LBGC:FFFFFF;ALC:0000FF;LC:0000FF;T:000000;GFNT:0000FF;GIMP:0000FF;LH:50;LW:150;L:http://www.artima.com/images/artima150.gif;S:http://www.artima.com;FORID:1;"></input>
+<input type="hidden" name="hl" value="en"></input>
+</td></tr></table>
+</form>
+<!-- SiteSearch Google -->
+</center>
+<div class="sp">
+<div style="text-align: center">
+<a href="http://www.artima.com/copyright.html">Copyright</a> &copy; 1996-2014 Artima, Inc. All Rights Reserved.</a> - <a href="http://www.artima.com/privacy.html">Privacy Policy</a> - <a href="http://www.artima.com/termsofuse.html">Terms of Use</a> - <a href="http://www.artima.com/advertising.html">Advertise with Us</a>
+</div>
+</div>
+<br />
+</body>
+</html>

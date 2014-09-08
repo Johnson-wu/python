@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+  <rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://purl.org/rss/1.0/"
+  >
+
+  <channel rdf:about="http://www.artima.com/articles/feeds/articles.rss">
+    <title>Artima Articles</title>
+    <link>http://www.artima.com/</link>
+    <description>
+The most recently published articles at Artima.com.
+    </description>
+    <image rdf:resource="http://www.artima.com/images/artima88x33.gif"/>
+    <items>
+      <rdf:Seq>
+        <rdf:li resource="http://www.artima.com/articles/compile_time.html" />
+        <rdf:li resource="http://www.artima.com/articles/play2_scala_squeryl.html" />
+        <rdf:li resource="http://www.artima.com/articles/coding_with_jrebel.html" />
+        <rdf:li resource="http://www.artima.com/scalazine/articles/borachio_mock_objects_for_scala.html" />
+        <rdf:li resource="http://www.artima.com/articles/fit_or_future.html" />
+        <rdf:li resource="http://www.artima.com/scalazine/articles/a_business_case_for_new_languages.html" />
+        <rdf:li resource="http://www.artima.com/articles/flex_in_the_enterprise.html" />
+        <rdf:li resource="http://www.artima.com/articles/intro_to_flex_monkey.html" />
+        <rdf:li resource="http://www.artima.com/articles/animating_spark_skins_in_flex_4.html" />
+        <rdf:li resource="http://www.artima.com/scalazine/articles/akka_jonas_boner.html" />
+        <rdf:li resource="http://www.artima.com/articles/interactive_spark_components_in_flex.html" />
+        <rdf:li resource="http://www.artima.com/articles/rich_component_skins_in_flex.html" />
+        <rdf:li resource="http://www.artima.com/articles/journey_through_four_interfaces.html" />
+        <rdf:li resource="http://www.artima.com/scalazine/articles/scala_collections_architecture.html" />
+        <rdf:li resource="http://www.artima.com/lejava/articles/azul_pauseless_gc.html" />
+      </rdf:Seq>
+    </items>
+  </channel>
+
+  <image rdf:about="http://www.artima.com/images/artima88x33.gif">
+    <title>Artima.com</title>
+    <url>http://www.artima.com/images/artima88x33.gif</url>
+    <link>http://www.artima.com/</link>
+  </image>
+
+  <item rdf:about="http://www.artima.com/articles/compile_time.html">
+    <title>How the Use of Scala's Features Affects Compile Time</title>
+    <link>http://www.artima.com/articles/compile_time.html</link>
+    <description>
+The compiletime project is an attempt to better understand the relationship between the use of Scala's features and compile time. This article gives a quick overview of what we've learned so far.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/articles/play2_scala_squeryl.html">
+    <title>Getting Started with Play 2, Scala, and Squeryl</title>
+    <link>http://www.artima.com/articles/play2_scala_squeryl.html</link>
+    <description>
+In this article you will learn how to get started building web applications with Play 2, Scala, Squeryl, JSON, CoffeeScript, and jQuery. You will also learn how to test the application with ScalaTest and then deploy the application on the cloud with Heroku.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/articles/coding_with_jrebel.html">
+    <title>Coding with JRebel: Java Forever Changed</title>
+    <link>http://www.artima.com/articles/coding_with_jrebel.html</link>
+    <description>
+This article addresses the ways in which JRebel has made an impact on how developers spend their day coding.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/scalazine/articles/borachio_mock_objects_for_scala.html">
+    <title>Borachio: Mock Objects for Scala and Android</title>
+    <link>http://www.artima.com/scalazine/articles/borachio_mock_objects_for_scala.html</link>
+    <description>
+Borachio is a mock object library for Scala that supports both mock objects and mock functions.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/articles/fit_or_future.html">
+    <title>Fit or Future? Which is More Important When Hiring?</title>
+    <link>http://www.artima.com/articles/fit_or_future.html</link>
+    <description>
+Sean Landis, author of Agile Hiring, discusses how much weight to give to skills match when evaluating a candidate.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/scalazine/articles/a_business_case_for_new_languages.html">
+    <title>A Business Case for New Languages</title>
+    <link>http://www.artima.com/scalazine/articles/a_business_case_for_new_languages.html</link>
+    <description>
+Unsure about when to adopt a new technology? Do you think your old technology is &amp;quot;safer&amp;quot;? Maybe ... or perhaps sticking with it offers risks of its own. This article discusses some of the benefits of adopting Scala rather than staying with Java.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/articles/flex_in_the_enterprise.html">
+    <title>Using Flex in the Enterprise</title>
+    <link>http://www.artima.com/articles/flex_in_the_enterprise.html</link>
+    <description>
+In this interview, Frank Sommers, president of AutoSpaces, Inc., discusses how he came to use Flex for his company's enterprise application.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/articles/intro_to_flex_monkey.html">
+    <title>Introduction to Flex and AIR Testing with FlexMonkey</title>
+    <link>http://www.artima.com/articles/intro_to_flex_monkey.html</link>
+    <description>
+This article offers an introduction to FlexMonkey for testing Flex and AIR applications. In addition to discussing how FlexMonkey works, it touches on how automated functional testing can be used for “developer testing” when unit testing reaches its limits.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/articles/animating_spark_skins_in_flex_4.html">
+    <title>Animating Spark Skins in Flex 4</title>
+    <link>http://www.artima.com/articles/animating_spark_skins_in_flex_4.html</link>
+    <description>
+With a demo app from his book, Flex 4 Fun, Chet Haase shows how to use state transitions with the new Spark component architecture in Flex 4 to create dynamic component skins for better user experiences.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/scalazine/articles/akka_jonas_boner.html">
+    <title>Writing Concurrent, Scalable, Fault-Tolerant Systems with Akka 1.0</title>
+    <link>http://www.artima.com/scalazine/articles/akka_jonas_boner.html</link>
+    <description>
+Jonas Bonér, the lead developer of Akka, discusses the goals of Akka and the recent Akka 1.0 release.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/articles/interactive_spark_components_in_flex.html">
+    <title>Interactive Spark Components in Flex 4</title>
+    <link>http://www.artima.com/articles/interactive_spark_components_in_flex.html</link>
+    <description>
+With a demo app from his book, Flex 4 Fun, Chet Haase shows how to use states with the new component architecture in Flex 4 to create interactive component skins for better user experiences.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/articles/rich_component_skins_in_flex.html">
+    <title>Rich Component Skins in Flex 4</title>
+    <link>http://www.artima.com/articles/rich_component_skins_in_flex.html</link>
+    <description>
+With a demo app from his book, Flex 4 Fun, Chet Haase shows how to use the new component architecture, graphics tags, and filters in Flex 4 to create rich custom component skins.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/articles/journey_through_four_interfaces.html">
+    <title>Journey Through Four Interfaces</title>
+    <link>http://www.artima.com/articles/journey_through_four_interfaces.html</link>
+    <description>
+Frank Sommers discusses his journey through four user interfaces HTML, Swing, Ajax, and Flex.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/scalazine/articles/scala_collections_architecture.html">
+    <title>What's New in Scala 2.8: The Architecture of Scala Collections</title>
+    <link>http://www.artima.com/scalazine/articles/scala_collections_architecture.html</link>
+    <description>
+In this installment of a series of articles on the latest Scala release, Scala 2.8, Martin Odersky and Lex Spoon explain how the collections library was redesigned in 2.8, and how to extend the library with new collection types.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/lejava/articles/azul_pauseless_gc.html">
+    <title>Azul's Pauseless Garbage Collector</title>
+    <link>http://www.artima.com/lejava/articles/azul_pauseless_gc.html</link>
+    <description>
+At the JavaOne 2010 conference in San Francisco, Gil Tene, CTO of Azul Systems, discusses their pauseless garbage collector. In this interview, he explains the pauseless collection algorithm.
+    </description>
+  </item>
+
+</rdf:RDF>

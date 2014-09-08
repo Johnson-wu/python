@@ -1,0 +1,778 @@
+<html>
+<head>
+<title>Classes and Objects</title>
+<meta name="description" content="
+" />
+<meta name="keywords" content="scala" />
+<meta name="author" content="Martin Odersky, Lex Spoon, and Bill Venners" />
+<link rel="stylesheet" type="text/css" href="/artima.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+</head>
+<body><table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="bottom">
+<a href="/index.jsp"><img src="/images/a7.gif" alt="The Artima Developer Community" border="0" width="550" height="43" /></a>
+</td>
+</table>
+<table width="100%" bgcolor="#333333">
+<tr>
+<td align="center">
+<div class="ml">
+<a href="/articles" class="hl">Articles</a>&nbsp;|
+<a href="/news/index.jsp" class="hl">News</a>&nbsp;|
+<a href="/weblogs/index.jsp" class="hl">Weblogs</a>&nbsp;|
+<a href="/buzz/index.jsp" class="hl">Buzz</a>&nbsp;|
+<a href="/shop/catalog" class="hl">Books</a>&nbsp;|
+<a href="/forums/index.jsp" class="hl">Forums</a>
+</div>
+</td>
+</tr>
+</table>
+<table width="100%" bgcolor="#AACCFF">
+<tr>
+<td align="center">
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/classes-and-objectsP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/next-steps-in-scala.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/basic-types-and-operations.html">Next</a>
+</div>
+</td>
+</tr>
+</table>
+<BR>
+<div class="vegies">
+<div class="tc">
+<span class="sts">Chapter 4 of Programming in Scala, First Edition</span><br />
+<span class="ts">Classes and Objects</span><br />
+<span class="as">by Martin Odersky, Lex Spoon, and Bill Venners</span><br />
+<span class="pd">December 10, 2008</span><br />
+</div>
+
+
+
+
+<p>You've already seen the basics of classes and objects in Scala in the previous two chapters. In this chapter,
+we'll take you a bit deeper. You'll learn more about classes, fields, and methods, and get an overview of semicolon inference.
+You'll learn more about singleton objects, including how to use them to write and run a Scala application.
+If you are familiar with Java, you'll find
+the concepts in Scala are similar, but not exactly the same. 
+So even if you're a Java guru, it will pay to read on.</p>
+
+<h3><a name="4.1"></a>4.1 Classes, fields, and methods <span style="font-size: .5em">[<a href="classes-and-objects.html#4.1">link</a>]</span></h3>
+
+
+<p><a name="sec:classes-fields-methods"></a></p>
+
+<p>A class is a blueprint for objects<a id="i853620774-1"></a>. Once you define a class, you can create objects from the
+class blueprint with the keyword <span class="code">new</span>.<a id="i313049961-1"></a><a id="i-1663070161-1"></a> For example, given the class
+definition:</p>
+
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">ChecksumAccumulator</span>&nbsp;{
+  &nbsp;&nbsp;<span class="comment">//&nbsp;class&nbsp;definition&nbsp;goes&nbsp;here</span>
+  }
+</pre><!-- -->
+
+
+<p>You can create <span class="code">ChecksumAccumulator</span> objects with:</p>
+
+<pre>
+  <span class="vem">new</span>&nbsp;<span class="typename">ChecksumAccumulator</span>
+</pre><!-- -->
+
+
+<p>Inside a class definition, you place fields and methods, which are
+collectively called
+<em>members</em>.<a id="i1842841433-1"></a><a id="i1490663010-1"></a><a id="i-1274708295-1"></a><a id="i1074702876-1"></a><a id="i955534258-1"></a> Fields, which you define
+with either <span class="code">val</span> or <span class="code">var</span>, are variables
+that refer to objects<a id="i521418335-1"></a><a id="i1295914649-1"></a>. Methods, which you define with <span class="code">def</span>, contain
+executable code.<a id="i1764649166-2"></a> The fields hold the state, or data, of an object, whereas the methods use that data to do
+the computational work of the object. When you instantiate a class, the runtime
+sets aside some memory to hold the
+image of that object's state&mdash;<i>i.e.</i>, the content of its variables. For example, if you defined a <span class="code">ChecksumAccumulator</span>
+class and gave it a <span class="code">var</span> field named <span class="code">sum</span>:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">ChecksumAccumulator</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">var</span>&nbsp;sum&nbsp;=&nbsp;<span class="literal">0</span>
+  }
+</pre><!-- --></p>
+
+<p>and you instantiated it twice with:</p>
+
+<pre>
+  <span class="vem">val</span>&nbsp;acc&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ChecksumAccumulator</span>
+  <span class="vem">val</span>&nbsp;csa&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ChecksumAccumulator</span>
+</pre><!-- -->
+
+
+<p>The image of the objects in memory might look like:</p>
+
+<div align="center">
+<img src="images/cc0dd0.jpg" alt="image images/cc0dd0.jpg"/>
+
+
+</div>
+
+
+<p>Since <span class="code">sum</span>, a field declared inside class <span class="code">ChecksumAccumulator</span>, is a <span class="code">var</span>, not a <span class="code">val</span>, you can later reassign to <span class="code">sum</span> a
+different <span class="code">Int</span> value, like this:</p>
+
+<pre>
+  acc.sum&nbsp;=&nbsp;<span class="literal">3</span>
+</pre><!-- -->
+
+
+<p>Now the picture would look like:</p>
+
+<div align="center">
+<img src="images/cc3dd0.jpg" alt="image images/cc3dd0.jpg"/>
+
+
+</div>
+
+
+<p>One thing to notice about this picture is that there are two <span class="code">sum</span> variables, one in the object referenced
+by <span class="code">acc</span> and the other in the object referenced by <span class="code">csa</span>. Fields are
+also known as <em>instance variables</em>,<a id="i-1571995732-1"></a><a id="i-813534408-1"></a> because
+every instance gets its own set of the variables. Collectively, an object's instance variables make up the memory image of the object. You can
+see this illustrated here not only in that you see two <span class="code">sum</span> variables, but also that when you changed one, the other was unaffected.</p>
+
+<p>Another thing to note in this example is that you were able to mutate the object <span class="code">acc</span> referred to, even
+though <span class="code">acc</span> is a <span class="code">val</span>. What you can't do with <span class="code">acc</span> (or <span class="code">csa</span>), given that they
+are <span class="code">val</span>s, not <span class="code">var</span>s, is reassign a different object to them. For example, the following attempt would fail:
+<pre>
+  <span class="comment">//&nbsp;Won't&nbsp;compile,&nbsp;because&nbsp;acc&nbsp;is&nbsp;a&nbsp;val</span>
+  acc&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ChecksumAccumulator</span>
+</pre><!-- -->
+What you can count on, therefore, is that <span class="code">acc</span> will always refer to the same <span class="code">ChecksumAccumulator</span> object with which you initialize it, but the fields
+contained inside that object might change over time.</p>
+
+<p>One important way to pursue robustness of an object is to ensure that
+the object's state&mdash;the values of its instance variables&mdash;remains
+valid during its entire lifetime. The first step is to prevent
+outsiders from accessing the fields directly by making the fields
+<em>private</em>.<a id="i694224322-1"></a><a id="i1692219636-1"></a> Because private fields can only be accessed by methods
+defined in the same class, all the code that can update the state will
+be localized to the class. To declare a field private, you place a <span class="code">private</span>
+access modifier in front of the field, like this:</p>
+
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">ChecksumAccumulator</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;sum&nbsp;=&nbsp;<span class="literal">0</span>
+  }
+</pre><!-- -->
+
+
+<p>Given this definition of <span class="code">ChecksumAccumulator</span>, any attempt to access <span class="code">sum</span> from the outside of the class would fail:</p>
+
+<pre>
+  <span class="vem">val</span>&nbsp;acc&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ChecksumAccumulator</span>
+  acc.sum&nbsp;=&nbsp;<span class="literal">5</span>&nbsp;<span class="comment">//&nbsp;Won't&nbsp;compile,&nbsp;because&nbsp;sum&nbsp;is&nbsp;private</span>
+</pre><!-- -->
+
+
+<div class="note">
+<h4>Note</h4>
+
+
+<p>The way you make members public in Scala is by not explicitly specifying
+any access modifier<a id="i807441147-1"></a>. Put another way, where you'd
+say "public" in Java, you simply say nothing in Scala. Public is Scala's default access level.</p>
+
+</div>
+
+
+<p>Now that <span class="code">sum</span> is private, the only code that can access <span class="code">sum</span> is code defined inside the body of the class itself.
+Thus, <span class="code">ChecksumAccumulator</span> won't be of much use to anyone unless we define some methods in it:</p>
+
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">ChecksumAccumulator</span>&nbsp;{
+  <br />  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;sum&nbsp;=&nbsp;<span class="literal">0</span>
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;add(b:&nbsp;<span class="typename">Byte</span>):&nbsp;<span class="typename">Unit</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;sum&nbsp;+=&nbsp;b
+  &nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;checksum():&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">return</span>&nbsp;<span style="font-size:large">~</span>(sum&nbsp;&amp;&nbsp;<span class="literal">0xFF</span>)&nbsp;+&nbsp;<span class="literal">1</span>
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+
+
+<p>The <span class="code">ChecksumAccumulator</span> now has two methods, <span class="code">add</span> and <span class="code">checksum</span>, both of which exhibit the basic form of a
+function definition, shown in <a href="first-steps-in-scala.html#fig:method-form">Figure 2.1</a> <a href="first-steps-in-scala.html#fig:method-form">here</a>.</p>
+
+<p>Any parameters to a method can be used inside the method. One
+important characteristic of method parameters in Scala is that they
+are <span class="code">val</span>s, not <span class="code">var</span>s.<a href="classes-and-objects.html#footnote4-1">[1]</a><a id="i1448353285-1"></a>
+If you attempt to reassign a parameter inside a method in Scala, therefore, it won't compile:
+<pre>
+  <span class="vem">def</span>&nbsp;add(b:&nbsp;<span class="typename">Byte</span>):&nbsp;<span class="typename">Unit</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;b&nbsp;=&nbsp;<span class="literal">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;This&nbsp;won't&nbsp;compile,&nbsp;because&nbsp;b&nbsp;is&nbsp;a&nbsp;val</span>
+  &nbsp;&nbsp;sum&nbsp;+=&nbsp;b
+  }
+</pre><!-- --></p>
+
+<p>Although <span class="code">add</span> and <span class="code">checksum</span> in this version of
+<span class="code">ChecksumAccumulator</span> correctly implement the desired functionality, you
+can express them using a more concise style.
+First, the <span class="code">return</span> at the end of the <span class="code">checksum</span> method is
+superfluous and can be dropped. In the absence of any explicit return
+statement, a Scala method returns the last value computed by the
+method.<a id="i-2127509767-1"></a><a id="i119623890-1"></a></p>
+
+<p>The recommended style for methods is in fact to avoid having explicit,
+and especially multiple, return statements. Instead, think of each method as an expression that
+yields one value, which is returned. This philosophy will encourage you to make methods quite small, 
+to factor larger methods into multiple smaller ones. On the other hand, design choices depend on the design context, and
+Scala makes it easy to write methods that have multiple, explicit <span class="code">return</span>s if that's what you desire.</p>
+
+<p>Because all <span class="code">checksum</span> does is calculate a value, it does not need an
+explicit <span class="code">return</span>. 
+Another shorthand for methods is that you can leave off the
+curly braces if a method computes only a single result expression.  If
+the result expression is short, it can even be placed on the same line
+as the <span class="code">def</span> itself. With these changes, class <span class="code">ChecksumAccumulator</span> looks
+like this:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">ChecksumAccumulator</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;sum&nbsp;=&nbsp;<span class="literal">0</span>
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;add(b:&nbsp;<span class="typename">Byte</span>):&nbsp;<span class="typename">Unit</span>&nbsp;=&nbsp;sum&nbsp;+=&nbsp;b
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;checksum():&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;<span style="font-size:large">~</span>(sum&nbsp;&amp;&nbsp;<span class="literal">0xFF</span>)&nbsp;+&nbsp;<span class="literal">1</span>
+  }
+</pre><!-- --></p>
+
+<p>Methods with a result type of <span class="code">Unit</span>, such as <span class="code">ChecksumAccumulator</span>'s <span class="code">add</span> method,
+are executed for their side effects.
+A side effect is generally defined as mutating state somewhere
+external to the method or performing an I/O action. In <span class="code">add</span>'s case, for example, the side effect is that 
+<span class="code">sum</span> is reassigned.
+Another way to express such methods is to leave off
+the result type and the equals sign, and enclose the body of the method in
+curly braces.
+In this form, the method looks like a <em>procedure</em>, a method that is 
+executed only for its side effects.<a id="i-163214618-1"></a> The <span class="code">add</span> method in <a href="classes-and-objects.html#lst:checksum-class">Listing 4.1</a> illustrates this style:<a id="i408410112-1"></a><a id="i-1220669121-1"></a></p>
+
+<p><a name="lst:checksum-class"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="comment">//&nbsp;In&nbsp;file&nbsp;ChecksumAccumulator.scala</span>
+  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ChecksumAccumulator</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;sum&nbsp;=&nbsp;<span class="literal">0</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;add(b:&nbsp;<span class="typename">Byte</span>)&nbsp;{&nbsp;sum&nbsp;+=&nbsp;b&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;checksum():&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;<span style="font-size:large">~</span>(sum&nbsp;&amp;&nbsp;<span class="literal">0xFF</span>)&nbsp;+&nbsp;<span class="literal">1</span>
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 4.1 - Final version of class <span class="code">ChecksumAccumulator</span>.</h5>
+
+
+<p>One puzzler to watch out for is that whenever you leave off
+the equals sign before the body of a function, its result type
+will definitely be <span class="code">Unit</span>.<a id="i-1454060797-1"></a> This is true no matter what the body contains, because
+the Scala compiler can convert any type to <span class="code">Unit</span>. For example, if
+the last result of a method is a <span class="code">String</span>, but the method's result type
+is declared to be <span class="code">Unit</span>, the <span class="code">String</span> will be converted to <span class="code">Unit</span> and
+its value lost. Here's an example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">def</span>&nbsp;f():&nbsp;<span class="typename">Unit</span>&nbsp;=&nbsp;<span class="quotedstring">"this&nbsp;String&nbsp;gets&nbsp;lost"</span>&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">f:&nbsp;()Unit</span>
+</pre><!-- -->
+In this example, the <span class="code">String</span> is converted to <span class="code">Unit</span> because
+<span class="code">Unit</span> is the declared result type of function <span class="code">f</span>.
+The Scala compiler treats a function defined in the procedure style, <i>i.e.</i>, with
+curly braces but no equals sign, essentially the same as a function that explicitly
+declares its result
+type to be <span class="code">Unit</span>:
+<pre>
+  scala&gt;&nbsp;<span class="vem">def</span>&nbsp;g()&nbsp;{&nbsp;<span class="quotedstring">"this&nbsp;String&nbsp;gets&nbsp;lost&nbsp;too"</span>&nbsp;}
+  <span class="output">g:&nbsp;()Unit</span>
+</pre><!-- -->
+The puzzler occurs, therefore, if you intend to return a non-<span class="code">Unit</span> value, but forget the equals sign.
+To get what you want, you'll need to insert the missing equals sign:
+<pre>
+  scala&gt;&nbsp;<span class="vem">def</span>&nbsp;h()&nbsp;=&nbsp;{&nbsp;<span class="quotedstring">"this&nbsp;String&nbsp;gets&nbsp;returned!"</span>&nbsp;}
+  <span class="output">h:&nbsp;()java.lang.String</span>
+  <br />  scala&gt;&nbsp;h
+  <span class="output">res0:&nbsp;java.lang.String&nbsp;=&nbsp;this&nbsp;String&nbsp;gets&nbsp;returned!</span>
+</pre><!-- --></p>
+
+<h3><a name="4.2"></a>4.2 Semicolon inference <span style="font-size: .5em">[<a href="classes-and-objects.html#4.2">link</a>]</span></h3>
+
+
+<p><a name="sec:semicolon-inf"></a></p>
+
+<p>In a Scala program, a
+semicolon<a id="i1984943760-1"></a><a id="i794983274-1"></a> at the end of a statement is usually
+optional<a id="i-491339878-1"></a>.  You can type one if you want but you don't have to if the
+statement appears by itself on a single line. On the other hand,
+a semicolon is required if you write multiple statements on a
+single line:
+<pre>
+  <span class="vem">val</span>&nbsp;s&nbsp;=&nbsp;<span class="quotedstring">"hello"</span>;&nbsp;println(s)
+</pre><!-- -->
+If you want to enter a statement that spans multiple lines, most of
+the time you can simply enter it and Scala will separate the
+statements in the correct place.  For example, the following is
+treated as one four-line statement:
+<pre>
+  <span class="vem">if</span>&nbsp;(x&nbsp;&lt;&nbsp;<span class="literal">2</span>)
+  &nbsp;&nbsp;println(<span class="quotedstring">"too&nbsp;small"</span>)
+  <span class="vem">else</span>
+  &nbsp;&nbsp;println(<span class="quotedstring">"ok"</span>)
+</pre><!-- -->
+Occasionally, however, Scala will split a statement into two
+parts against your wishes:
+<pre>
+  x
+  +&nbsp;y
+</pre><!-- -->
+This parses as two statements <span class="code">x</span> and <span class="code">+y</span>.  If you intend it to parse
+as one statement <span class="code">x</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">y</span>, you can always wrap it in parentheses:
+<pre>
+  (x
+  +&nbsp;y)
+</pre><!-- -->
+Alternatively, you can put the <span class="code">+</span> at the end of a
+line.<a id="i-1344376109-1"></a><a id="i1115343227-1"></a>
+For just this reason, whenever you are chaining an infix operation such
+as <span class="code">+</span>, it is a common Scala style to put the operators at the end
+of the line instead of the beginning:
+<pre>
+  x&nbsp;+
+  y&nbsp;+
+  z
+</pre><!-- --></p>
+
+<div class="aside">
+<h3>The rules of semicolon inference</h3>
+
+
+<p>The precise rules for statement separation<a id="i1984943760-2"></a> are surprisingly simple for
+how well they work.  In short, a line ending is treated as a semicolon
+unless one of the following conditions is true:<!-- --></p>
+
+<ol>
+<li>The line in question ends in a word that would not be legal as the end of a statement,
+such as a period or an infix operator.
+</li>
+<li>The next line begins with a word that cannot start a statement.
+</li>
+<li>The line ends while inside parentheses <span class="code">(...)</span> or brackets <span class="code">[...]</span>, 
+because these cannot contain multiple statements anyway.
+</li></ol>
+
+
+</div>
+
+
+<h3><a name="4.3"></a>4.3 Singleton objects <span style="font-size: .5em">[<a href="classes-and-objects.html#4.3">link</a>]</span></h3>
+
+
+<p><a name="sec:singleton-objects"></a></p>
+
+<p><a name="lst:checksum-obj"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="comment">//&nbsp;In&nbsp;file&nbsp;ChecksumAccumulator.scala</span>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable.Map
+  <br />  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">ChecksumAccumulator</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">val</span>&nbsp;cache&nbsp;=&nbsp;<span class="typename">Map[String, Int]</span>()
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;calculate(s:&nbsp;<span class="typename">String</span>):&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(cache.contains(s))
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cache(s)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;acc&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ChecksumAccumulator</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(c&nbsp;&lt;-&nbsp;s)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;acc.add(c.toByte)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;cs&nbsp;=&nbsp;acc.checksum()
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cache&nbsp;+=&nbsp;(s&nbsp;-&gt;&nbsp;cs)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cs
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 4.2 - Companion object for class <span class="code">ChecksumAccumulator</span>.</h5>
+
+
+<p>As mentioned in <a href="a-scalable-language.html">Chapter 1</a>, one way in
+which Scala is more object-oriented than Java is that classes in Scala
+cannot have static members.<a id="i-100664180-1"></a><a id="i-1455692441-1"></a> Instead, Scala has <a href="glossary.html#g775061748"><em>singleton objects</em></a>.<a id="i-1742889473-1"></a><a id="i-1642091000-1"></a> A singleton object definition looks like a class definition,
+except instead of the keyword <span class="code">class</span> you use the keyword
+<span class="code">object</span>. <a href="classes-and-objects.html#lst:checksum-obj">Listing 4.2</a> shows an example.</p>
+
+<p>The singleton object in this figure is named <span class="code">ChecksumAccumulator</span>,
+the same name as the class in the previous example.  When a singleton
+object shares the same name with a class, it is called that class's
+<a href="glossary.html#g423027411"><em>companion object</em></a>.<a id="i541826262-1"></a> You must define both
+the class and its companion object in the same source file. The class
+is called the <a href="glossary.html#g-828430492"><em>companion class</em></a> of the singleton object. A class
+and its companion object can access each other's private members.<a id="i-1552749806-1"></a><a id="i-216316744-1"></a></p>
+
+<p>The <span class="code">ChecksumAccumulator</span> singleton object has one method,
+named <span class="code">calculate</span>, which takes a <span class="code">String</span> and calculates a checksum for
+the characters in the <span class="code">String</span>.  It also has one private field,
+<span class="code">cache</span>, a mutable map in which previously calculated checksums are
+cached.<a href="classes-and-objects.html#footnote4-2">[2]</a>  The first line of the method,
+"<span class="code">if</span>&nbsp;<span class="code">(cache.contains(s))</span>", checks the cache to see if the passed
+string is already contained as a key in the map. If so, it just
+returns the mapped value, <span class="code">cache(s)</span>. Otherwise, it executes the
+else clause, which calculates the checksum.  The first line of the
+else clause defines a <span class="code">val</span> named <span class="code">acc</span> and initializes it with a
+new <span class="code">ChecksumAccumulator</span> instance.<a href="classes-and-objects.html#footnote4-3">[3]</a> The next line is a
+<span class="code">for</span> expression, which cycles through each character in the passed string,
+converts the character to a <span class="code">Byte</span> by invoking <span class="code">toByte</span> on it, and
+passes that to the <span class="code">add</span> method of the <span class="code">ChecksumAccumulator</span>
+instances to which <span class="code">acc</span> refers. After the <span class="code">for</span> expression completes,
+the next line of the method invokes <span class="code">checksum</span> on <span class="code">acc</span>, which gets
+the checksum for the passed <span class="code">String</span>, and stores it into a <span class="code">val</span>
+named <span class="code">cs</span>. In the next line, <span class="code">cache</span>&nbsp;<span class="code">+=</span>&nbsp;<span class="code">(s</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">cs)</span>, the passed
+string key is mapped to the integer checksum value, and this key-value
+pair is added to the cache map. The last expression of the method,
+<span class="code">cs</span>, ensures the checksum is the result of the method.</p>
+
+<p>If you are a Java programmer, one way to think of singleton objects is
+as the home for any static methods you might have written in Java.
+You can invoke methods on singleton objects using a similar syntax:
+the name of the singleton object, a dot, and the name of the
+method. For example, you can invoke the <span class="code">calculate</span> method of
+singleton object <span class="code">ChecksumAccumulator</span> like this:</p>
+
+<pre>
+  ChecksumAccumulator.calculate(<span class="quotedstring">"Every&nbsp;value&nbsp;is&nbsp;an&nbsp;object."</span>)
+</pre><!-- -->
+A singleton object is more than a holder of static methods, however. It is
+a first-class object.
+
+
+<p>You can think of a singleton object's name, therefore, as a "name tag" attached to the object:</p>
+
+<div align="center">
+<img src="images/csaObject.jpg" alt="image images/csaObject.jpg"/>
+
+
+</div>
+
+
+<p>Defining a singleton object doesn't define a type (at the Scala level
+of abstraction). Given just a definition of object
+<span class="code">ChecksumAccumulator</span>, you can't make a variable of type
+<span class="code">ChecksumAccumulator</span>. Rather, the type named <span class="code">ChecksumAccumulator</span> 
+is defined by the singleton object's companion class. However, singleton objects extend a superclass and can mix in traits. Given
+each singleton object is an instance of its superclasses and mixed-in
+traits, you can invoke its methods via these types, refer to it from
+variables of these types, and pass it to methods expecting these
+types.  We'll show some examples of singleton objects
+inheriting from classes and traits in <a href="traits.html">Chapter 12</a>.</p>
+
+<p>One difference between classes and singleton objects is that singleton<a id="i-614433232-1"></a>
+objects cannot take parameters, whereas classes can. Because you can't instantiate a singleton object with the <span class="code">new</span> keyword,
+you have no way to pass parameters to it.
+Each singleton object is implemented as<a id="i-1705632190-1"></a><a id="i1357897992-1"></a>
+an instance of a <a href="glossary.html#g1908038877"><em>synthetic class</em></a> referenced from a static variable, so they have the same initialization semantics as Java
+statics.<a href="classes-and-objects.html#footnote4-4">[4]</a> In particular, a singleton object is initialized the first
+time some code accesses it.</p>
+
+<p>A singleton object that does not share the same name with a companion
+class is called a <a href="glossary.html#g1856979834"><em>standalone object</em></a>.<a id="i1181640299-1"></a><a id="i1731800121-1"></a> You can use standalone
+objects for many purposes, including collecting related utility
+methods together, or defining an entry point to a Scala
+application. This use case is shown in the next section.<!-- --></p>
+
+<h3><a name="4.4"></a>4.4 A Scala application <span style="font-size: .5em">[<a href="classes-and-objects.html#4.4">link</a>]</span></h3>
+
+
+<p><a name="sec:a-scala-application"></a></p>
+
+<p>To run a Scala program, you must supply the name of a standalone singleton object<!-- --> with a <span class="code">main</span> method that takes one parameter, an <span class="code">Array[String]</span>,
+and has a result type of <span class="code">Unit</span>.<a id="i40729076-1"></a> Any standalone object with a <span class="code">main</span> method of the proper signature can be used as the entry point into
+an application. An example is shown in <a href="classes-and-objects.html#lst:summer-app">Listing 4.3</a>:<a id="i558250415-1"></a></p>
+
+<p><a name="lst:summer-app"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="comment">//&nbsp;In&nbsp;file&nbsp;Summer.scala</span>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;ChecksumAccumulator.calculate
+  <br />  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">Summer</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;main(args:&nbsp;<span class="typename">Array[String]</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(arg&nbsp;&lt;-&nbsp;args)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(arg&nbsp;+<span class="quotedstring">":&nbsp;"</span>+&nbsp;calculate(arg))
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 4.3 - The <span class="code">Summer</span> application.</h5>
+
+
+<p>The name of the singleton object in <a href="classes-and-objects.html#lst:summer-app">Listing 4.3</a> is <span class="code">Summer</span>. Its <span class="code">main</span> method has
+the proper signature, so you can use it as an application. The first
+statement in the file is an import of the <span class="code">calculate</span> method defined
+in the <span class="code">ChecksumAccumulator</span> object in the previous example. This
+import statement allows you to use the method's simple name in the
+rest of the file.<a href="classes-and-objects.html#footnote4-5">[5]</a> The body of the <span class="code">main</span> method simply prints out each argument and
+the checksum for the argument, separated by a colon.</p>
+
+<div class="note">
+<h4>Note</h4>
+
+
+<p>Scala implicitly imports members of packages <span class="code">java.lang</span> and <span class="code">scala</span>, as
+well as the members of a singleton object named <span class="code">Predef</span>, into every Scala source
+file. <span class="code">Predef</span>, which resides in package <span class="code">scala</span>, contains many useful
+methods. For example, when you say <span class="code">println</span> in a Scala source file, 
+you're actually invoking <span class="code">println</span> on <span class="code">Predef</span>. (<span class="code">Predef.println</span> turns around and
+invokes <span class="code">Console.println</span>, which does the real work.) When you say
+<span class="code">assert</span>, you're invoking <span class="code">Predef.assert</span>.<a id="i-783142358-1"></a><a id="i586706545-1"></a></p>
+
+</div>
+
+
+<p>To run the <span class="code">Summer</span> application, place the code from <a href="classes-and-objects.html#lst:summer-app">Listing 4.3</a>
+into a file
+named <span class="code">Summer.scala</span>. Because <span class="code">Summer</span> uses <span class="code">ChecksumAccumulator</span>,
+place the code for <span class="code">ChecksumAccumulator</span>, both the class shown in
+<a href="classes-and-objects.html#lst:checksum-class">Listing 4.1</a> and its companion object shown in
+<a href="classes-and-objects.html#lst:checksum-obj">Listing 4.2</a>, into a file named
+<span class="code">ChecksumAccumulator.scala</span>.</p>
+
+<p>One difference between Scala and Java is that whereas Java requires
+you to put a public class in a file named after the class&mdash;for
+example, you'd put class <span class="code">SpeedRacer</span> in file <span class="code">SpeedRacer.java</span>&mdash;in
+Scala, you can name <span class="code">.scala</span> files anything you want, no matter what
+Scala classes or code you put in them.<a id="i-1061147639-1"></a><a id="i982997419-1"></a> In general in the case of
+non-scripts, however, it is recommended style to name files after the
+classes they contain as is done in Java, so that programmers can more
+easily locate classes by looking at file names. This is the approach
+we've taken with the two files in this example,
+<span class="code">Summer.scala</span> and <span class="code">ChecksumAccumulator.scala</span>.</p>
+
+<p>Neither <span class="code">ChecksumAccumulator.scala</span> nor <span class="code">Summer.scala</span> are scripts,
+because they end in a definition. A script, by contrast, must end in a
+result expression.<a id="i1047419434-2"></a> Thus if you try to run <span class="code">Summer.scala</span> as a
+script, 
+the Scala interpreter will complain that <span class="code">Summer.scala</span> does not end
+in a result expression (assuming of course you didn't add
+any expression of your own after the <span class="code">Summer</span> object
+definition).
+Instead, you'll need to actually compile these files with
+the Scala compiler, then run the resulting class files. One way to do
+this is to use <span class="code">scalac</span>, which is the basic Scala compiler, like
+this:<a id="i-674656853-1"></a><a id="i-2092005582-1"></a><a id="i-1405503952-1"></a>
+<pre>
+  $&nbsp;scalac&nbsp;ChecksumAccumulator.scala&nbsp;Summer.scala
+</pre><!-- -->
+This compiles your source files, but there may be a perceptible delay
+before the compilation finishes.  The reason is that
+every time the compiler starts up, it spends time scanning
+the contents of <span class="code">jar</span> files and doing other initial work before
+it even looks at the fresh source files you submit to it.
+For this reason,
+the Scala distribution also includes a Scala compiler <em>daemon</em>
+called <span class="code">fsc</span> (for fast Scala compiler).<a id="i1477728746-1"></a> You use it like this:</p>
+
+<pre>
+  $&nbsp;fsc&nbsp;ChecksumAccumulator.scala&nbsp;Summer.scala
+</pre><!-- -->
+The first time you run <span class="code">fsc</span>, it will create a local server daemon
+attached to a port on your computer. It will then send the list of
+files to compile to the daemon via the port, and the daemon will
+compile the files. The next time you run <span class="code">fsc</span>, the daemon will
+already be running, so <span class="code">fsc</span> will simply send the file list to the
+daemon, which will immediately compile the files. Using <span class="code">fsc</span>, you
+only need to wait for the Java runtime to startup the first time. If
+you ever want to stop the <span class="code">fsc</span> daemon, you can do so with <span class="code">fsc</span>&nbsp;<span class="code">-shutdown</span>.
+
+
+<p>Running either of these <span class="code">scalac</span> or <span class="code">fsc</span> commands will produce Java
+class files that you can then run via the <span class="code">scala</span> command, the same
+command you used to invoke the interpreter in previous
+examples.<a id="i1944711780-1"></a> However, instead of giving it a filename with a <span class="code">.scala</span>
+extension containing Scala code to interpret as you did in every
+previous example,<a href="classes-and-objects.html#footnote4-6">[6]</a> in this case you'll give it the name of a
+standalone object containing a <span class="code">main</span> method of the proper signature.
+You can run the <span class="code">Summer</span> application, therefore, by typing:
+<pre>
+  $&nbsp;scala&nbsp;Summer&nbsp;of&nbsp;love
+</pre><!-- --></p>
+
+<p>You will see checksums printed for the two command line arguments:
+<pre>
+  <span class="output">of:&nbsp;-213</span>
+  <span class="output">love:&nbsp;-182</span>
+</pre><!-- --></p>
+
+<h3><a name="4.5"></a>4.5 The <span class="code">Application</span> trait <span style="font-size: .5em">[<a href="classes-and-objects.html#4.5">link</a>]</span></h3>
+
+
+<p><a name="sec:application-trait"></a></p>
+
+<p>Scala provides a trait, <span class="code">scala.Application</span>, that can save you
+some finger typing.<a id="i-2135552226-1"></a> 
+Although we haven't yet covered everything you'll need to understand exactly how
+this trait works, we figured you'd want to know about it now anyway.
+<a href="classes-and-objects.html#lst:season-app">Listing 4.4</a> shows an example:</p>
+
+<p><a name="lst:season-app"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;ChecksumAccumulator.calculate
+  <br />  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">FallWinterSpringSummer</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Application</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(season&nbsp;&lt;-&nbsp;<span class="typename">List</span>(<span class="quotedstring">"fall"</span>,&nbsp;<span class="quotedstring">"winter"</span>,&nbsp;<span class="quotedstring">"spring"</span>))
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(season&nbsp;+<span class="quotedstring">":&nbsp;"</span>+&nbsp;calculate(season))
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 4.4 - Using the <span class="code">Application</span> trait.</h5>
+
+
+<p>To use the trait, you first write<!-- -->
+"<span class="code">extends</span>&nbsp;<span class="code">Application</span>" after
+the name of your singleton object. Then instead of writing a <span class="code">main</span> method,
+you place the code you would have put in the <span class="code">main</span> method<!-- --> directly between the curly
+braces of the singleton object. That's it. You can compile and run this
+application just like any other.</p>
+
+<p>The way this works is that trait <span class="code">Application</span> declares a <span class="code">main</span> method of
+the appropriate signature, which your singleton object inherits, making it
+usable as a Scala application. The code between the curly braces is collected
+into a <a href="glossary.html#g-1733976356"><em>primary constructor</em></a> of the singleton object, and is executed when
+the class is initialized. Don't worry if you don't understand what all this means.
+It will be explained in later chapters, and in the meantime you can use the
+trait without fully understanding the details.</p>
+
+<p>Inheriting from <span class="code">Application</span> is shorter than writing an explicit <span class="code">main</span>
+method, but it also has some shortcomings.  First, you can't use this
+trait if you need to access command-line arguments, because the
+<span class="code">args</span> array isn't available. For example, because the <span class="code">Summer</span>
+application uses command-line arguments, it must be written with an
+explicit <span class="code">main</span> method, as shown in
+<a href="classes-and-objects.html#lst:summer-app">Listing 4.3</a>. Second, because of some restrictions in
+the JVM threading model, you need an explicit main method if your
+program is multi-threaded. Finally, some implementations of the JVM do
+not optimize the initialization code of an object which is executed by
+the <span class="code">Application</span> trait.  So you should inherit from <span class="code">Application</span>
+only when your program is relatively simple and single-threaded.</p>
+
+<h3><a name="4.6"></a>4.6 Conclusion <span style="font-size: .5em">[<a href="classes-and-objects.html#4.6">link</a>]</span></h3>
+
+
+<p>This chapter has given you the basics of classes and objects in Scala, and
+shown you how to compile and run applications. In the next chapter, you'll learn
+about Scala's basic types and how to use them.</p>
+
+<hr/>
+<h4>Footnotes for Chapter 4:</h4>
+
+
+<p><a name="footnote4-1">[1]</a> The reason parameters are <span class="code">val</span>s is
+that <span class="code">val</span>s are easier to reason about. You needn't look further to determine
+if a <span class="code">val</span> is reassigned, as you must do with a
+<span class="code">var</span>.</p>
+
+<p><a name="footnote4-2">[2]</a> We used a cache here to show a singleton object with
+a field. A cache such as this is a performance optimization that
+trades off memory for computation time. In general, you would likely
+use such a cache only if you encountered a performance problem that
+the cache solves, and might use a weak map, such as <span class="code">WeakHashMap</span> in
+<span class="code">scala.collection.jcl</span>, so that entries in the cache could be garbage
+collected if memory becomes scarce.</p>
+
+<p><a name="footnote4-3">[3]</a> Because the keyword <span class="code">new</span> is
+only used to instantiate classes, the new object created here is an
+instance of the <span class="code">ChecksumAccumulator</span> class, not the singleton object of
+the same name.</p>
+
+<p><a name="footnote4-4">[4]</a> The name of the synthetic class is the object name plus a dollar sign. Thus the synthetic class
+for the singleton object named <span class="code">ChecksumAccumulator</span> is <span class="code">ChecksumAccumulator$</span>.</p>
+
+<p><a name="footnote4-5">[5]</a> If you're a Java programmer, you can
+think of this import as similar to the static import feature introduced in Java
+5. One difference in Scala, however, is that you can import members from
+any object, not just singleton objects.<!-- --></p>
+
+<p><a name="footnote4-6">[6]</a> The actual mechanism that the scala program
+uses to "interpret" a Scala source file is that it compiles the
+Scala source code to Java bytecodes, loads them immediately via a class
+loader, and executes them.</p>
+
+
+
+<br clear="all">
+<p>
+<center>
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/classes-and-objectsP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/next-steps-in-scala.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/basic-types-and-operations.html">Next</a>
+</div>
+</center>
+</div>
+<hr width="100%" />
+<center>
+<script type="text/javascript"><!--
+google_ad_client = "pub-3911176865765226";
+google_alternate_color = "ffffff";
+google_ad_width = 728;
+google_ad_height = 15;
+google_ad_format = "728x15_0ads_al";
+google_ad_channel = "";
+google_color_border = "ffffff";
+google_color_bg = "FFFFFF";
+google_color_link = "003090";
+google_color_text = "000000";
+google_color_url = "666666";
+//--></script>
+<script type="text/javascript"
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+<br />
+<br />
+<!-- SiteSearch Google -->
+<form method="get" action="http://www.google.com/custom">
+<table border="0" bgcolor="#ffffff">
+<tr><td nowrap="nowrap" valign="top" align="left" height="32">
+<a href="http://www.google.com/">
+<img src="http://www.google.com/logos/Logo_25wht.gif"
+border="0" alt="Google"></img></a>
+</td>
+<td nowrap="nowrap">
+<input type="hidden" name="domains" value="Artima.com"></input>
+<input type="text" name="q" size="31" maxlength="255" value=""></input>
+<input type="submit" name="sa" value="Search"></input>
+</td></tr>
+<tr>
+<td>&nbsp;</td>
+<td nowrap="nowrap">
+<font size="-1" color="#000000">
+<input type="radio" name="sitesearch" value=""></input> Web
+<input type="radio" name="sitesearch" value="Artima.com" checked="checked"></input>Artima.com
+</font>&nbsp;&nbsp;
+<input type="hidden" name="client" value="pub-3911176865765226"></input>
+<input type="hidden" name="forid" value="1"></input>
+<input type="hidden" name="ie" value="ISO-8859-1"></input>
+<input type="hidden" name="oe" value="ISO-8859-1"></input>
+<input type="hidden" name="cof" value="GALT:#008000;GL:1;DIV:#336699;VLC:663399;AH:center;BGC:FFFFFF;LBGC:FFFFFF;ALC:0000FF;LC:0000FF;T:000000;GFNT:0000FF;GIMP:0000FF;LH:50;LW:150;L:http://www.artima.com/images/artima150.gif;S:http://www.artima.com;FORID:1;"></input>
+<input type="hidden" name="hl" value="en"></input>
+</td></tr></table>
+</form>
+<!-- SiteSearch Google -->
+</center>
+<div class="sp">
+<div style="text-align: center">
+<a href="http://www.artima.com/copyright.html">Copyright</a> &copy; 1996-2014 Artima, Inc. All Rights Reserved.</a> - <a href="http://www.artima.com/privacy.html">Privacy Policy</a> - <a href="http://www.artima.com/termsofuse.html">Terms of Use</a> - <a href="http://www.artima.com/advertising.html">Advertise with Us</a>
+</div>
+</div>
+<br />
+</body>
+</html>

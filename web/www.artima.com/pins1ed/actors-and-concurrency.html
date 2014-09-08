@@ -1,0 +1,1653 @@
+<html>
+<head>
+<title>Actors and Concurrency</title>
+<meta name="description" content="
+" />
+<meta name="keywords" content="scala" />
+<meta name="author" content="Martin Odersky, Lex Spoon, and Bill Venners" />
+<link rel="stylesheet" type="text/css" href="/artima.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+</head>
+<body><table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="bottom">
+<a href="/index.jsp"><img src="/images/a7.gif" alt="The Artima Developer Community" border="0" width="550" height="43" /></a>
+</td>
+</table>
+<table width="100%" bgcolor="#333333">
+<tr>
+<td align="center">
+<div class="ml">
+<a href="/articles" class="hl">Articles</a>&nbsp;|
+<a href="/news/index.jsp" class="hl">News</a>&nbsp;|
+<a href="/weblogs/index.jsp" class="hl">Weblogs</a>&nbsp;|
+<a href="/buzz/index.jsp" class="hl">Buzz</a>&nbsp;|
+<a href="/shop/catalog" class="hl">Books</a>&nbsp;|
+<a href="/forums/index.jsp" class="hl">Forums</a>
+</div>
+</td>
+</tr>
+</table>
+<table width="100%" bgcolor="#AACCFF">
+<tr>
+<td align="center">
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/actors-and-concurrencyP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/combining-scala-and-java.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/combinator-parsing.html">Next</a>
+</div>
+</td>
+</tr>
+</table>
+<BR>
+<div class="vegies">
+<div class="tc">
+<span class="sts">Chapter 30 of Programming in Scala, First Edition</span><br />
+<span class="ts">Actors and Concurrency</span><br />
+<span class="as">by Martin Odersky, Lex Spoon, and Bill Venners</span><br />
+<span class="pd">December 10, 2008</span><br />
+</div>
+
+
+
+
+<p>Sometimes it helps in designing a program to specify that things
+happen independently, in parallel, <em>concurrently</em>. Java includes
+support for concurrency, and although this
+support is sufficient, it turns out to be quite difficult to get right in practice
+as programs get larger and more
+complex.<a id="i-1261817322-1"></a><a id="i-1422944994-3"></a><a id="i1338746414-2"></a>
+Scala augments Java's native support by adding <em>actors</em>. Actors provide a concurrency model that
+is easier to work with and can, therefore,
+help you avoid many of the difficulties of using Java's native concurrency model.
+This chapter will show you the basics of how to use Scala's actors library and provide an extended example that transforms
+the single-threaded circuit simulation code of <a href="stateful-objects.html">Chapter 18</a> into a multi-threaded version.</p>
+
+<h3><a name="30.1"></a>30.1 Trouble in paradise <span style="font-size: .5em">[<a href="actors-and-concurrency.html#30.1">link</a>]</span></h3>
+
+
+<p>The Java platform comes with a built-in threading model based on shared data and locks. Each object is associated with
+a logical <em>monitor</em>,<a id="i-328798631-1"></a> which can be used to control multi-threaded access to data. To use
+this model, you decide
+what data will be shared by multiple threads and mark as "synchronized" sections of the code that access, or
+control access to, the shared data.
+The Java runtime employs a locking mechanism to ensure that only one thread at a time enters synchronized sections 
+guarded by the same lock,
+thereby enabling you to orchestrate multi-threaded access to the shared
+data.<a id="i2035919517-1"></a></p>
+
+<p>Unfortunately, programmers have found it very difficult to reliably build robust multi-threaded applications
+using the shared data and locks model, especially as applications grow in size and complexity. The problem
+is that at each point in the program, you must reason about what data you are modifying or
+accessing that might be modified or accessed by other threads, and what locks are being held.
+At each method call, you must reason about what locks it will try to
+hold, and convince yourself that it will not deadlock while<a id="i503639951-2"></a>
+trying to obtain them.  Compounding the problem, the locks you reason about are
+not fixed at compile time, because the program is free
+to create new locks at run time as it progresses.</p>
+
+<p>Making things worse, testing is not reliable with multi-threaded
+code.<a id="i-670497952-1"></a> Since
+threads are non-deterministic, you might successfully test a program
+one thousand times, yet still the program could go wrong the first
+time it runs on a customer's machine.  With shared data and locks, you must get the
+program correct through reason alone.</p>
+
+<p>Moreover, you can't solve the problem by over-synchronizing either. It can be just as
+problematic to synchronize everything as it is to synchronize nothing.
+The problem is that new lock operations remove possibilities for race
+conditions, but simultaneously add possibilities for deadlocks.  A
+correct lock-using program must have neither race conditions nor deadlocks,
+so you cannot play it safe by overdoing it in either direction.</p>
+
+<p>Java 5 introduced <span class="code">java.util.concurrent</span>, a library of concurrency utilities that provides
+higher level abstractions for concurrent programming.<a id="i-1522908125-1"></a>
+Using the concurrency utilities makes multi-threaded programming far less error prone than rolling your own abstractions with
+Java's low-level synchronization primitives. Nevertheless, the concurrent utilities are also based on the shared data
+and locks model, and as a result do not solve the fundamental
+difficulties of using that model.<a id="i1837693870-1"></a><a id="i1225979037-1"></a><a id="i1954917920-1"></a></p>
+
+<p>Scala's actors library does address the fundamental problem by providing an alternative, <em>share-nothing</em>,
+message-passing model that programmers tend to find much easier to
+reason about.<a id="i-93411491-1"></a><a id="i-1499722452-1"></a> Actors are a good first tool
+of choice when designing concurrent software, because they can help you avoid the deadlocks and race conditions
+that are easy to fall into when using the shared data and locks model.</p>
+
+<h3><a name="30.2"></a>30.2 Actors and message passing <span style="font-size: .5em">[<a href="actors-and-concurrency.html#30.2">link</a>]</span></h3>
+
+
+<p>An actor is a thread-like entity that has a mailbox for receiving
+messages.<a id="i-122023144-2"></a> To implement an actor, you subclass <span class="code">scala.actors.Actor</span>
+and implement the <span class="code">act</span> method.<a id="i63093205-1"></a><a id="i1229358457-1"></a> An example is shown in <a href="actors-and-concurrency.html#lst:silly-actor">Listing 30.1</a>.
+This actor doesn't do anything with its mailbox. It just prints a message five times and quits.
+<a name="lst:silly-actor"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;scala.actors._
+  <br />  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">SillyActor</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Actor</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;act()&nbsp;{&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(i&nbsp;&lt;-&nbsp;<span class="literal">1</span>&nbsp;to&nbsp;<span class="literal">5</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"I'm&nbsp;acting!"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Thread.sleep(<span class="literal">1000</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 30.1 - A simple actor.</h5>
+
+
+<p>You start an actor by invoking its <span class="code">start</span> method, similar
+to the way you start a Java thread:<a id="i827922473-1"></a>
+<pre>
+  scala&gt;&nbsp;SillyActor.start()
+  <span class="output">I'm&nbsp;acting!</span>
+  <span class="output">res4:&nbsp;scala.actors.Actor&nbsp;=&nbsp;SillyActor$@1945696</span>
+  <br />  <span class="output">scala&gt;&nbsp;I'm&nbsp;acting!</span>
+  <span class="output">I'm&nbsp;acting!</span>
+  <span class="output">I'm&nbsp;acting!</span>
+  <span class="output">I'm&nbsp;acting!</span>
+</pre><!-- -->
+Notice that the "I'm acting!" output is interleaved with the Scala
+shell's output. This interleaving is due
+to the <span class="code">SillyActor</span> actor running independently from the thread running
+the shell.
+Actors run independently from each other, too.
+For example, given this second actor:
+<pre>
+  <span class="vem">import</span>&nbsp;scala.actors._
+  <br />  <span class="vem">object</span>&nbsp;<span class="typename">SeriousActor</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Actor</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;act()&nbsp;{&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(i&nbsp;&lt;-&nbsp;<span class="literal">1</span>&nbsp;to&nbsp;<span class="literal">5</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"To&nbsp;be&nbsp;or&nbsp;not&nbsp;to&nbsp;be."</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Thread.sleep(<span class="literal">1000</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+  }
+</pre><!-- --></p>
+
+<p>You could run two actors at the same time, like this:
+<pre>
+  scala&gt;&nbsp;SillyActor.start();&nbsp;SeriousActor.start()
+  <span class="output">res3:&nbsp;scala.actors.Actor&nbsp;=&nbsp;seriousActor$@1689405</span>
+  <br />  <span class="output">scala&gt;&nbsp;To&nbsp;be&nbsp;or&nbsp;not&nbsp;to&nbsp;be.</span>
+  <span class="output">I'm&nbsp;acting!</span>
+  <span class="output">To&nbsp;be&nbsp;or&nbsp;not&nbsp;to&nbsp;be.</span>
+  <span class="output">I'm&nbsp;acting!</span>
+  <span class="output">To&nbsp;be&nbsp;or&nbsp;not&nbsp;to&nbsp;be.</span>
+  <span class="output">I'm&nbsp;acting!</span>
+  <span class="output">To&nbsp;be&nbsp;or&nbsp;not&nbsp;to&nbsp;be.</span>
+  <span class="output">I'm&nbsp;acting!</span>
+  <span class="output">To&nbsp;be&nbsp;or&nbsp;not&nbsp;to&nbsp;be.</span>
+  <span class="output">I'm&nbsp;acting!</span>
+</pre><!-- -->
+You can also create an actor using a utility method named
+<span class="code">actor</span> in object <span class="code">scala.actors.Actor</span>:<a id="i297460982-1"></a>
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.actors.Actor._
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;seriousActor2&nbsp;=&nbsp;actor&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(i&nbsp;&lt;-&nbsp;<span class="literal">1</span>&nbsp;to&nbsp;<span class="literal">5</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"That&nbsp;is&nbsp;the&nbsp;question."</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Thread.sleep(<span class="literal">1000</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  <span class="output">scala&gt;&nbsp;That&nbsp;is&nbsp;the&nbsp;question.</span>
+  <span class="output">That&nbsp;is&nbsp;the&nbsp;question.</span>
+  <span class="output">That&nbsp;is&nbsp;the&nbsp;question.</span>
+  <span class="output">That&nbsp;is&nbsp;the&nbsp;question.</span>
+  <span class="output">That&nbsp;is&nbsp;the&nbsp;question.</span>
+</pre><!-- -->
+The <span class="code">val</span> definition above creates an actor that executes
+the actions defined in the block following the <span class="code">actor</span> method.
+The actor starts immediately when it is defined. There is no need to 
+call a separate <span class="code">start</span> method.</p>
+
+<p>All well and good.  
+You can create actors and they run independently.  How do they
+work together, though?  How do they communicate without using
+shared memory and locks?
+Actors communicate by sending each other <a href="glossary.html#g954925063"><em>messages</em></a>.
+You send a message by using the <span class="code">!</span> method, like this:<a id="i1171485367-1"></a><a id="i155878042-1"></a>
+<pre>
+  scala&gt;&nbsp;<span class="typename">SillyActor</span>&nbsp;!&nbsp;<span class="quotedstring">"hi&nbsp;there"</span>
+</pre><!-- -->
+Nothing happens in this case, because <span class="code">SillyActor</span> is too busy acting
+to process its messages, and so the <span class="code">"hi</span>&nbsp;<span class="code">there"</span> message sits in its
+mailbox unread.  <a href="actors-and-concurrency.html#lst:receive-clause">Listing 30.2</a> shows a new, more sociable, actor that waits for a
+message in its mailbox and prints out whatever it receives.  It
+receives a message by calling <span class="code">receive</span>, passing in a partial
+function.<a id="i-1060995512-1"></a><a id="i-854473105-1"></a><a href="actors-and-concurrency.html#footnote30-1">[1]</a>
+<a name="lst:receive-clause"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;echoActor&nbsp;=&nbsp;actor&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">while</span>&nbsp;(<span class="vem">true</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;receive&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;msg&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"received&nbsp;message:&nbsp;"</span>+&nbsp;msg)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 30.2 - An actor that calls <span class="code">receive</span>.</h5>
+
+
+<p>When an actor sends a message, it does not
+block, and when an actor receives a message, it is not interrupted.
+The sent message waits in the receiving actor's mailbox until the actor
+calls <span class="code">receive</span>. You can see this behavior illustrated here:</p>
+
+<pre>
+  scala&gt;&nbsp;echoActor&nbsp;!&nbsp;<span class="quotedstring">"hi&nbsp;there"</span>
+  <span class="output">received&nbsp;message:&nbsp;hi&nbsp;there</span>
+  <br />  scala&gt;&nbsp;echoActor&nbsp;!&nbsp;<span class="literal">15</span>
+  <br />  scala&gt;&nbsp;received&nbsp;message:&nbsp;<span class="literal">15</span>
+</pre><!-- -->
+
+
+<p>As discussed in
+<a href="case-classes-and-pattern-matching.html#sec:partial-functions">Section 15.7</a>, a partial function (an instance of trait <span class="code">PartialFunction</span>) is not a full function&mdash;<i>i.e.</i>, it might not
+be defined over all input
+values.<a id="i-33298553-2"></a> In addition to
+an <span class="code">apply</span> method that takes one argument, a partial function offers an
+<span class="code">isDefinedAt</span> method, which also takes one
+argument.<a id="i1604479281-2"></a>
+The <span class="code">isDefinedAt</span> method will return <span class="code">true</span> if
+the partial function can "handle" the passed value. Such values are safe to pass to <span class="code">apply</span>. If you pass a value to
+<span class="code">apply</span> for which <span class="code">isDefinedAt</span> would return false, however, <span class="code">apply</span> will throw an exception.</p>
+
+<p>An actor will only process messages matching one of the cases in the partial function
+passed to <span class="code">receive</span>.
+For each message in the mailbox, <span class="code">receive</span> will
+first invoke <span class="code">isDefinedAt</span> on the passed partial function to
+determine whether it has a case that will match and handle the message. The <span class="code">receive</span> method will choose the first message in the mailbox
+for which <span class="code">isDefinedAt</span> returns
+true, and pass that message to the partial function's <span class="code">apply</span> method. The partial function's <span class="code">apply</span> method will handle the message. For example, 
+<span class="code">echoActor</span>'s <span class="code">apply</span> method will print <span class="code">"received</span>&nbsp;<span class="code">message:</span>&nbsp;<span class="code">"</span> followed by the message object's <span class="code">toString</span> result.
+If the mailbox contains no message for which <span class="code">isDefinedAt</span> returns true,
+the actor on which <span class="code">receive</span> was invoked will block until a matching message arrives.</p>
+
+<p>For example, here is an actor that handles only messages of type <span class="code">Int</span>:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;intActor&nbsp;=&nbsp;actor&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;receive&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;x:&nbsp;<span class="typename">Int</span>&nbsp;=&gt;&nbsp;<span class="comment">//&nbsp;I&nbsp;only&nbsp;want&nbsp;Ints</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"Got&nbsp;an&nbsp;Int:&nbsp;"</span>+&nbsp;x)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  <span class="output">intActor:&nbsp;scala.actors.Actor&nbsp;=&nbsp;</span>
+  <span class="output">&nbsp;&nbsp;scala.actors.Actor$$anon$1@34ba6b</span>
+</pre><!-- -->
+If you send a <span class="code">String</span> or <span class="code">Double</span>, for example, the <span class="code">intActor</span> will silently ignore the message:
+<pre>
+  scala&gt;&nbsp;intActor&nbsp;!&nbsp;<span class="quotedstring">"hello"</span>
+  scala&gt;&nbsp;intActor&nbsp;!&nbsp;<span class="typename">Math.Pi</span>
+</pre><!-- -->
+But if you pass an <span class="code">Int</span>, you'll get a response printed out:
+<pre>
+  scala&gt;&nbsp;intActor&nbsp;!&nbsp;<span class="literal">12</span>
+  <span class="output">Got&nbsp;an&nbsp;Int:&nbsp;12</span>
+</pre><!-- --></p>
+
+<h3><a name="30.3"></a>30.3 Treating native threads as actors <span style="font-size: .5em">[<a href="actors-and-concurrency.html#30.3">link</a>]</span></h3>
+
+
+<p>The actor subsystem manages one or more native threads for its own
+use.<a id="i1922192932-1"></a>  So long as you work with an explicit actor that you define, you
+do not need to think much about how they map to threads.</p>
+
+<p>The other direction is also supported by the subsystem: every native
+thread is also usable as an actor.  However, you cannot use
+<span class="code">Thread.current</span> directly, because it does not have the necessary
+methods.<a id="i-1922502654-1"></a>  Instead, you should use <span class="code">Actor.self</span> if you want to view
+the current thread as an actor.</p>
+
+<p>This facility  is especially useful for debugging actors from
+the interactive shell. Here's an example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.actors.Actor._
+  <span class="output">import&nbsp;scala.actors.Actor._</span>
+  <br />  scala&gt;&nbsp;self&nbsp;!&nbsp;<span class="quotedstring">"hello"</span>
+  <br />  scala&gt;&nbsp;self.receive&nbsp;{&nbsp;<span class="vem">case</span>&nbsp;x&nbsp;=&gt;&nbsp;x&nbsp;}
+  <span class="output">res6:&nbsp;Any&nbsp;=&nbsp;hello</span>
+</pre><!-- -->
+The <span class="code">receive</span>  method returns the value computed by
+the partial function passed to it.  In this case, the
+partial function returns the
+message itself, and so the received message ends up being printed out
+by the interpreter shell.</p>
+
+<p>If you use this technique, it is better to use a variant of <span class="code">receive</span>
+called <span class="code">receiveWithin</span>.<a id="i-1195361571-1"></a>  You can then specify a timeout in
+milliseconds.  If you use <span class="code">receive</span> in the interpreter shell, then
+the <span class="code">receive</span> will block the shell until a message arrives.  In the
+case of <span class="code">self.receive</span>, this could mean waiting forever!  Instead,
+use <span class="code">receiveWithin</span> with some timeout value:
+<pre>
+  scala&gt;&nbsp;self.receiveWithin(<span class="literal">1000</span>)&nbsp;{&nbsp;<span class="vem">case</span>&nbsp;x&nbsp;=&gt;&nbsp;x&nbsp;}&nbsp;<span class="comment">//&nbsp;wait&nbsp;a&nbsp;sec!</span>
+  <span class="output">res7:&nbsp;Any&nbsp;=&nbsp;TIMEOUT</span>
+</pre><!-- --></p>
+
+<h3><a name="30.4"></a>30.4 Better performance through thread reuse <span style="font-size: .5em">[<a href="actors-and-concurrency.html#30.4">link</a>]</span></h3>
+
+
+<p>Actors are implemented on top of normal Java threads.  As described so
+far, in fact, every actor must be given its own thread, so that all
+the <span class="code">act</span> methods get their turn.</p>
+
+<p>Unfortunately, despite their light-sounding name, threads
+are not all that cheap in Java.  Threads consume enough
+memory that typical Java virtual machines, which can host millions of objects,
+can have only thousands of threads.  Worse, switching threads often
+takes hundreds if not thousands of processor cycles.  If you want your
+program be as efficient as possible, then it is important to be
+sparing with thread creation and switching.<a id="i1159262946-1"></a></p>
+
+<p>To help you conserve threads, Scala provides an alternative to the usual
+<span class="code">receive</span> method called <span class="code">react</span>.<a id="i785426092-1"></a>  Like <span class="code">receive</span>, <span class="code">react</span> takes a partial function. Unlike <span class="code">receive</span>, however, <span class="code">react</span> does
+not return after it finds and processes a message.  Its result type
+is <span class="code">Nothing</span>.  It evaluates the message handler and that's it.<a href="actors-and-concurrency.html#footnote30-2">[2]</a></p>
+
+<p>Because the <span class="code">react</span> method does not need to return, the
+implementation does not need to preserve the call stack of the current<a id="i-1862604258-1"></a>
+thread.  Instead, the library can reuse the current thread for the
+next actor that wakes up.  This approach is so effective that if every
+actor in a program uses <span class="code">react</span> instead of <span class="code">receive</span>, only a
+single thread is necessary in principle to host all of the program's
+actors (to be sure, if your computer has several processor cores, the
+actors subsystem
+ will use enough threads to utilize all cores when it
+can).<a id="i-1206501288-2"></a></p>
+
+<div class="callout">
+
+
+<p><br />
+In practice, programs will need at least a few <span class="code">receive</span>'s,
+but you should try to use <span class="code">react</span> whenever possible so as to conserve
+threads.
+<br /></p>
+
+</div>
+
+
+<p>Because <span class="code">react</span> does not return, the message handler you pass it must
+now both process that message and arrange to do all of the actor's
+remaining work.  A common way to do this is to have a top-level work
+method&mdash;such as <span class="code">act</span> itself&mdash;that the message handler calls
+when it finishes. <a href="actors-and-concurrency.html#lst:reactive-actor">Listing 30.3</a> shows an example that uses this approach.</p>
+
+<p><a name="lst:reactive-actor"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">NameResolver</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Actor</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">import</span>&nbsp;java.net.{<span class="typename">InetAddress</span>,&nbsp;<span class="typename">UnknownHostException</span>}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;act()&nbsp;{&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;react&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;(name:&nbsp;<span class="typename">String</span>,&nbsp;actor:&nbsp;<span class="typename">Actor</span>)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;actor&nbsp;!&nbsp;getIp(name)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;act()
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="quotedstring">"EXIT"</span>&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"Name&nbsp;resolver&nbsp;exiting."</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;quit</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;msg&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"Unhandled&nbsp;message:&nbsp;"</span>+&nbsp;msg)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;act()
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;getIp(name:&nbsp;<span class="typename">String</span>):&nbsp;<span class="typename">Option[InetAddress]</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">try</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="typename">Some</span>(InetAddress.getByName(name))
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<span class="vem">catch</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;_:<span class="typename">UnknownHostException</span>&nbsp;=&gt;&nbsp;<span class="typename">None</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 30.3 - An actor that calls <span class="code">react</span>.</h5>
+
+
+<p>The actor shown in <a href="actors-and-concurrency.html#lst:reactive-actor">Listing 30.3</a> waits for strings that are host names,
+and if there is one, returns an IP address for that host name. Here's an example:</p>
+
+<pre>
+  scala&gt;&nbsp;NameResolver.start()
+  <span class="output">res0:&nbsp;scala.actors.Actor&nbsp;=&nbsp;NameResolver$@90d6c5</span>
+  <br />  scala&gt;&nbsp;<span class="typename">NameResolver</span>&nbsp;!&nbsp;(<span class="quotedstring">"www.scala-lang.org"</span>,&nbsp;self)
+  <br />  scala&gt;&nbsp;self.receiveWithin(<span class="literal">0</span>)&nbsp;{&nbsp;<span class="vem">case</span>&nbsp;x&nbsp;=&gt;&nbsp;x&nbsp;}
+  <span class="output">res2:&nbsp;Any&nbsp;=&nbsp;Some(www.scala-lang.org/128.178.154.102)</span>
+  <br />  scala&gt;&nbsp;<span class="typename">NameResolver</span>&nbsp;!&nbsp;(<span class="quotedstring">"wwwwww.scala-lang.org"</span>,&nbsp;self)
+  <br />  scala&gt;&nbsp;self.receiveWithin(<span class="literal">0</span>)&nbsp;{&nbsp;<span class="vem">case</span>&nbsp;x&nbsp;=&gt;&nbsp;x&nbsp;}
+  <span class="output">res4:&nbsp;Any&nbsp;=&nbsp;None</span>
+</pre><!-- -->
+Writing an actor to use <span class="code">react</span> instead of <span class="code">receive</span> is challenging,
+but pays off in performance.  Because <span class="code">react</span> does not return, the
+calling actor's call stack can be discarded, freeing up the thread's
+resources for a different actor.  At the extreme, if all of the actors
+of a program use <span class="code">react</span>, then they can be implemented on a single
+thread.
+
+
+<p>This coding pattern is so common with event-based actors, there is
+special support in the library for it.  The <span class="code">Actor.loop</span> function executes
+a block of code repeatedly, even if the code calls
+<span class="code">react</span>.<a id="i-534082357-1"></a> <span class="code">NameResolver</span>'s <span class="code">act</span> method can be rewritten to use <span class="code">loop</span> as shown in <a href="actors-and-concurrency.html#lst:act-with-loop">Listing 30.4</a>.
+The one difference in behavior between this <span class="code">act</span> method and that of <a href="actors-and-concurrency.html#lst:reactive-actor">Listing 30.3</a> is that this one
+does not handle <span class="code">"EXIT"</span> by quitting. Instead, this actor will loop and react to messages forever.
+<a name="lst:act-with-loop"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;act()&nbsp;{&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;loop&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;react&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;(name:&nbsp;<span class="typename">String</span>,&nbsp;actor:&nbsp;<span class="typename">Actor</span>)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;actor&nbsp;!&nbsp;getIp(name)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;msg&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"Unhandled&nbsp;message:&nbsp;"</span>&nbsp;+&nbsp;msg)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 30.4 - An actor's <span class="code">act</span> method that uses <span class="code">loop</span>.</h5>
+
+
+<div class="aside">
+<h3>How <span class="code">react</span> works</h3>
+
+
+<p>A return type of <span class="code">Nothing</span> indicates a function will never return normally,
+but instead will always complete abruptly with an exception. And indeed, this
+is true of <span class="code">react</span>. The actual implementation of <span class="code">react</span> is not as simple as
+the following description, and subject to change, but conceptually you can
+think of <span class="code">react</span> as working like this:</p>
+
+<p><!-- -->When you call <span class="code">start</span> on an actor, the <span class="code">start</span> method
+will in some way arrange things such that some thread will eventually call
+<span class="code">act</span> on that actor. If that <span class="code">act</span> method invokes <span class="code">react</span>,
+the <span class="code">react</span> method will look in the actor's mailbox for
+a message the passed partial function can handle. (It does this the same way as <span class="code">receive</span>,
+by passing candidate messages to the partial function's <span class="code">isDefinedAt</span> method.) If it
+finds a message that can be handled, <span class="code">react</span> will schedule the handling of that message for later execution
+and throw an exception. If it doesn't find one, it will place the actor in "cold storage," to be resurrected
+if and when it gets more messages in its mailbox, and throw an exception. In either case, <span class="code">react</span> will
+complete abruptly with this exception, and so will <span class="code">act</span>.
+The thread that invoked <span class="code">act</span> will catch the exception, forget about the actor,
+and move on to other duties.</p>
+
+<p><!-- -->This is why if you want <span class="code">react</span> to handle more than the first message, you'll
+need to call <span class="code">act</span> again from inside your partial function, or use some other means to get 
+<span class="code">react</span> invoked again.</p>
+
+</div>
+
+
+<h3><a name="30.5"></a>30.5 Good actors style <span style="font-size: .5em">[<a href="actors-and-concurrency.html#30.5">link</a>]</span></h3>
+
+
+<p>At this point you have seen everything you need to write your own
+actors.
+Simply using these methods takes you only so far, however.
+The point of them is that they support an actors <em>style</em>
+of concurrent programming.  To the extent you can write in this
+style, your code will be easier to debug and will have fewer
+deadlocks and race conditions.
+This section provides some guidelines
+for programming in an actors style.</p>
+
+<h4>Actors should not block</h4>
+
+
+<p>A well written actor does not block while processing a message.
+The problem is that while the actor blocks, some
+other actor might make a request on it that it could handle.  If the
+actor is blocked on the first request, it will not even notice the
+second request.  In the worst case, a deadlock can even result, with
+multiple actors blocked as they each wait for some other
+blocked actor to respond.</p>
+
+<p>Instead of blocking, the actor should arrange for some message to
+arrive designating that action is ready to be taken.  Often this
+rearrangement will require the help of other actors.  For example,
+instead of calling <span class="code">Thread.sleep</span> directly and blocking the current
+actor, you could create a helper actor that sleeps and then sends a
+message back when enough time has elapsed:
+<pre>
+  actor&nbsp;{
+  &nbsp;&nbsp;Thread.sleep(time)
+  &nbsp;&nbsp;mainActor&nbsp;!&nbsp;<span class="quotedstring">"WAKEUP"</span>
+  }&nbsp;
+</pre><!-- -->
+This helper actor does indeed block, but since it will never receive a
+message, it is OK in this case.  The main actor remains available to
+answer new requests. 
+The <span class="code">emoteLater</span> method, shown in <a href="actors-and-concurrency.html#lst:timer-helper">Listing 30.5</a>, demonstrates the use of this idiom.  It
+creates a new actor that will do the <span class="code">sleep</span> so that the main
+actor does not block.  To ensure that it sends the <span class="code">"Emote"</span> message
+to the correct actor, it is careful to evaluate <span class="code">self</span> in
+the scope of the main actor instead of the scope of the helper
+actor.
+<a name="lst:timer-helper"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;sillyActor2&nbsp;=&nbsp;actor&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;emoteLater()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;mainActor&nbsp;=&nbsp;self
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;actor&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Thread.sleep(<span class="literal">1000</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mainActor&nbsp;!&nbsp;<span class="quotedstring">"Emote"</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">var</span>&nbsp;emoted&nbsp;=&nbsp;<span class="literal">0</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;emoteLater()
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;loop&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;react&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="quotedstring">"Emote"</span>&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"I'm&nbsp;acting!"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;emoted&nbsp;+=&nbsp;<span class="literal">1</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(emoted&nbsp;&lt;&nbsp;<span class="literal">5</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;emoteLater()
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;msg&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"Received:&nbsp;"</span>+&nbsp;msg)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 30.5 - An actor that uses a helper actor to avoid blocking itself.</h5>
+
+
+<p>Because this actor does not block in <span class="code">sleep</span>&mdash;its helper actor
+does&mdash;it can continue to do other work while waiting for its next
+time to emote.  Unlike the earlier silly actor, this one will continue
+to print out messages while it waits for its next input:</p>
+
+<pre>
+  scala&gt;&nbsp;sillyActor2&nbsp;!&nbsp;<span class="quotedstring">"hi&nbsp;there"</span>
+  scala&gt;&nbsp;<span class="typename">Received</span>:&nbsp;hi&nbsp;there
+  <span class="output">I'm&nbsp;acting!</span>
+  <span class="output">I'm&nbsp;acting!</span>
+  <span class="output">I'm&nbsp;acting!</span>
+</pre><!-- -->
+
+
+<h4>Communicate with actors only via messages</h4>
+
+
+<p>The key way the actors model addresses the difficulties of the shared data and locks model
+is by providing a safe space&mdash;the actor's <span class="code">act</span> method&mdash;where you can think sequentially.
+Put another way, actors allow you to write a multi-threaded program as a bunch of independent
+single-threaded programs that communicate with each other via
+asynchronous messaging.<a id="i1351372324-1"></a>
+This simplification works, however, only so long as messages are the only way you let
+your actors communicate.<a href="actors-and-concurrency.html#footnote30-3">[3]</a><a id="i855957185-1"></a></p>
+
+<p>For example, a <span class="code">GoodActor</span> could include a reference to itself in a message to a <span class="code">BadActor</span>, to
+identify itself as the source of that message. If <span class="code">BadActor</span> invokes some
+arbitrary method on <span class="code">GoodActor</span> instead of sending it a message with `<span class="code">!</span>', however, problems
+may ensue.
+The invoked method might read private instance data in <span class="code">GoodActor</span>, which may have been written by a different thread.
+As a result, you would need to ensure that both the
+<span class="code">BadActor</span> thread's reading of the instance data and the <span class="code">GoodActor</span> thread's writing of it are synchronized
+on the same lock. The <span class="code">GoodActor</span>'s private instance data has become <em>shared data</em> that must be guarded
+by a <em>lock</em>. As soon as you go around the message passing scheme between actors, therefore, you drop
+back down into the shared data and locks model, with all the difficulties you were trying to avoid in
+the first place by using the actors model.<a id="i-122023144-3"></a></p>
+
+<p>On the other hand, this does not mean that you should never go around message passing. Although shared data and locks
+is very difficult to get right, it is not impossible. One difference between Scala's approach to actors and that of Erlang, in fact,
+is that Scala gives you the option to combine the actors and shared data
+and locks models in the same program.<a id="i-894319228-1"></a></p>
+
+<p>As an example,
+imagine you wanted multiple actors to share a common mutable map. Since the map is mutable, the pure actors approach would
+be to create an actor that "owns" the mutable map and define a set of messages that allows other actors to access it. You could
+define a message for putting a key-value pair into the shared map, getting a value given a key, and so on, for all the operations
+you need to do on the map. In addition, you'd need to define messages for sending asynchronous responses to actors that
+made queries of the map. Another option, however, is to pass a thread-safe map, such as <span class="code">ConcurrentHashMap</span> from the<a id="i181041576-3"></a>
+Java Concurrency Utilities, in a message to multiple actors, and let
+those actors use that map directly.<a id="i557834191-1"></a><a id="i1928053007-1"></a><a id="i510829358-1"></a></p>
+
+<p>Although it would be far easier and safer to implement a shared map via actors than to
+implement something like <span class="code">ConcurrentHashMap</span> yourself, since <span class="code">ConcurrentHashMap</span> already exists, you may judge it easier
+and as low risk to use that than to implement your own shared map with an actor. This would also mean that your responses
+from the shared map could be synchronous, whereas with actors they would need to be asynchronous. Scala's actors library
+gives you the choice.</p>
+
+<div class="aside">
+<h3>If you're considering shared data and locks</h3>
+
+
+<p>When considering whether to combine the actors model with the shared data and locks model,
+it is helpful to recall the words of Harry Callahan,<a id="i-1020432582-1"></a> played by Clint Eastwood<a id="i-1067398584-1"></a> in the 1971 movie
+Dirty Harry:<a id="i317859986-1"></a></p>
+
+<p><!-- --><em>I know what you're thinking. "Did he fire six shots or only
+five?" Well, to tell you the truth, in all this excitement I kind of lost track myself. But
+being as this is a .44 Magnum, the most powerful handgun in the world, and would blow your
+head clean off, you've got to ask yourself one question: Do I feel lucky? Well, do ya, punk?</em></p>
+
+</div>
+
+
+<h4>Prefer immutable messages</h4>
+
+
+<p>Because Scala's actors model provides what amounts to a single-threaded environment inside
+each actor's <span class="code">act</span> method, you need not worry about whether the objects you use in the implementation of
+this method are thread-safe.<a id="i181041576-4"></a> You can use unsynchronized, mutable objects to your hearts content in an <span class="code">act</span> method,
+for example, because each <span class="code">act</span> method is effectively confined to one thread.<a href="actors-and-concurrency.html#footnote30-4">[4]</a> This is why the actors model is called a share-nothing model&mdash;the
+data is confined to one thread rather than being shared by many.</p>
+
+<p>There is one exception to the share-nothing rule, however: the data inside objects used to send messages between
+actors is "shared" by multiple actors. As a result, you <em>do</em> have to worry about whether message objects
+are thread-safe. And in general, they should be.</p>
+
+<p>The best way to ensure that message objects are thread-safe is to only use immutable objects for messages.
+Instances of any class that has only <span class="code">val</span> fields, which themselves refer only to immutable objects, are immutable.
+An easy way to define such message classes, of course, is as case
+classes.<a id="i783873611-1"></a> So long as you don't explicitly
+add <span class="code">var</span> fields to a case class and ensure the <span class="code">val</span> fields are all immutable types, your case class will by
+definition be immutable. It will also be convenient for pattern matching in
+the partial functions passed to <span class="code">react</span> or <span class="code">receive</span>. You can also use as messages instances of regular (non-case)
+immutable classes that you define. Or you can use instances of the many immutable classes provided
+in the Scala API, such as tuples, strings, lists, immutable sets and maps, and so on.</p>
+
+<p>Now, if an actor sends a mutable, unsynchronized object as a message, and never reads or writes that object thereafter, it
+would work, but it's just asking for trouble. A future maintainer may not realize the object is shared
+and write to it, thereby creating a hard to find concurrency bug.</p>
+
+<p>In general, it is best to arrange your data such that every unsynchronized, mutable object
+is "owned," and therefore accessed by, only one actor. You can arrange
+for objects to be transferred from one actor to another if you like,
+but you need to make sure that at any given time, it is clear which
+actor owns the object and is allowed to access it.  In other words, when you
+design an actors-based system, you need to decide which parts of
+<em>mutable</em> memory are assigned to which actor.
+All other actors that access a mutable data structure must
+send messages to the data structure's owner and wait for a message to come
+back with a reply.</p>
+
+<p>If you do find you have a mutable object you want to continue using as well as send in a message to another actor, you 
+should make and send a copy of it instead. While you're at it, you may want to make it immutable.
+For example, because arrays are mutable and unsynchronized, any array you use should be accessed by one actor at a time.
+If you want to continue using an array as well as send it to another actor, you should send a copy. For example, if 
+the array itself holds only immutable objects, you can make a copy with <span class="code">arr.clone</span>.<a id="i1900167322-1"></a> But you should
+also consider using <span class="code">arr.toList</span>, and send the resulting immutable list instead.</p>
+
+<p>Immutable objects are convenient in many cases, but they really shine for
+parallel systems, because they are the easiest, lowest risk way to design thread-safe objects.
+When you design a program that might involve
+parallelism in the future, whether using actors or not, you should try especially hard to make
+data structures immutable.</p>
+
+<h4>Make messages self-contained</h4>
+
+
+<p>When you return a value from a method, the caller is in a good
+position to remember what it was doing before it called the method.
+It can take the response value and then continue whatever it was
+doing.</p>
+
+<p>With actors, things are trickier.  When one actor makes a request of
+another, the response might not come for a long time.  The
+calling actor should not block, but should continue to do any other
+work it can while it waits for the response.  A difficulty, then, is
+interpreting the response when it finally does come back.  Can the actor
+remember what it was doing when it made the request?</p>
+
+<p>One way to simplify the logic of an actors program is to include
+redundant information in the messages.  If the request is an immutable
+object, you can even cheaply include a reference to the request in the
+return value!  For example, the IP-lookup actor would be better
+if it returned the host name in addition to the IP address found for
+it.  It would make this actor slightly longer, but it should simplify
+the logic of any actor making requests on it:
+<pre>
+  <span class="vem">def</span>&nbsp;act()&nbsp;{&nbsp;
+  &nbsp;&nbsp;loop&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;react&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;(name:&nbsp;<span class="typename">String</span>,&nbsp;actor:&nbsp;<span class="typename">Actor</span>)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;actor&nbsp;!&nbsp;(name,&nbsp;getIp(name))
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+Another way to increase redundancy in the messages is to make a case
+class for each kind of message.  While such a wrapper is not strictly
+necessary in many cases, it makes an actors program much easier to
+understand.  Imagine a programmer looking at a send of a string,
+for example:
+<pre>
+  lookerUpper&nbsp;!&nbsp;(<span class="quotedstring">"www.scala-lang.org"</span>,&nbsp;self)
+</pre><!-- -->
+It can be difficult to figure out which actors in the code might
+respond.  It is much easier if the code looks like this:
+<pre>
+  <span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">LookupIP</span>(hostname:&nbsp;<span class="typename">String</span>,&nbsp;requester:&nbsp;<span class="typename">Actor</span>)
+  <br />  lookerUpper&nbsp;!&nbsp;<span class="typename">LookupIP</span>(<span class="quotedstring">"www.scala-lang.org"</span>,&nbsp;self)
+</pre><!-- -->
+Now, the programmer can search for <span class="code">LookupIP</span> in the source code,
+probably finding very few possible responders.
+<a href="actors-and-concurrency.html#lst:NameResolver2">Listing 30.6</a> shows an updated name-resolving
+actor that uses case classes instead of tuples for its messages.
+<a name="lst:NameResolver2"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;scala.actors.Actor._
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;java.net.{<span class="typename">InetAddress</span>,&nbsp;<span class="typename">UnknownHostException</span>}
+  <br />  &nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">LookupIP</span>(name:&nbsp;<span class="typename">String</span>,&nbsp;respondTo:&nbsp;<span class="typename">Actor</span>)
+  &nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">LookupResult</span>(
+  &nbsp;&nbsp;&nbsp;&nbsp;name:&nbsp;<span class="typename">String</span>,&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;address:&nbsp;<span class="typename">Option[InetAddress]</span>
+  &nbsp;&nbsp;)
+  <br />  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">NameResolver2</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Actor</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;act()&nbsp;{&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;react&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">LookupIP</span>(name,&nbsp;actor)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;actor&nbsp;!&nbsp;<span class="typename">LookupResult</span>(name,&nbsp;getIp(name))
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;getIp(name:&nbsp;<span class="typename">String</span>):&nbsp;<span class="typename">Option[InetAddress]</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;As&nbsp;before&nbsp;(in&nbsp;Listing&nbsp;30.3)</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 30.6 - An actor that uses case classes for messages.</h5>
+
+
+<h3><a name="30.6"></a>30.6 A longer example: Parallel discrete event simulation <span style="font-size: .5em">[<a href="actors-and-concurrency.html#30.6">link</a>]</span></h3>
+
+
+<p>As a longer example, suppose you wanted to parallelize the discrete
+event simulation of <a href="stateful-objects.html">Chapter 18</a>.  Each
+participant in the simulation could run as its own actor, thus allowing
+you to speed up a simulation by using more processors.
+This section will walk you through the process, using code
+based on a parallel circuit
+simulator developed by Philipp Haller.<a id="i-952102166-1"></a></p>
+
+<h4>Overall Design</h4>
+
+
+<p>Most of the design from <a href="stateful-objects.html">Chapter 18</a> works
+fine for both sequential and parallel discrete event simulation.
+There are events, and they happen at designated times, processing an
+event can cause new events to be scheduled, and so forth.  Likewise, a
+circuit simulation can be implemented as a discrete event simulation
+by making gates and wires participants in the simulation, and changes
+in the wires the events of the simulation.  The one thing that would
+be nice to change would be to run the events in parallel.  How can the
+design be rearranged to make this happen?</p>
+
+<p>The key idea is to make each simulated object an actor.  Each event
+can then be processed by the actor where most of that event's state
+lies.  For circuit simulation, the update of a gate's output can be
+processed by the actor corresponding to that gate.  With this
+arrangement, events will naturally be handled in parallel.</p>
+
+<p>In code, it is likely that there will be some common behavior between
+different simulated objects.  It makes sense, then, to define a trait
+<span class="code">Simulant</span> that can be mixed into to any class to make it a simulated
+object.  Wires, gates, and other simulated objects can mix in this
+trait.
+<pre>
+  <span class="vem">trait</span>&nbsp;<span class="typename">Simulant</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Actor</span>
+  <span class="vem">class</span>&nbsp;<span class="typename">Wire</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Simulant</span>
+</pre><!-- --></p>
+
+<p>So far so good, but there are a few design issues to work out, several
+of which do not have a single, obviously best answer.  For this
+chapter, we present a reasonable choice for each design issue that
+keeps the code concise.  There are other solutions possible, though,
+and trying them out would make for good practice for anyone wanting
+experience programming with actors.</p>
+
+<p>The first design issue is to figure out how to make the simulation
+participants stay synchronized with the simulated time.  That is,
+participant A should not race ahead and process an event at time tick
+100 until all other actors have finished with time tick 99.  To see
+why this is essential, imagine for a moment that simulant A is working
+at time 90 while simulant B is working at time 100.  It might be that
+participant A is about to send a message that changes B's state at
+time 91.  B will not learn this until too late, because it has already
+processed times 92 to 99.  To avoid this problem, the design approach
+used in this chapter is that no simulant should process events for
+time <i>n</i> until all other simulants are finished with time <i>n</i>-1.</p>
+
+<p>That decision raises a new question,<!-- --> though: how do simulants know when
+it's safe to move forward?  A straightforward approach
+is to have a "clock" actor that keeps track
+of the current time and tells the simulation participants when it
+is time to move forward.
+To keep the clock from moving
+forward before all simulants are ready, the clock can ping actors at
+carefully chosen times to make sure they have received and processed
+all messages for the current time tick.  There will be <span class="code">Ping</span> messages
+that the clock sends the simulants, and <span class="code">Pong</span> messages that
+the simulants send back when they are ready for the clock
+to move forward.
+<pre>
+  <span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Ping</span>(time:&nbsp;<span class="typename">Int</span>)
+  <span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Pong</span>(time:&nbsp;<span class="typename">Int</span>,&nbsp;from:&nbsp;<span class="typename">Actor</span>)
+</pre><!-- --></p>
+
+<p>Note that
+these messages could be defined as having no fields.  However, the
+<span class="code">time</span> and <span class="code">from</span> fields add a little bit of redundancy to the
+system.  The <span class="code">time</span> field holds the time of a ping, and it can be
+used to connect a <span class="code">Pong</span> with its associated <span class="code">Ping</span>.  The <span class="code">from</span>
+field is the sender of a <span class="code">Pong</span>.  The sender of a <span class="code">Ping</span> is always
+the clock, so it does not have a <span class="code">from</span> field.  All of this
+information is unnecessary if the program is behaving perfectly, but
+it can simplify the logic in some places, and it can greatly help in
+debugging if the program has any errors.</p>
+
+<p>One question that arises is how a simulant knows it has finished with
+the current time tick.  Simulants should not respond to a <span class="code">Ping</span>
+until they have finished all the work for that tick, but how do they
+know?  Maybe another actor has made a request to it that has not
+yet arrived.  Maybe a message one actor has sent another has
+not been processed yet.</p>
+
+<p>It simplifies the answer to this question to add two constraints.
+First, assume that simulants never send each other messages directly,
+but instead only schedule events on each other.  Second, they never
+post events for the current time tick, but only for times at least one
+tick into the future.  These two constraints are significant, but they
+appear tolerable for a typical simulation.  After all, there is
+normally some non-zero propagation delay whenever two components of a
+system interact with each other.  Further, at worst, time ticks can be
+made to correspond to shorter time intervals, and information that
+will be needed in the future can be sent ahead of time.</p>
+
+<p>Other arrangements are possible.  Simulants could be allowed to send
+messages directly to each other.  However, if they do so, then there
+would need to be a more sophisticated mechanism for deciding when it
+is safe for an actor to send back a <span class="code">Pong</span>.  Each simulant should
+delay responding to a <span class="code">Ping</span> until any other simulants it has made
+requests to are finished processing those requests.  To ensure this
+property, you would need the simulants to pass each other some extra
+information.  For now, assume that simulants don't communicate with
+each other except via the simulation's agenda.</p>
+
+<p>Given that decision, there may as well be a single agenda of work
+items, and that agenda may as well be held by the clock actor.  That
+way, the clock can wait to send out pings until it has sent out
+requests for all work items at the current time.  Actors then know
+that whenever they receive a <span class="code">Ping</span>, they have already received from
+the clock all work items that need to happen at the current time tick.
+It is thus safe when an actor receives a <span class="code">Ping</span> to immediately send
+back a <span class="code">Pong</span>, because no more work will be arriving during the
+current time tick.  Taking this approach, a <span class="code">Clock</span> has the following
+state:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">Clock</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Actor</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;running&nbsp;=&nbsp;<span class="vem">false</span>
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;currentTime&nbsp;=&nbsp;<span class="literal">0</span>
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;agenda:&nbsp;<span class="typename">List[WorkItem]</span>&nbsp;=&nbsp;<span class="typename">List</span>()
+  }
+</pre><!-- --></p>
+
+<p>The final design issue to work out is how a simulation is set up to
+begin with.  A natural approach is to create the simulation with the
+clock stopped, add all the simulants, connect them all together, and
+then start the clock.  The subtlety is that you need to be absolutely
+sure that everything is connected before you start the clock running!
+Otherwise, some parts of the simulation will start running before they
+are fully formed.</p>
+
+<p>How do you know when the simulation is fully assembled and ready to
+start?  There are again multiple ways to approach this problem.  The
+simple way adopted in this chapter
+is to avoid sending message to actors while
+setting the simulation
+up.  That way, once the last method call returns, you know that the
+simulation is entirely constructed.  The resulting coding pattern is
+that you use regular method calls to set the simulation up, and you
+use
+actor message sends while the simulation is running.</p>
+
+<p>Given the preceding decisions, the rest of the design is straightforward.
+A <span class="code">WorkItem</span> can be defined much like in
+<a href="stateful-objects.html">Chapter 18</a>, in that it holds a time and an
+action.  For the parallel simulation, however, the action itself has a
+different encoding.  In <a href="stateful-objects.html">Chapter 18</a>,
+actions are represented as zero-argument functions.  For parallel
+simulation, it is more natural to use a target actor and a message to
+be sent to that actor:
+<pre>
+  <span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">WorkItem</span>(time:&nbsp;<span class="typename">Int</span>,&nbsp;msg:&nbsp;<span class="typename">Any</span>,&nbsp;target:&nbsp;<span class="typename">Actor</span>)
+</pre><!-- -->
+Likewise, the <span class="code">afterDelay</span> method for scheduling a new work item
+becomes an <span class="code">AfterDelay</span> message that can be sent to the clock.  Just
+as with the <span class="code">WorkItem</span> class, the zero-argument action function is
+replaced by a message and a target actor:
+<pre>
+  <span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">AfterDelay</span>(delay:&nbsp;<span class="typename">Int</span>,&nbsp;msg:&nbsp;<span class="typename">Any</span>,&nbsp;target:&nbsp;<span class="typename">Actor</span>)
+</pre><!-- -->
+Finally, it will prove useful to have messages requesting the
+simulation to start and stop:
+<pre>
+  <span class="vem">case</span>&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">Start</span>
+  <span class="vem">case</span>&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">Stop</span>
+</pre><!-- --></p>
+
+<p>That's it for the overall design. There is a <span class="code">Clock</span> class holding a
+current time and an agenda, and a clock only advances the clock after
+it has pinged all of its simulants to be sure they are ready.  There
+is a <span class="code">Simulant</span> trait for simulation participants, and these
+communicate with their fellow simulants by sending work items to the
+clock to add to its agenda.
+The next section will take a look now at how to implement these core classes.</p>
+
+<h4>Implementing the simulation framework</h4>
+
+
+<p>There are two things that need implementing for the core framework: the
+<span class="code">Clock</span> class and the <span class="code">Simulant</span> trait.  Consider the <span class="code">Clock</span>
+class, first.  The necessary state of a clock is as follows:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">Clock</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Actor</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;running&nbsp;=&nbsp;<span class="vem">false</span>
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;currentTime&nbsp;=&nbsp;<span class="literal">0</span>
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;agenda:&nbsp;<span class="typename">List[WorkItem]</span>&nbsp;=&nbsp;<span class="typename">List</span>()
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;allSimulants:&nbsp;<span class="typename">List[Actor]</span>&nbsp;=&nbsp;<span class="typename">List</span>()
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;busySimulants:&nbsp;<span class="typename">Set[Actor]</span>&nbsp;=&nbsp;Set.empty
+</pre><!-- -->
+A clock starts out with <span class="code">running</span> set to <span class="code">false</span>.  Once the
+simulation is fully initialized, the clock will be sent the <span class="code">Start</span>
+message and <span class="code">running</span> will become true.  This way, the simulation
+stays frozen until all of its pieces have been connected together as
+desired.  It also means that, since all of the simulants are also
+frozen, it is safe to use regular method calls to set things up
+instead of needing to use actor message sends.</p>
+
+<p>A clock may as well go ahead and start running as an actor once it is
+created.  This is safe, because it will not actually do anything until
+it receives a <span class="code">Start</span> message:
+<pre>
+  start()
+</pre><!-- --></p>
+
+<p>A clock also keeps track of the current time (<span class="code">currentTime</span>), the
+list of participants managed by this clock (<span class="code">allSimulants</span>), and the
+list of participants that are still working on the current time tick
+(<span class="code">busySimulants</span>).  A list is used to hold <span class="code">allSimulants</span>, because
+it is only iterated through, but a set is used for <span class="code">busySimulants</span>
+because items will be removed from it in an unpredictable order.
+Once the simulator starts running, it will only
+advance to a new time when <span class="code">busySimulants</span> is empty, and whenever it
+advances the clock, it will set <span class="code">busySimulants</span> to <span class="code">allSimulants</span>.</p>
+
+<p>To set up a simulation, there is going to be a need for a method
+to add new simulants to a clock.  It may as well be added right now:
+<pre>
+  <span class="vem">def</span>&nbsp;add(sim:&nbsp;<span class="typename">Simulant</span>)&nbsp;{
+  &nbsp;&nbsp;allSimulants&nbsp;=&nbsp;sim&nbsp;::&nbsp;allSimulants
+  }
+</pre><!-- --></p>
+
+<p>That's the state of a clock.  Now look at its activity.  Its main loop
+alternates between two responsibilities: advancing the clock, and
+responding to messages.  Once the clock advances, it can only advance
+again when at least one message has been received, so it is safe to
+define the main loop as an alternation between these two activities:
+<pre>
+  <span class="vem">def</span>&nbsp;act()&nbsp;{
+  &nbsp;&nbsp;loop&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(running&nbsp;&amp;&amp;&nbsp;busySimulants.isEmpty)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;advance()
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;reactToOneMessage()
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+The advancement of time has a few parts beyond simply incrementing the
+<span class="code">currentTime</span>.  First, if the agenda is empty, and the simulation is
+not just starting, then the simulation should exit.  Second, assuming
+the agenda is non-empty, all work items for time <span class="code">currentTime</span> should
+now take place.  Third, all simulants should be put on the
+<span class="code">busySimulants</span> list and sent <span class="code">Ping</span>s.  The clock will not advance
+again until all <span class="code">Ping</span>s have been responded to:
+<pre>
+  <span class="vem">def</span>&nbsp;advance()&nbsp;{
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(agenda.isEmpty&nbsp;&amp;&amp;&nbsp;currentTime&nbsp;&gt;&nbsp;<span class="literal">0</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"**&nbsp;Agenda&nbsp;empty.&nbsp;&nbsp;Clock&nbsp;exiting&nbsp;at&nbsp;time&nbsp;"</span>+
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;currentTime+<span class="quotedstring">"."</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;self&nbsp;!&nbsp;<span class="typename">Stop</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">return</span>
+  &nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;currentTime&nbsp;+=&nbsp;<span class="literal">1</span>
+  &nbsp;&nbsp;println(<span class="quotedstring">"Advancing&nbsp;to&nbsp;time&nbsp;"</span>+currentTime)
+  <br />  &nbsp;&nbsp;processCurrentEvents()
+  &nbsp;&nbsp;<span class="vem">for</span>&nbsp;(sim&nbsp;&lt;-&nbsp;allSimulants)
+  &nbsp;&nbsp;&nbsp;&nbsp;sim&nbsp;!&nbsp;<span class="typename">Ping</span>(currentTime)
+  <br />  &nbsp;&nbsp;busySimulants&nbsp;=&nbsp;Set.empty&nbsp;++&nbsp;allSimulants
+  }
+</pre><!-- -->
+Processing the current events is simply a matter of processing
+all events at the top of the agenda whose time is <span class="code">currentTime</span>:
+<pre>
+  <span class="vem">private</span>&nbsp;<span class="vem">def</span>&nbsp;processCurrentEvents()&nbsp;{
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;todoNow&nbsp;=&nbsp;agenda.takeWhile(_.time&nbsp;&lt;=&nbsp;currentTime)
+  <br />  &nbsp;&nbsp;agenda&nbsp;=&nbsp;agenda.drop(todoNow.length)
+  <br />  &nbsp;&nbsp;<span class="vem">for</span>&nbsp;(<span class="typename">WorkItem</span>(time,&nbsp;msg,&nbsp;target)&nbsp;&lt;-&nbsp;todoNow)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;assert(time&nbsp;==&nbsp;currentTime)
+  &nbsp;&nbsp;&nbsp;&nbsp;target&nbsp;!&nbsp;msg
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+There are three steps in this method.  First, the items
+that need to occur at the current time are selected
+using <span class="code">takeWhile</span> and saved into the <span class="code">val</span> <span class="code">todoNow</span>.
+Second, those items are dropped from the agenda by using
+<span class="code">drop</span>.  
+Finally, the items to do now are looped through
+and sent the target message.  The <span class="code">assert</span> is included
+just to guarantee that the scheduler's logic is sound.</p>
+
+<p>Given this ground work, handling the messages that a clock can receive
+is straightforward.  An <span class="code">AfterDelay</span> message causes a new item to be
+added to the work queue.  A <span class="code">Pong</span> causes a simulant to be removed
+from the list of busy simulants.  <span class="code">Start</span> causes the simulation to
+begin, and <span class="code">Stop</span> causes the clock to stop:<!-- -->
+<pre>
+  <span class="vem">def</span>&nbsp;reactToOneMessage()&nbsp;{
+  &nbsp;&nbsp;react&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">AfterDelay</span>(delay,&nbsp;msg,&nbsp;target)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;item&nbsp;=&nbsp;<span class="typename">WorkItem</span>(currentTime&nbsp;+&nbsp;delay,&nbsp;msg,&nbsp;target)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;agenda&nbsp;=&nbsp;insert(agenda,&nbsp;item)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">Pong</span>(time,&nbsp;sim)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert(time&nbsp;==&nbsp;currentTime)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert(busySimulants&nbsp;contains&nbsp;sim)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;busySimulants&nbsp;-=&nbsp;sim
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">Start</span>&nbsp;=&gt;&nbsp;running&nbsp;=&nbsp;<span class="vem">true</span>
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">Stop</span>&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(sim&nbsp;&lt;-&nbsp;allSimulants)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sim&nbsp;!&nbsp;<span class="typename">Stop</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exit()
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+The <span class="code">insert</span> method, not shown, is exactly like that of
+<a href="stateful-objects.html#lst:simulation">Listing 18.8</a>.  It inserts its argument into
+the agenda while being careful to keep the agenda sorted.</p>
+
+<p>That's the complete implementation of <span class="code">Clock</span>.  Now consider how to
+implement <span class="code">Simulant</span>.  Boiled down to its essence, a <span class="code">Simulant</span> is
+any actor that understands and cooperates with the simulation messages
+<span class="code">Stop</span> and <span class="code">Ping</span>.  Its <span class="code">act</span> method can therefore be as simple as
+this:
+<pre>
+  <span class="vem">def</span>&nbsp;act()&nbsp;{
+  &nbsp;&nbsp;loop&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;react&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">Stop</span>&nbsp;=&gt;&nbsp;exit()
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">Ping</span>(time)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(time&nbsp;==&nbsp;<span class="literal">1</span>)&nbsp;simStarting()
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock&nbsp;!&nbsp;<span class="typename">Pong</span>(time,&nbsp;self)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;msg&nbsp;=&gt;&nbsp;handleSimMessage(msg)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+Whenever a simulant receives <span class="code">Stop</span>, it exits.  If it
+receives a <span class="code">Ping</span>, it responds with a <span class="code">Pong</span>.  If the <span class="code">Ping</span> is for
+time 1, then <span class="code">simStarting</span> is called before the <span class="code">Pong</span> is sent
+back, allowing subclasses to define behavior that should happen
+when the simulation starts running.  Any other message must be
+interpreted by subclasses, so it defers to an abstract 
+<span class="code">handleSimMessage</span> method.</p>
+
+<p>There are two abstract members of a simulant: <span class="code">handleSimMessage</span>  and <span class="code">clock</span>.
+A simulant must know its
+clock so that it can reply to <span class="code">Ping</span> messages and schedule new work
+items.  Putting it all together, the <span class="code">Simulant</span> trait is as shown in <a href="actors-and-concurrency.html#lst:simulant-trait">Listing 30.7</a>.
+<a name="lst:simulant-trait"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">trait</span>&nbsp;<span class="typename">Simulant</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Actor</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;clock:&nbsp;<span class="typename">Clock</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;handleSimMessage(msg:&nbsp;<span class="typename">Any</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;simStarting()&nbsp;{&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;act()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;react&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">Stop</span>&nbsp;=&gt;&nbsp;exit()
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">Ping</span>(time)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(time&nbsp;==&nbsp;<span class="literal">1</span>)&nbsp;simStarting()
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock&nbsp;!&nbsp;<span class="typename">Pong</span>(time,&nbsp;self)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;msg&nbsp;=&gt;&nbsp;handleSimMessage(msg)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;start()
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 30.7 - The <span class="code">Simulant</span> trait.</h5>
+
+
+<p>Note that a simulant goes ahead and starts running the moment
+it is created.  This is safe and convenient, because it will
+not actually do anything until its clock sends it a message,
+and that should not happen until the simulation starts and the
+clock receives a <span class="code">Start</span> message.</p>
+
+<p>That completes the framework for parallel event simulation.  Like its
+sequential cousin in <a href="stateful-objects.html">Chapter 18</a>, it takes
+surprisingly little code.</p>
+
+<h4>Implementing a circuit simulation</h4>
+
+
+<p>Now that the simulation framework is complete, it's time to work on
+the implementation of circuits.  A circuit has a number of wires and
+gates, which will be simulants, and a clock for managing the simulation.
+A wire holds a boolean signal&mdash;either high (<span class="code">true</span>) or low
+(<span class="code">false</span>).  Gates are connected to a number of wires, some of which
+are inputs and others outputs.  Gates compute a signal for
+their output wires based on the state of their input wires.</p>
+
+<p>Since the wire, gates, <i>etc.</i>, of a circuit are only used for that
+particular circuit, their classes can be defined as members of a
+<span class="code">Circuit</span> class, just as with the currency objects of
+<a href="abstract-members.html#sec:currencies">Section 20.9</a>.  The overall <span class="code">Circuit</span> class will
+therefore have a number of members:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">Circuit</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;clock&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Clock</span>
+  &nbsp;&nbsp;<span class="comment">//&nbsp;simulation&nbsp;messages</span>
+  &nbsp;&nbsp;<span class="comment">//&nbsp;delay&nbsp;constants</span>
+  &nbsp;&nbsp;<span class="comment">//&nbsp;Wire&nbsp;and&nbsp;Gate&nbsp;classes&nbsp;and&nbsp;methods</span>
+  &nbsp;&nbsp;<span class="comment">//&nbsp;misc.&nbsp;utility&nbsp;methods</span>
+  }
+</pre><!-- -->
+Now look at each of these members, one group at a time.  First,
+there are the simulation messages.  Once the simulation starts
+running, wires and gates can only communicate via message sends, so
+they will need a message type for each kind of information they want
+to send each other.  There are only two such kinds of information.
+Gates need to tell their output wires to change state, and wires need
+to inform the gates they are inputs to whenever their state changes:
+<pre>
+  <span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">SetSignal</span>(sig:&nbsp;<span class="typename">Boolean</span>)
+  <span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">SignalChanged</span>(wire:&nbsp;<span class="typename">Wire</span>,&nbsp;sig:&nbsp;<span class="typename">Boolean</span>)
+</pre><!-- -->
+Next, there are several delays that must be chosen.  Any work item
+scheduled with the simulation framework&mdash;including propagation of a
+signal to or from a wire&mdash;must be scheduled at some time in the
+future.  It is unclear what the precise delays should be, so those
+delays are worth putting into <span class="code">val</span>s.  This way, they can be easily
+adjusted in the future:
+<pre>
+  <span class="vem">val</span>&nbsp;<span class="typename">WireDelay</span>&nbsp;=&nbsp;<span class="literal">1</span>
+  <span class="vem">val</span>&nbsp;<span class="typename">InverterDelay</span>&nbsp;=&nbsp;<span class="literal">2</span>
+  <span class="vem">val</span>&nbsp;<span class="typename">OrGateDelay</span>&nbsp;=&nbsp;<span class="literal">3</span>
+  <span class="vem">val</span>&nbsp;<span class="typename">AndGateDelay</span>&nbsp;=&nbsp;<span class="literal">3</span>
+</pre><!-- -->
+At this point it is time to look at the <span class="code">Wire</span> and <span class="code">Gate</span> classes.
+Consider wires, first.  A wire is a simulant that has a current signal
+state (high or low) and a list of gates that are observing that state.
+It mixes in the <span class="code">Simulant</span> trait, so it also needs to specify a clock
+to use:
+<pre>
+  <span class="vem">class</span>&nbsp;<span class="typename">Wire</span>(name:&nbsp;<span class="typename">String</span>,&nbsp;init:&nbsp;<span class="typename">Boolean</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Simulant</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;<span class="vem">this</span>(name:&nbsp;<span class="typename">String</span>)&nbsp;{&nbsp;<span class="vem">this</span>(name,&nbsp;<span class="vem">false</span>)&nbsp;}
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;<span class="vem">this</span>()&nbsp;{&nbsp;<span class="vem">this</span>(<span class="quotedstring">"unnamed"</span>)&nbsp;}
+  <br />  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;clock&nbsp;=&nbsp;Circuit.this.clock
+  &nbsp;&nbsp;clock.add(<span class="vem">this</span>)
+  <br />  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;sigVal&nbsp;=&nbsp;init
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;observers:&nbsp;<span class="typename">List[Actor]</span>&nbsp;=&nbsp;<span class="typename">List</span>()
+</pre><!-- -->
+The class also needs a <span class="code">handleSimMessage</span> method to specify how it
+should respond to simulation messages.  The only message a wire should
+receive is <span class="code">SetSignal</span>, the message for changing a wire's signal.
+The response should be that if the signal is different from the
+current signal, the current state changes, and the new signal is
+propagated:
+<pre>
+  <span class="vem">def</span>&nbsp;handleSimMessage(msg:&nbsp;<span class="typename">Any</span>)&nbsp;{
+  &nbsp;&nbsp;msg&nbsp;<span class="vem">match</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">SetSignal</span>(s)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(s&nbsp;!=&nbsp;sigVal)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sigVal&nbsp;=&nbsp;s
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;signalObservers()
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+  }
+  <br />  <span class="vem">def</span>&nbsp;signalObservers()&nbsp;{
+  &nbsp;&nbsp;<span class="vem">for</span>&nbsp;(obs&nbsp;&lt;-&nbsp;observers)
+  &nbsp;&nbsp;&nbsp;&nbsp;clock&nbsp;!&nbsp;<span class="typename">AfterDelay</span>(
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="typename">WireDelay</span>,
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="typename">SignalChanged</span>(<span class="vem">this</span>,&nbsp;sigVal),
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;obs)
+  }
+</pre><!-- -->
+The above code shows how <em>changes</em> in a wire's signal are
+propagated to any gates watching it.  It's also important to pass the
+initial state of a wire to any observing gates.  This only needs to be
+done once, when the simulation starts up.  After that, gates can
+simply store the result of the most recent <span class="code">SignalChanged</span> they have
+received.  Sending out the initial signal when the simulation starts
+is as simple as providing a <span class="code">simStarting()</span> method:
+<pre>
+  <span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;simStarting()&nbsp;{&nbsp;signalObservers()&nbsp;}
+</pre><!-- -->
+There are now just a few more odds and ends about wires.  Wires
+need a method for connecting new gates, and they could use
+a nice <span class="code">toString</span> method:
+<pre>
+  <span class="vem">def</span>&nbsp;addObserver(obs:&nbsp;<span class="typename">Actor</span>)&nbsp;{
+  &nbsp;&nbsp;observers&nbsp;=&nbsp;obs&nbsp;::&nbsp;observers
+  }
+  <br />  <span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;toString&nbsp;=&nbsp;<span class="quotedstring">"Wire("</span>+&nbsp;name&nbsp;+<span class="quotedstring">")"</span>
+</pre><!-- -->
+That is everything you need for wires.  Now consider gates, the other
+major class of objects in a circuit.  There are three fundamental
+gates that would be nice to define: <em>And</em>, <em>Or</em>, and <em>Not</em>.<!-- -->  All of
+these share a lot of behavior, so it is worth defining an abstract
+<span class="code">Gate</span> class to hold the commonality.</p>
+
+<p>A difficulty in defining this <span class="code">Gate</span> class is that some gates have
+two input wires (<em>And</em>, <em>Or</em>) while others have just one (<em>Not</em>).  It would
+be possible to model this difference explicitly.  However, it
+simplifies the code to think of all gates as having two inputs, where
+<em>Not</em> gates simply ignore their second input.  The ignored second input
+can be set to some dummy wire that never changes state from <span class="code">false</span>:
+<pre>
+  <span class="vem">private</span>&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">DummyWire</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Wire</span>(<span class="quotedstring">"dummy"</span>)
+</pre><!-- -->
+Given this trick, the gate class will come together straightforwardly.  It
+mixes in the <span class="code">Simulant</span> trait, and its one constructor accepts two
+input wires and one output wire:
+<pre>
+  <span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Gate</span>(in1:&nbsp;<span class="typename">Wire</span>,&nbsp;in2:&nbsp;<span class="typename">Wire</span>,&nbsp;out:&nbsp;<span class="typename">Wire</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Simulant</span>&nbsp;{
+</pre><!-- -->
+There are two abstract members of <span class="code">Gate</span> that specific subclasses will have
+to fill in.  The most obvious is that different kinds of gates
+compute a different function of their inputs.  Thus, there should 
+be an abstract method for computing an output based on inputs:
+<pre>
+  <span class="vem">def</span>&nbsp;computeOutput(s1:&nbsp;<span class="typename">Boolean</span>,&nbsp;s2:&nbsp;<span class="typename">Boolean</span>):&nbsp;<span class="typename">Boolean</span>
+</pre><!-- -->
+Second, different kinds of gates have different propagation delays.
+Thus, the delay of the gate should be an abstract <span class="code">val</span>:
+<pre>
+  <span class="vem">val</span>&nbsp;delay:&nbsp;<span class="typename">Int</span>
+</pre><!-- -->
+The delay could be a <span class="code">def</span>, but making it a <span class="code">val</span> encodes the
+fact that a particular gate's delay should never change.</p>
+
+<p>Because <span class="code">Gate</span> mixes in <span class="code">Simulant</span>, it is required to specify
+which clock it is using.  As with <span class="code">Wire</span>, <span class="code">Gate</span> should
+specify the clock of the enclosing <span class="code">Circuit</span>.  For convenience,
+the <span class="code">Gate</span> can go ahead and add itself to the clock when it is
+constructed:
+<pre>
+  <span class="vem">val</span>&nbsp;clock&nbsp;=&nbsp;Circuit.this.clock
+  clock.add(<span class="vem">this</span>)
+</pre><!-- -->
+Similarly, it makes sense to go ahead and connect the gate to the two
+input wires, using regular method calls:
+<pre>
+  in1.addObserver(<span class="vem">this</span>)
+  in2.addObserver(<span class="vem">this</span>)
+</pre><!-- -->
+The only local state of a gate is the most recent signal on each of
+its input wires.  This state needs to be stored, because wires only
+send a signal when the state changes.  If one input wire changes, only
+that one wire's state will be sent to the gate, but the new output
+will need to be computed from both wires' states:
+<pre>
+  <span class="vem">var</span>&nbsp;s1,&nbsp;s2&nbsp;=&nbsp;<span class="vem">false</span>
+</pre><!-- -->
+Now look at how gates respond to simulation messages.  There is only
+one message they need to handle, and that's the <span class="code">SignalChanged</span>
+message indicating that one of the input wires has changed.
+When a <span class="code">SignalChanged</span> arrives, two things need to be
+done.  First, the local notion of the wire states need to be updated
+according to the change.  Second, the new output needs to be computed
+and then sent out to the output wire with a <span class="code">SetSignal</span> message:</p>
+
+<pre>
+  <span class="vem">def</span>&nbsp;handleSimMessage(msg:&nbsp;<span class="typename">Any</span>)&nbsp;{
+  &nbsp;&nbsp;msg&nbsp;<span class="vem">match</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">SignalChanged</span>(w,&nbsp;sig)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(w&nbsp;==&nbsp;in1)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s1&nbsp;=&nbsp;sig
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(w&nbsp;==&nbsp;in2)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s2&nbsp;=&nbsp;sig
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock&nbsp;!&nbsp;<span class="typename">AfterDelay</span>(delay,
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="typename">SetSignal</span>(computeOutput(s1,&nbsp;s2)),
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;out)
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+<!-- -->Given this abstract <span class="code">Gate</span> class, it is
+now easy to define specific kinds of gates.  As with the sequential
+simulation in <a href="stateful-objects.html">Chapter 18</a>, the gates can be
+created as side effects of calling some utility methods.  All the
+methods need to do is create a <span class="code">Gate</span> and fill in the appropriate
+delay and output computation.  Everything else is common to 
+all gates and is handled in the <span class="code">Gate</span> class:
+<pre>
+  <span class="vem">def</span>&nbsp;orGate(in1:&nbsp;<span class="typename">Wire</span>,&nbsp;in2:&nbsp;<span class="typename">Wire</span>,&nbsp;output:&nbsp;<span class="typename">Wire</span>)&nbsp;=&nbsp;
+  &nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Gate</span>(in1,&nbsp;in2,&nbsp;output)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;delay&nbsp;=&nbsp;<span class="typename">OrGateDelay</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;computeOutput(s1:&nbsp;<span class="typename">Boolean</span>,&nbsp;s2:&nbsp;<span class="typename">Boolean</span>)&nbsp;=&nbsp;s1&nbsp;||&nbsp;s2&nbsp;
+  &nbsp;&nbsp;}
+  <br />  <span class="vem">def</span>&nbsp;andGate(in1:&nbsp;<span class="typename">Wire</span>,&nbsp;in2:&nbsp;<span class="typename">Wire</span>,&nbsp;output:&nbsp;<span class="typename">Wire</span>)&nbsp;=&nbsp;
+  &nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Gate</span>(in1,&nbsp;in2,&nbsp;output)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;delay&nbsp;=&nbsp;<span class="typename">AndGateDelay</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;computeOutput(s1:&nbsp;<span class="typename">Boolean</span>,&nbsp;s2:&nbsp;<span class="typename">Boolean</span>)&nbsp;=&nbsp;s1&nbsp;&amp;&amp;&nbsp;s2&nbsp;
+  &nbsp;&nbsp;}
+</pre><!-- -->
+In the case of <em>Not</em> gates, a dummy wire will be specified as the second
+input.  This is an implementation detail from the point of view of a
+caller creating a <em>Not</em> gate, so the <span class="code">inverter</span> method only takes one
+input wire instead of two:
+<pre>
+  <span class="vem">def</span>&nbsp;inverter(input:&nbsp;<span class="typename">Wire</span>,&nbsp;output:&nbsp;<span class="typename">Wire</span>)&nbsp;=&nbsp;
+  &nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Gate</span>(input,&nbsp;<span class="typename">DummyWire</span>,&nbsp;output)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;delay&nbsp;=&nbsp;<span class="typename">InverterDelay</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;computeOutput(s1:&nbsp;<span class="typename">Boolean</span>,&nbsp;ignored:&nbsp;<span class="typename">Boolean</span>)&nbsp;=&nbsp;!s1
+  &nbsp;&nbsp;}
+</pre><!-- -->
+At this point the library can simulate circuits, but, as described in
+<a href="stateful-objects.html">Chapter 18</a>, it is useful to add a
+wire-probing utility so that you can watch the circuit evolve.
+Without such a utility, the simulation would have no way to know which
+wires are worth logging and which are more like implementation
+details.
+
+
+<p>Define a <span class="code">probe</span> method that takes a <span class="code">Wire</span> as an argument and then
+prints out a line of text whenever that wire's signal changes.  The
+method can be implemented by simply making a new simulant that
+connects itself to a specified wire.  This simulant can respond to
+<span class="code">SignalChanged</span> messages by printing out the new signal:
+<pre>
+  <span class="vem">def</span>&nbsp;probe(wire:&nbsp;<span class="typename">Wire</span>)&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Simulant</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;clock&nbsp;=&nbsp;Circuit.this.clock
+  &nbsp;&nbsp;clock.add(<span class="vem">this</span>)
+  &nbsp;&nbsp;wire.addObserver(<span class="vem">this</span>)
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;handleSimMessage(msg:&nbsp;<span class="typename">Any</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;msg&nbsp;<span class="vem">match</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">SignalChanged</span>(w,&nbsp;s)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"signal&nbsp;"</span>+&nbsp;w&nbsp;+<span class="quotedstring">"&nbsp;changed&nbsp;to&nbsp;"</span>+&nbsp;s)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+  }
+</pre><!-- --></p>
+
+<p>That is the bulk of the <span class="code">Circuit</span> class.  Callers should create an
+instance of <span class="code">Circuit</span>, create a bunch of wires and gates, call
+<span class="code">probe</span> on a few wires of interest, and then start the simulation
+running.  The one piece missing is how the simulation is started, and
+that can be as simple as sending the clock a <span class="code">Start</span> message:
+<pre>
+  <span class="vem">def</span>&nbsp;start()&nbsp;{&nbsp;clock&nbsp;!&nbsp;<span class="typename">Start</span>&nbsp;}
+</pre><!-- --></p>
+
+<p><a name="lst:adders"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">trait</span>&nbsp;<span class="typename">Adders</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Circuit</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;halfAdder(a:&nbsp;<span class="typename">Wire</span>,&nbsp;b:&nbsp;<span class="typename">Wire</span>,&nbsp;s:&nbsp;<span class="typename">Wire</span>,&nbsp;c:&nbsp;<span class="typename">Wire</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;d,&nbsp;e&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Wire</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;orGate(a,&nbsp;b,&nbsp;d)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;andGate(a,&nbsp;b,&nbsp;c)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inverter(c,&nbsp;e)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;andGate(d,&nbsp;e,&nbsp;s)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;fullAdder(a:&nbsp;<span class="typename">Wire</span>,&nbsp;b:&nbsp;<span class="typename">Wire</span>,&nbsp;cin:&nbsp;<span class="typename">Wire</span>,
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sum:&nbsp;<span class="typename">Wire</span>,&nbsp;cout:&nbsp;<span class="typename">Wire</span>)&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;s,&nbsp;c1,&nbsp;c2&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Wire</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;halfAdder(a,&nbsp;cin,&nbsp;s,&nbsp;c1)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;halfAdder(b,&nbsp;s,&nbsp;sum,&nbsp;c2)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;orGate(c1,&nbsp;c2,&nbsp;cout)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 30.8 - Adder components.</h5>
+
+
+<p>More complicated circuit components can be built from methods just as
+it was explained previously in
+<a href="stateful-objects.html">Chapter 18</a>. For instance
+<a href="actors-and-concurrency.html#lst:adders">Listing 30.8</a> shows again the half adder and full adder
+components that were already introduced then. Their implementation
+stays is the same, but as a small variation they are now packaged in a
+trait, named <span class="code">Adders</span>, whereas in <a href="stateful-objects.html">Chapter 18</a> they were
+contained in an abstract class. 
+Because the trait is marked as extending <span class="code">Circuit</span>, it can directly access
+members of <span class="code">Circuit</span> such as <span class="code">Wire</span> and <span class="code">orGate</span>.  Using the trait
+then looks like this:
+<pre>
+  <span class="vem">val</span>&nbsp;circuit&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Circuit</span>&nbsp;<span class="vem">with</span>&nbsp;<span class="typename">Adders</span>
+</pre><!-- -->
+This <span class="code">circuit</span> variable holds a circuit that has all of the methods
+of <span class="code">Circuit</span> and all of the methods of <span class="code">Adders</span>.  
+Note that with this coding pattern, based on a trait instead of a class,
+you set the stage to provide multiple component sets.  Users
+mix in whichever component sets they plan to use, like this:
+<pre>
+  <span class="vem">val</span>&nbsp;circuit&nbsp;=
+  &nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Circuit</span>&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">with</span>&nbsp;<span class="typename">Adders</span>&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">with</span>&nbsp;<span class="typename">Multiplexers</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">with</span>&nbsp;<span class="typename">FlipFlops</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">with</span>&nbsp;<span class="typename">MultiCoreProcessors</span>
+</pre><!-- --></p>
+
+<h4>Trying it all out</h4>
+
+
+<p>That's the whole framework.  It includes a simulation framework, a
+circuit simulation class, and a small library of standard adder
+components.  Here is a simple demo object that uses it:
+<pre>
+  <span class="vem">object</span>&nbsp;<span class="typename">Demo</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;main(args:&nbsp;<span class="typename">Array[String]</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;circuit&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Circuit</span>&nbsp;<span class="vem">with</span>&nbsp;<span class="typename">Adders</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">import</span>&nbsp;circuit._
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ain&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Wire</span>(<span class="quotedstring">"ain"</span>,&nbsp;<span class="vem">true</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;bin&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Wire</span>(<span class="quotedstring">"bin"</span>,&nbsp;<span class="vem">false</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;cin&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Wire</span>(<span class="quotedstring">"cin"</span>,&nbsp;<span class="vem">true</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;sout&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Wire</span>(<span class="quotedstring">"sout"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;cout&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Wire</span>(<span class="quotedstring">"cout"</span>)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;probe(ain)
+  &nbsp;&nbsp;&nbsp;&nbsp;probe(bin)
+  &nbsp;&nbsp;&nbsp;&nbsp;probe(cin)
+  &nbsp;&nbsp;&nbsp;&nbsp;probe(sout)
+  &nbsp;&nbsp;&nbsp;&nbsp;probe(cout)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;fullAdder(ain,&nbsp;bin,&nbsp;cin,&nbsp;sout,&nbsp;cout)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;circuit.start()
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+This example creates a circuit that includes the <span class="code">Adders</span> trait.  It
+immediately imports all of the circuit's members, thus allowing easy
+accesses to methods like <span class="code">probe</span> and <span class="code">fullAdder</span>.  Without the
+import, it would be necessary to write <span class="code">circuit.probe(ain)</span> instead
+of just <span class="code">probe(ain)</span>.</p>
+
+<p>The example then creates five wires.  Three will be used as inputs
+(<span class="code">ain</span>, <span class="code">bin</span>, and <span class="code">cin</span>), and two will be used as outputs
+(<span class="code">sout</span>, <span class="code">cout</span>).  The three input wires are given arbitrary initial
+signals of <span class="code">true</span>, <span class="code">false</span>, and <span class="code">true</span>.  These inputs correspond
+to adding 1 to 0, with a carry in of 1.</p>
+
+<p>The <span class="code">probe</span> method gets applied to all five externally visible wires,
+so any changes in their state can be observed as the simulation runs.
+Finally the wires are plugged into a full adder, and the simulation is
+started.  The output of the simulation is as follows:</p>
+
+<pre>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;1</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;2</span>
+  <span class="output">signal&nbsp;Wire(cout)&nbsp;changed&nbsp;to&nbsp;false</span>
+  <span class="output">signal&nbsp;Wire(cin)&nbsp;changed&nbsp;to&nbsp;true</span>
+  <span class="output">signal&nbsp;Wire(ain)&nbsp;changed&nbsp;to&nbsp;true</span>
+  <span class="output">signal&nbsp;Wire(sout)&nbsp;changed&nbsp;to&nbsp;false</span>
+  <span class="output">signal&nbsp;Wire(bin)&nbsp;changed&nbsp;to&nbsp;false</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;3</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;4</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;5</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;6</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;7</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;8</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;9</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;10</span>
+  <span class="output">signal&nbsp;Wire(cout)&nbsp;changed&nbsp;to&nbsp;true</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;11</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;12</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;13</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;14</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;15</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;16</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;17</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;18</span>
+  <span class="output">signal&nbsp;Wire(sout)&nbsp;changed&nbsp;to&nbsp;true</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;19</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;20</span>
+  <span class="output">Advancing&nbsp;to&nbsp;time&nbsp;21</span>
+  <span class="output">signal&nbsp;Wire(sout)&nbsp;changed&nbsp;to&nbsp;false</span>
+  <span class="output">**&nbsp;Agenda&nbsp;empty.&nbsp;&nbsp;Clock&nbsp;exiting&nbsp;at&nbsp;time&nbsp;21.</span>
+</pre><!-- -->
+As expected, with inputs of 1, 0, and 1 (<span class="code">true</span>, <span class="code">false</span> and
+<span class="code">true</span>), the outputs are a carry of 1 and sum of 0 (<span class="code">cout</span> is
+<span class="code">true</span>, and <span class="code">sout</span> is <span class="code">false</span>).
+
+
+<h3><a name="30.7"></a>30.7 Conclusion <span style="font-size: .5em">[<a href="actors-and-concurrency.html#30.7">link</a>]</span></h3>
+
+
+<p>Concurrent programming gives you great power.  It lets you simplify
+your code, and it lets you take advantage of multiple processors.  It
+is therefore unfortunate that the most widely used concurrency
+primitives, threads, locks, and monitors, are such a minefield of
+deadlocks and race conditions.</p>
+
+<p>The actors style provides a way out of the minefield, letting you
+write concurrent programs without having such a great risk of
+deadlocks and race conditions.  This chapter has introduced several
+fundamental constructs for working with actors in Scala, including how
+to create actors, how to send and receive messages, and how to
+conserve threads with <span class="code">react</span>, among other nuts and bolts.  It then
+showed you how to use these constructs as part of a general actors
+style.</p>
+
+<hr/>
+<h4>Footnotes for Chapter 30:</h4>
+
+
+<p><a name="footnote30-1">[1]</a> As described in
+<a href="case-classes-and-pattern-matching.html#sec:partial-functions">Section 15.7</a>, a <em>partial function</em> literal is expressed as a series
+of <span class="code">match</span> alternatives or "cases." It looks like a <span class="code">match</span> expression without the <span class="code">match</span> keyword.</p>
+
+<p><a name="footnote30-2">[2]</a> Behind the scenes, <span class="code">react</span> will throw an exception after its done.</p>
+
+<p><a name="footnote30-3">[3]</a> Another benefit is that a message send 
+ensures the message object is <em>safely published</em> to other threads, as described in
+Goetz,<a id="i348023279-1"></a> <i>et. al.</i>, <em>Java Concurrency in
+Practice</em>, p. 49. <a href="bibliography.html#goetz:java-con-in-prac">goetz:java-con-in-prac</a><a id="i-374110760-1"></a></p>
+
+<p><a name="footnote30-4">[4]</a> When using
+<span class="code">react</span>, different messages could potentially be handled by different threads, but if so they will be
+handled sequentially and with sufficient synchronization to allow you to program under the simplifying assumption
+that each <span class="code">act</span> method is confined to a single thread.</p>
+
+
+
+<br clear="all">
+<p>
+<center>
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/actors-and-concurrencyP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/combining-scala-and-java.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/combinator-parsing.html">Next</a>
+</div>
+</center>
+</div>
+<hr width="100%" />
+<center>
+<script type="text/javascript"><!--
+google_ad_client = "pub-3911176865765226";
+google_alternate_color = "ffffff";
+google_ad_width = 728;
+google_ad_height = 15;
+google_ad_format = "728x15_0ads_al";
+google_ad_channel = "";
+google_color_border = "ffffff";
+google_color_bg = "FFFFFF";
+google_color_link = "003090";
+google_color_text = "000000";
+google_color_url = "666666";
+//--></script>
+<script type="text/javascript"
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+<br />
+<br />
+<!-- SiteSearch Google -->
+<form method="get" action="http://www.google.com/custom">
+<table border="0" bgcolor="#ffffff">
+<tr><td nowrap="nowrap" valign="top" align="left" height="32">
+<a href="http://www.google.com/">
+<img src="http://www.google.com/logos/Logo_25wht.gif"
+border="0" alt="Google"></img></a>
+</td>
+<td nowrap="nowrap">
+<input type="hidden" name="domains" value="Artima.com"></input>
+<input type="text" name="q" size="31" maxlength="255" value=""></input>
+<input type="submit" name="sa" value="Search"></input>
+</td></tr>
+<tr>
+<td>&nbsp;</td>
+<td nowrap="nowrap">
+<font size="-1" color="#000000">
+<input type="radio" name="sitesearch" value=""></input> Web
+<input type="radio" name="sitesearch" value="Artima.com" checked="checked"></input>Artima.com
+</font>&nbsp;&nbsp;
+<input type="hidden" name="client" value="pub-3911176865765226"></input>
+<input type="hidden" name="forid" value="1"></input>
+<input type="hidden" name="ie" value="ISO-8859-1"></input>
+<input type="hidden" name="oe" value="ISO-8859-1"></input>
+<input type="hidden" name="cof" value="GALT:#008000;GL:1;DIV:#336699;VLC:663399;AH:center;BGC:FFFFFF;LBGC:FFFFFF;ALC:0000FF;LC:0000FF;T:000000;GFNT:0000FF;GIMP:0000FF;LH:50;LW:150;L:http://www.artima.com/images/artima150.gif;S:http://www.artima.com;FORID:1;"></input>
+<input type="hidden" name="hl" value="en"></input>
+</td></tr></table>
+</form>
+<!-- SiteSearch Google -->
+</center>
+<div class="sp">
+<div style="text-align: center">
+<a href="http://www.artima.com/copyright.html">Copyright</a> &copy; 1996-2014 Artima, Inc. All Rights Reserved.</a> - <a href="http://www.artima.com/privacy.html">Privacy Policy</a> - <a href="http://www.artima.com/termsofuse.html">Terms of Use</a> - <a href="http://www.artima.com/advertising.html">Advertise with Us</a>
+</div>
+</div>
+<br />
+</body>
+</html>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+  <rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://purl.org/rss/1.0/"
+  >
+
+  <channel rdf:about="http://www.artima.com/weblogs/feeds/weblogs.rss">
+    <title>Artima Weblogs</title>
+    <link>http://www.artima.com/weblogs/</link>
+    <description>
+Artima Weblogs is a community of bloggers posting on a wide range of topics of interest to software developers.
+    </description>
+    <image rdf:resource="http://www.artima.com/images/artima88x33.gif"/>
+    <items>
+      <rdf:Seq>
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=362327" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=361787" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=362212" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=362200" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=361795" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=361740" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=361253" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=361087" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=355465" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=354443" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=352502" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=352018" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=351308" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=351149" />
+        <rdf:li resource="http://www.artima.com/weblogs/viewpost.jsp?thread=350864" />
+      </rdf:Seq>
+    </items>
+  </channel>
+
+  <image rdf:about="http://www.artima.com/images/artima88x33.gif">
+    <title>Artima.com</title>
+    <url>http://www.artima.com/images/artima88x33.gif</url>
+    <link>http://www.artima.com/</link>
+  </image>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=362327">
+    <title>For the Sake of Simplicity</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=362327</link>
+    <description>
+Fifteen years ago this month a piece of mine appeared in EXE Magazine (RIP) lamenting unnecessary complexity in software. A significant update for the twenty-first century proves to be unnecessary. The message and the examples are the same, so I'm posting it again for posterity, as caution for the next fifteen years, and for the sake of simplicity.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=361787">
+    <title>Markdown vs. AsciiDoc</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=361787</link>
+    <description>
+Markdown has a lot of users and tools, but it was pointed out that it's limited and has been forked, while AsciiDoc has an extensible architecture.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=362212">
+    <title>Scala Summit in Crested Butte, CO, September 15-19 2014</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=362212</link>
+    <description>
+Come create conversation, generate ideas, hack projects, hike, fish and
+mountain bike at the second annual Scala Summit! This year we hope to see the
+leaves change and you'll experience the glorious autumn weather at 9,000 feet
+in the Rocky Mountains.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=362200">
+    <title>Ghost</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=362200</link>
+    <description>
+A friend asked if I'd tried Ghost. I know of it, but it's confusing about what it can do.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=361795">
+    <title>Announcing Pojomatic 2.0</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=361795</link>
+    <description>
+Pojomatic 2.0 has been released, and uses InvokeDynamic to give performance nearing that of hand-rolled code.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=361740">
+    <title>Update: Search for New Programming Blog Platform</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=361740</link>
+    <description>
+I've continued my background task of finding a new home for programming articles. I'm not there yet, but I've made some progress.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=361253">
+    <title>Apple's New Swift Language</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=361253</link>
+    <description>
+This is also a trial post on Codrspace, to see how that works as a programming blog platform
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=361087">
+    <title>Videos of Recent Presentations</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=361087</link>
+    <description>
+On April 24, I spoke at the Craft conference in Budapest. On May 7, I spoke at the SF Scala user group. Here are links to the videos, along with my Reinventing Business presentation from last Summer's OSCON.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=355465">
+    <title>Atomic Scala eBook &amp;#38; Downloadable Hands-On Java eSeminar</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=355465</link>
+    <description>
+I've been doing a lot of media production in recent months and the efforts have borne fruit: I've created my first full-fledged eBook (after lots of research) and I've reworked the Hands-On Java eSeminar so it's now a download instead of mailing a CD.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=354443">
+    <title>A Hazard of Covariant Return Types and Bridge Methods</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=354443</link>
+    <description>
+A combination of bridge methods, covariant return types and dynamic dispatch can lead to some surprising and unfortunate results.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=352502">
+    <title>The Scala Summit in Crested Butte, August 19-21</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=352502</link>
+    <description>
+This is the first iteration of an event we hope to evolve into something like The Java Posse Roundup, but with hiking and mountain biking instead of snow activities. We already have an impressive list of name-brand attendees.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=352018">
+    <title>ScalaTest 2.0.M6 Preview</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=352018</link>
+    <description>
+The 2.0.M6 milestone release of ScalaTest is coming soon. It is a major release with many new features. In this post, I give a preview of the new features, and ask for feedback.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=351308">
+    <title>Use Uncertainty As a Driver</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=351308</link>
+    <description>
+Uncertainty is normally seen as something you must either suppress or avoid. Of this many people appear, well, certain. That you should embrace it and use it to help determine schedule and design is not immediately obvious.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=351149">
+    <title>Simplicity Before Generality, Use Before Reuse</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=351149</link>
+    <description>
+Generality and reusability sound like such good qualities to have in code that is easy to forget not only how hard they are to achieve, but also that without the more modest qualities of simplicity and utility how little value they may hold.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/weblogs/viewpost.jsp?thread=350864">
+    <title>Windows 8 is ... Not So Bad</title>
+    <link>http://www.artima.com/weblogs/viewpost.jsp?thread=350864</link>
+    <description>
+After a lot of trepidation because of bad press, I've rapidly come to prefer Windows 8 over Windows 7. Because an equivalent-horsepower Mac is 3 times the cost of a Windows 8 machine, I'm moving back to Windows.
+    </description>
+  </item>
+
+</rdf:RDF>

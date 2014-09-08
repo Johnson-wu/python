@@ -1,0 +1,1604 @@
+<html>
+<head>
+<title>Collections</title>
+<meta name="description" content="
+" />
+<meta name="keywords" content="scala" />
+<meta name="author" content="Martin Odersky, Lex Spoon, and Bill Venners" />
+<link rel="stylesheet" type="text/css" href="/artima.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+</head>
+<body><table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="bottom">
+<a href="/index.jsp"><img src="/images/a7.gif" alt="The Artima Developer Community" border="0" width="550" height="43" /></a>
+</td>
+</table>
+<table width="100%" bgcolor="#333333">
+<tr>
+<td align="center">
+<div class="ml">
+<a href="/articles" class="hl">Articles</a>&nbsp;|
+<a href="/news/index.jsp" class="hl">News</a>&nbsp;|
+<a href="/weblogs/index.jsp" class="hl">Weblogs</a>&nbsp;|
+<a href="/buzz/index.jsp" class="hl">Buzz</a>&nbsp;|
+<a href="/shop/catalog" class="hl">Books</a>&nbsp;|
+<a href="/forums/index.jsp" class="hl">Forums</a>
+</div>
+</td>
+</tr>
+</table>
+<table width="100%" bgcolor="#AACCFF">
+<tr>
+<td align="center">
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/collectionsP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/working-with-lists.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/stateful-objects.html">Next</a>
+</div>
+</td>
+</tr>
+</table>
+<BR>
+<div class="vegies">
+<div class="tc">
+<span class="sts">Chapter 17 of Programming in Scala, First Edition</span><br />
+<span class="ts">Collections</span><br />
+<span class="as">by Martin Odersky, Lex Spoon, and Bill Venners</span><br />
+<span class="pd">December 10, 2008</span><br />
+</div>
+
+
+
+
+<p>Scala has a rich collections library. You've already seen the most commonly used collection
+types in previous chapters&mdash;arrays, lists, sets, and maps&mdash;but there is more to the story. In this chapter, we'll start by
+giving an overview of how these types relate to each other in the collections inheritance
+hierarchy. We'll also briefly describe these and various other collection types that you may occasionally want to use, including
+discussing their tradeoffs of speed, space, and requirements on input data.<a id="i1853891989-1"></a></p>
+
+<h3><a name="17.1"></a>17.1 Overview of the library <span style="font-size: .5em">[<a href="collections.html#17.1">link</a>]</span></h3>
+
+
+<p>The Scala collections library involves many classes and traits. As a result, it can be challenging
+to get a big picture of the library by browsing the Scaladoc documentation. In <a href="collections.html#fig:collections-hierarchy">Figure 17.1</a>,
+we show just the traits you need to know about to understand the big picture.</p>
+
+<p>The main trait is <span class="code">Iterable</span>,<a id="i328792320-1"></a> which is the supertrait of both mutable and immutable
+variations of sequences (<span class="code">Seq</span>s), sets,
+and maps.
+Sequences are ordered collections, such as arrays and lists. Sets contain at most
+one of each object, as determined by the <span class="code">==</span> method. Maps contain a collection of keys mapped to values.</p>
+
+<p><span class="code">Iterable</span> is so named because it represents
+collection objects that can produce an
+<span class="code">Iterator</span><a id="i1724581734-1"></a> via a method named
+<span class="code">elements</span><a id="i1465360794-1"></a>:
+<pre>
+  <span class="vem">def</span>&nbsp;elements:&nbsp;<span class="typename">Iterator[A]</span>
+</pre><!-- -->
+The <span class="code">A</span> in this example is the type parameter to <span class="code">Iterator</span>, which 
+indicates the type of element objects contained in the collection.
+The <span class="code">Iterator</span> returned by <span class="code">elements</span> is parameterized by the same type.
+An <span class="code">Iterable[Int]</span>'s <span class="code">elements</span> method, for example,
+will produce an <span class="code">Iterator[Int]</span>.</p>
+
+<p><span class="code">Iterable</span> provides dozens of useful concrete methods, all
+implemented in terms of the <span class="code">Iterator</span> returned by <span class="code">elements</span>, which is the sole abstract method in trait <span class="code">Iterable</span>.
+Among the methods defined in <span class="code">Iterable</span> are many higher-order methods, most of which you've already seen in previous chapters.
+Some examples are <span class="code">map</span>, <span class="code">flatMap</span>, <span class="code">filter</span>, <span class="code">exists</span>, and <span class="code">find</span>.
+These higher-order methods provide concise ways to iterate through
+collections for specific purposes, such as to transform each element and produce a new collection (the <span class="code">map</span> method) or find the first occurrence of an element
+given a predicate (the <span class="code">find</span> method).</p>
+
+<div class="figure"><a name="fig:collections-hierarchy"></a>
+
+
+<p><img src="images/collections.jpg" alt="image images/collections.jpg"/></p>
+
+</div>
+<h5> Figure 17.1 - Class hierarchy for Scala collections.<a id="i-1854640549-1"></a><a id="i-1691199868-1"></a><a id="i1751340543-1"></a></h5>
+
+
+<p>An <span class="code">Iterator</span> has many of the same methods as <span class="code">Iterable</span>, including the higher-order ones, but does not belong to the same hierarchy. As shown 
+in <a href="collections.html#fig:iterator-hierarchy">Figure 17.2</a>, trait <span class="code">Iterator</span> extends <span class="code">AnyRef</span>. The difference between <span class="code">Iterable</span> and <span class="code">Iterator</span>
+is that trait <span class="code">Iterable</span> represents types that can be iterated over (<i>i.e.</i>, collection types), whereas trait <span class="code">Iterator</span> is
+the mechanism used to perform an iteration. Although an <span class="code">Iterable</span> can be iterated over multiple times, an <span class="code">Iterator</span> can
+be used just once. Once you've iterated through a collection with an <span class="code">Iterator</span>, you can't reuse it. If you need to iterate through
+the same collection again, you'll need to call <span class="code">elements</span> on that collection to obtain a new <span class="code">Iterator</span>.</p>
+
+<p>The many concrete methods provided by <span class="code">Iterator</span> are implemented in
+terms of two abstract methods, <span class="code">next</span><a id="i1108447773-1"></a> and <span class="code">hasNext</span>:<a id="i390091735-1"></a>
+<pre>
+  <span class="vem">def</span>&nbsp;hasNext:&nbsp;<span class="typename">Boolean</span>
+  <span class="vem">def</span>&nbsp;next:&nbsp;A
+</pre><!-- -->
+The <span class="code">hasNext</span> method indicates whether any elements remain in the iteration. The <span class="code">next</span> method returns
+the next element.</p>
+
+<p>Although most of the <span class="code">Iterable</span> implementations you are likely to encounter will represent collections
+of a finite size, <span class="code">Iterable</span> can also be used
+to represent infinite collections. The <span class="code">Iterator</span> returned from an infinite collection could, for example, calculate and return the next
+digit of &pi; each time its <span class="code">next</span> method was invoked.</p>
+
+<div class="figure"><a name="fig:iterator-hierarchy"></a>
+
+
+<p><img src="images/iterator.jpg" alt="image images/iterator.jpg"/></p>
+
+</div>
+<h5> Figure 17.2 - Class hierarchy for <span class="code">Iterator</span>.<a id="i128022489-1"></a><a id="i1562158708-1"></a></h5>
+
+
+<h3><a name="17.2"></a>17.2 Sequences <span style="font-size: .5em">[<a href="collections.html#17.2">link</a>]</span></h3>
+
+
+<p><a name="sec:sequences"></a></p>
+
+<p>Sequences, classes that inherit from trait <span class="code">Seq</span>,<a id="i-1529225491-2"></a> let you work
+with groups of data lined up in order.  Because the elements are
+ordered, you can ask for the first element, second element, 
+103rd element, and so on.  In this section, we'll give you a quick tour of
+the most important sequences.</p>
+
+<h4>Lists</h4>
+
+
+<p>Perhaps the most important sequence type to know about<!-- --><!-- --> is class <span class="code">List</span>,<a id="i882498454-2"></a>
+the immutable linked-list described in detail in the previous chapter.
+Lists support fast addition and
+removal of items to the beginning of the list, but they do not
+provide fast access to arbitrary indexes because the <a id="i-394736131-1"></a>
+implementation must iterate through the list linearly.</p>
+
+<p>This combination of features might sound odd, but they hit a sweet
+spot that works well for many algorithms.  The fast addition and
+removal of initial elements means that pattern matching works well, as
+described in <a href="case-classes-and-pattern-matching.html">Chapter 15</a>.
+The immutability of lists helps you develop correct,
+efficient algorithms because you never need to make copies of a list.
+Here's a short example showing how to initialize a list and access its head and tail:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;colors&nbsp;=&nbsp;<span class="typename">List</span>(<span class="quotedstring">"red"</span>,&nbsp;<span class="quotedstring">"blue"</span>,&nbsp;<span class="quotedstring">"green"</span>)
+  <span class="output">colors:&nbsp;List[java.lang.String]&nbsp;=&nbsp;List(red,&nbsp;blue,&nbsp;green)</span>
+  <br />  scala&gt;&nbsp;colors.head
+  <span class="output">res0:&nbsp;java.lang.String&nbsp;=&nbsp;red</span>
+  <br />  scala&gt;&nbsp;colors.tail
+  <span class="output">res1:&nbsp;List[java.lang.String]&nbsp;=&nbsp;List(blue,&nbsp;green)</span>
+</pre><!-- -->
+For an introduction to lists see <a href="next-steps-in-scala.html#step8">Step 8</a> in <a href="next-steps-in-scala.html">Chapter 3</a>, and for the
+details on using lists, see <a href="working-with-lists.html">Chapter 16</a>. Lists
+will also be discussed in <a href="implementing-lists.html">Chapter 22</a>, which provides insight into how lists
+are implemented in Scala.</p>
+
+<h4>Arrays</h4>
+
+
+<p>Arrays allow you to hold
+a sequence of elements and efficiently access an element at an arbitrary position,<a id="i341425106-2"></a>
+ both to get or update the element, with a zero-based
+index.<a id="i-1409164998-2"></a><a id="i916713681-1"></a>  Here's how you create an array whose size you know, but for which you don't yet know
+the element values:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;fiveInts&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Array[Int]</span>(<span class="literal">5</span>)
+  <span class="output">fiveInts:&nbsp;Array[Int]&nbsp;=&nbsp;Array(0,&nbsp;0,&nbsp;0,&nbsp;0,&nbsp;0)</span>
+</pre><!-- -->
+Here's how you initialize an array when you do know the element values:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;fiveToOne&nbsp;=&nbsp;<span class="typename">Array</span>(<span class="literal">5</span>,&nbsp;<span class="literal">4</span>,&nbsp;<span class="literal">3</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">1</span>)
+  <span class="output">fiveToOne:&nbsp;Array[Int]&nbsp;=&nbsp;Array(5,&nbsp;4,&nbsp;3,&nbsp;2,&nbsp;1)</span>
+</pre><!-- -->
+As mentioned previously, arrays are accessed in Scala by placing an index in parentheses, not square brackets as in Java.
+Here's an example of both accessing and updating an array element:
+<pre>
+  scala&gt;&nbsp;fiveInts(<span class="literal">0</span>)&nbsp;=&nbsp;fiveToOne(<span class="literal">4</span>)
+  <br />  scala&gt;&nbsp;fiveInts
+  <span class="output">res1:&nbsp;Array[Int]&nbsp;=&nbsp;Array(1,&nbsp;0,&nbsp;0,&nbsp;0,&nbsp;0)</span>
+</pre><!-- -->
+Scala arrays are represented in the same way as Java arrays.  So, you can seamlessly use
+existing Java methods that return arrays.<a href="collections.html#footnote17-1">[1]</a></p>
+
+<p>You have seen arrays in action many times in previous chapters.
+The basics are in <a href="next-steps-in-scala.html#step7">Step 7</a> in <a href="next-steps-in-scala.html">Chapter 3</a>.
+Several examples of iterating through the elements of an array with a <span class="code">for</span> expression are shown
+in <a href="builtin-control-structures.html#sec:for-expressions">Section 7.3</a>. Arrays also figure prominently in the two-dimensional layout library
+of <a href="composition-and-inheritance.html">Chapter 10</a>.</p>
+
+<h4>List buffers</h4>
+
+
+<p>Class <span class="code">List</span> provides fast access to the head of the list, but not the end. Thus, when you need to
+build a list by appending to the end, you should consider building the list backwards by prepending elements
+to the front, then when you're done, calling <span class="code">reverse</span> to get the elements in the order you need.</p>
+
+<p>Another alternative, which avoids the <span class="code">reverse</span> operation, is to use a
+<span class="code">ListBuffer</span>.<a id="i-1815843466-2"></a>
+A <span class="code">ListBuffer</span> is a mutable object (contained in package <span class="code">scala.collection.mutable</span>), which can<a id="i-737429794-1"></a>
+help you build lists more efficiently when you need to append. <span class="code">ListBuffer</span> provides constant time append and prepend
+operations. You append elements with the <span class="code">+=</span>
+operator,<a id="i714754650-1"></a> and prepend
+them with the <span class="code">+:</span> operator.<a id="i-42012992-1"></a>
+When you're done building, you can obtain
+a <span class="code">List</span> by invoking <span class="code">toList</span><a id="i-330065859-1"></a> on the <span class="code">ListBuffer</span>. Here's an example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable.ListBuffer
+  <span class="output">import&nbsp;scala.collection.mutable.ListBuffer</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;buf&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ListBuffer[Int]</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">buf:&nbsp;scala.collection.mutable.ListBuffer[Int]&nbsp;=&nbsp;ListBuffer()</span>
+  <br />  scala&gt;&nbsp;buf&nbsp;+=&nbsp;<span class="literal">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <br />  scala&gt;&nbsp;buf&nbsp;+=&nbsp;<span class="literal">2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <br />  scala&gt;&nbsp;buf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">res11:&nbsp;scala.collection.mutable.ListBuffer[Int]</span>
+  <span class="output">&nbsp;&nbsp;=&nbsp;ListBuffer(1,&nbsp;2)</span>
+  <br />  scala&gt;&nbsp;<span class="literal">3</span>&nbsp;+:&nbsp;buf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">res12:&nbsp;scala.collection.mutable.Buffer[Int]</span>
+  <span class="output">&nbsp;&nbsp;=&nbsp;ListBuffer(3,&nbsp;1,&nbsp;2)</span>
+  <br />  scala&gt;&nbsp;buf.toList
+  <span class="output">res13:&nbsp;List[Int]&nbsp;=&nbsp;List(3,&nbsp;1,&nbsp;2)</span>
+</pre><!-- --></p>
+
+<p>Another reason to use <span class="code">ListBuffer</span> instead of <span class="code">List</span> is to prevent the potential for stack overflow.<a id="i-981382311-1"></a>
+If you can build a list in the desired order by prepending, but the recursive algorithm that would be required is
+not tail recursive, you can use a <span class="code">for</span> expression or <span class="code">while</span> loop and a <span class="code">ListBuffer</span> instead.
+You'll see <span class="code">ListBuffer</span> being used in this way in
+<a href="implementing-lists.html#sec:the-listbuffer-class">Section 22.2</a>.</p>
+
+<h4>Array buffers</h4>
+
+
+<p>An <span class="code">ArrayBuffer</span> is like an array,
+except that you can additionally add and remove elements from the
+beginning and end of the sequence<a id="i1906553817-1"></a>.  All <span class="code">Array</span> operations are available,
+though they are a little slower due to a layer of wrapping in the
+implementation.  The new addition and removal operations are constant
+time on average, but occasionally require linear time due to the
+implementation needing to allocate a new array to hold the buffer's
+contents.</p>
+
+<p>To use an <span class="code">ArrayBuffer</span>, you must first import it from the mutable
+collections package:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable.ArrayBuffer
+  <span class="output">import&nbsp;scala.collection.mutable.ArrayBuffer</span>
+</pre><!-- -->
+When you create an <span class="code">ArrayBuffer</span>, you must specify a type parameter, but need
+not specify a length.  The <span class="code">ArrayBuffer</span> will
+adjust the allocated space automatically as needed:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;buf&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ArrayBuffer[Int]</span>()
+  <span class="output">buf:&nbsp;scala.collection.mutable.ArrayBuffer[Int]&nbsp;=&nbsp;</span>
+  <span class="output">&nbsp;&nbsp;ArrayBuffer()</span>
+</pre><!-- -->
+You can append to an <span class="code">ArrayBuffer</span> using the <span class="code">+=</span> method:<a id="i-69907863-1"></a>
+<pre>
+  scala&gt;&nbsp;buf&nbsp;+=&nbsp;<span class="literal">12</span>
+  <br />  scala&gt;&nbsp;buf&nbsp;+=&nbsp;<span class="literal">15</span>
+  <br />  scala&gt;&nbsp;buf
+  <span class="output">res16:&nbsp;scala.collection.mutable.ArrayBuffer[Int]&nbsp;=&nbsp;</span>
+  <span class="output">&nbsp;&nbsp;ArrayBuffer(12,&nbsp;15)</span>
+</pre><!-- -->
+All the normal array methods are available.  For example,
+you can ask an <span class="code">ArrayBuffer</span> its length, or you can retrieve an element
+by its index:
+<pre>
+  scala&gt;&nbsp;buf.length
+  <span class="output">res17:&nbsp;Int&nbsp;=&nbsp;2</span>
+  <br />  scala&gt;&nbsp;buf(<span class="literal">0</span>)
+  <span class="output">res18:&nbsp;Int&nbsp;=&nbsp;12</span>
+</pre><!-- --></p>
+
+<h4>Queues</h4>
+
+
+<p>If you need a first-in-first-out sequence, you can use a
+<span class="code">Queue</span><a id="i-705909367-1"></a>. Scala's collection library provides both mutable and
+immutable variants of <span class="code">Queue</span>. Here's how you can create an empty immutable queue:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.immutable.Queue
+  <span class="output">import&nbsp;scala.collection.immutable.Queue</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;empty&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Queue[Int]</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">empty:&nbsp;scala.collection.immutable.Queue[Int]&nbsp;=&nbsp;Queue()</span>
+</pre><!-- -->
+You can append an element to an immutable queue with 
+<span class="code">enqueue</span><a id="i432237508-1"></a>:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;has1&nbsp;=&nbsp;empty.enqueue(<span class="literal">1</span>)
+  <span class="output">has1:&nbsp;scala.collection.immutable.Queue[Int]&nbsp;=&nbsp;Queue(1)</span>
+</pre><!-- -->
+To append multiple elements to a queue, call enqueue
+with a collection as its argument:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;has123&nbsp;=&nbsp;has1.enqueue(<span class="typename">List</span>(<span class="literal">2</span>,&nbsp;<span class="literal">3</span>))
+  <span class="output">has123:&nbsp;scala.collection.immutable.Queue[Int]&nbsp;=&nbsp;Queue(1,2,3)</span>
+</pre><!-- -->
+To remove an element from the head of the queue, you use
+<span class="code">dequeue</span><a id="i2031764716-1"></a>:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;(element,&nbsp;has23)&nbsp;=&nbsp;has123.dequeue
+  <span class="output">element:&nbsp;Int&nbsp;=&nbsp;1</span>
+  <span class="output">has23:&nbsp;scala.collection.immutable.Queue[Int]&nbsp;=&nbsp;Queue(2,3)</span>
+</pre><!-- -->
+On immutable queues, the <span class="code">dequeue</span> method returns a pair (a <span class="code">Tuple2</span>) consisting of the element
+at the head of the queue, and the rest of the queue with the head element removed.</p>
+
+<p>You use a mutable queue similarly to how you use an immutable one, but instead of <span class="code">enqueue</span>, you
+use the <span class="code">+=</span> and <span class="code">++=</span> operators to append. Also, on a mutable queue, the <span class="code">dequeue</span> method will just remove
+the head element from the queue and return it. Here's an example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable.Queue&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">import&nbsp;scala.collection.mutable.Queue</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;queue&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Queue[String]</span>
+  <span class="output">queue:&nbsp;scala.collection.mutable.Queue[String]&nbsp;=&nbsp;Queue()</span>
+  <br />  scala&gt;&nbsp;queue&nbsp;+=&nbsp;<span class="quotedstring">"a"</span>
+  <br />  scala&gt;&nbsp;queue&nbsp;++=&nbsp;<span class="typename">List</span>(<span class="quotedstring">"b"</span>,&nbsp;<span class="quotedstring">"c"</span>)
+  <br />  scala&gt;&nbsp;queue
+  <span class="output">res21:&nbsp;scala.collection.mutable.Queue[String]&nbsp;=&nbsp;Queue(a,&nbsp;b,&nbsp;c)</span>
+  <br />  scala&gt;&nbsp;queue.dequeue
+  <span class="output">res22:&nbsp;String&nbsp;=&nbsp;a</span>
+  <br />  scala&gt;&nbsp;queue
+  <span class="output">res23:&nbsp;scala.collection.mutable.Queue[String]&nbsp;=&nbsp;Queue(b,&nbsp;c)</span>
+</pre><!-- --></p>
+
+<h4>Stacks</h4>
+
+
+<p>If you need a last-in-first-out sequence, you can use a
+<span class="code">Stack</span>,<a id="i-1444208192-1"></a> which also comes in
+both mutable and immutable versions in the Scala collections library.
+You push an element onto a stack with <span class="code">push</span><a id="i710285503-1"></a>,
+pop an element with <span class="code">pop</span><a id="i668387510-1"></a>, and peek at the top of the stack without removing it
+with <span class="code">top</span><a id="i949484730-1"></a>. Here's an example of a mutable stack:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable.Stack
+  <span class="output">import&nbsp;scala.collection.mutable.Stack</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;stack&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Stack[Int]</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">stack:&nbsp;scala.collection.mutable.Stack[Int]&nbsp;=&nbsp;Stack()</span>
+  <br />  scala&gt;&nbsp;stack.push(<span class="literal">1</span>)
+  <br />  scala&gt;&nbsp;stack
+  <span class="output">res1:&nbsp;scala.collection.mutable.Stack[Int]&nbsp;=&nbsp;Stack(1)</span>
+  <br />  scala&gt;&nbsp;stack.push(<span class="literal">2</span>)
+  <br />  scala&gt;&nbsp;stack
+  <span class="output">res3:&nbsp;scala.collection.mutable.Stack[Int]&nbsp;=&nbsp;Stack(1,&nbsp;2)</span>
+  <br />  scala&gt;&nbsp;stack.top
+  <span class="output">res8:&nbsp;Int&nbsp;=&nbsp;2</span>
+  <br />  scala&gt;&nbsp;stack
+  <span class="output">res9:&nbsp;scala.collection.mutable.Stack[Int]&nbsp;=&nbsp;Stack(1,&nbsp;2)</span>
+  <br />  scala&gt;&nbsp;stack.pop&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">res10:&nbsp;Int&nbsp;=&nbsp;2</span>
+  <br />  scala&gt;&nbsp;stack&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">res11:&nbsp;scala.collection.mutable.Stack[Int]&nbsp;=&nbsp;Stack(1)</span>
+</pre><!-- --></p>
+
+<h4>Strings (via <span class="code">RichString</span>)</h4>
+
+
+<p>One other sequence to be aware of is
+<span class="code">RichString</span>, which is a <span class="code">Seq[Char]</span>. Because <span class="code">Predef</span> has
+an implicit conversion from <span class="code">String</span> to
+<span class="code">RichString</span><a id="i875531717-1"></a>, you can treat any string as a <span class="code">Seq[Char]</span>. 
+Here's an example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">def</span>&nbsp;hasUpperCase(s:&nbsp;<span class="typename">String</span>)&nbsp;=&nbsp;s.exists(_.isUpperCase)
+  <span class="output">hasUpperCase:&nbsp;(String)Boolean</span>
+  <br />  scala&gt;&nbsp;hasUpperCase(<span class="quotedstring">"Robert&nbsp;Frost"</span>)
+  <span class="output">res14:&nbsp;Boolean&nbsp;=&nbsp;true</span>
+  <br />  scala&gt;&nbsp;hasUpperCase(<span class="quotedstring">"e&nbsp;e&nbsp;cummings"</span>)
+  <span class="output">res15:&nbsp;Boolean&nbsp;=&nbsp;false</span>
+</pre><!-- -->
+In this example, the <span class="code">exists</span><a id="i1531663089-1"></a> method is invoked on the string named <span class="code">s</span> in the <span class="code">hasUpperCase</span> method body. Because
+no method named "<span class="code">exists</span>" is declared in class <span class="code">String</span> itself, the Scala compiler will implicitly convert 
+<span class="code">s</span> to <span class="code">RichString</span>, which has the method. The <span class="code">exists</span> method treats
+the string as a <span class="code">Seq[Char]</span>, and will return true if any of the characters are upper case.<a href="collections.html#footnote17-2">[2]</a></p>
+
+<h3><a name="17.3"></a>17.3 Sets and maps <span style="font-size: .5em">[<a href="collections.html#17.3">link</a>]</span></h3>
+
+
+<p>You have already seen the basics of sets and maps in previous chapters, starting<a id="i3526737-2"></a><a id="i3344023-2"></a>
+with <a href="next-steps-in-scala.html#step10">Step 10</a> in <a href="next-steps-in-scala.html">Chapter 3</a>.
+In this section, we'll give more insight into their use and show you a few more examples.</p>
+
+<p>As mentioned previously, the Scala collections library offers both mutable and immutable versions
+of sets and maps. The hierarchy for sets is shown in <a href="next-steps-in-scala.html#fig:set-hierarchy">Figure 3.2</a> <a href="next-steps-in-scala.html#fig:set-hierarchy">here</a>,
+and the hierarchy for maps is shown in <a href="next-steps-in-scala.html#fig:map-hierarchy">Figure 3.3</a> <a href="next-steps-in-scala.html#fig:map-hierarchy">here</a>. As these
+diagrams show, the simple names <span class="code">Set</span> and <span class="code">Map</span> are used by three traits each, residing in different packages.</p>
+
+<p>By default when you write "<span class="code">Set</span>" or "<span class="code">Map</span>" you
+get an immutable object. If you want the mutable variant, you need to
+do an explicit import. Scala gives you easier access to the immutable variants, as a gentle encouragement
+to prefer them over their mutable counterparts. The easy access is provided via the <span class="code">Predef</span> object, which is implicitly
+imported into every Scala source file. <a href="collections.html#lst:predef-set-map">Listing 17.1</a> shows the relevant definitions.
+<a name="lst:predef-set-map"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">Predef</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">type</span>&nbsp;<span class="typename">Set[T]</span>&nbsp;=&nbsp;<span class="typename">scala.collection.immutable.Set[T]</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">type</span>&nbsp;<span class="typename">Map[K, V]</span>&nbsp;=&nbsp;<span class="typename">scala.collection.immutable.Map[K, V]</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;<span class="typename">Set</span>&nbsp;=&nbsp;<span class="typename">scala.collection.immutable.Set</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;<span class="typename">Map</span>&nbsp;=&nbsp;<span class="typename">scala.collection.immutable.Map</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;...</span>
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 17.1 - Default map and set definitions in <span class="code">Predef</span>.</h5>
+
+
+<p>The "<span class="code">type</span>" keyword<a id="i-1569140754-1"></a> is used in <span class="code">Predef</span> to define <span class="code">Set</span>
+and <span class="code">Map</span> as aliases for the longer fully qualified names of the immutable set and map traits.<a href="collections.html#footnote17-3">[3]</a>
+The <span class="code">val</span>s named <span class="code">Set</span> and <span class="code">Map</span> are initialized to refer to the
+singleton objects for the immutable <span class="code">Set</span> and <span class="code">Map</span>.
+So <span class="code">Map</span> is the same as <span class="code">Predef.Map</span>, which is defined to be the same 
+as <span class="code">scala.collection.immutable.Map</span>. This holds both for the <span class="code">Map</span> type and 
+<span class="code">Map</span> object.</p>
+
+<p>If you want to use both mutable and immutable sets or maps in the same source file,
+one approach is to import the name of the package that contains the mutable variants:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable
+  <span class="output">import&nbsp;scala.collection.mutable</span>
+</pre><!-- -->
+You can continue to refer to the immutable set as <span class="code">Set</span>, as before, but can now refer to the mutable set
+as <span class="code">mutable.Set</span>. Here's an example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;mutaSet&nbsp;=&nbsp;<span class="typename">mutable.Set</span>(<span class="literal">1</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">mutaSet:&nbsp;scala.collection.mutable.Set[Int]&nbsp;=&nbsp;Set(3,&nbsp;1,&nbsp;2)</span>
+</pre><!-- --></p>
+
+<h4>Using sets</h4>
+
+
+<p>The key characteristic of sets is that they will ensure that at most one of
+each object, as determined by <span class="code">==</span><a id="i1401108821-1"></a>, will be contained in the set at any one time.
+As an example, we'll use a set to count the number of
+different words in a string.</p>
+
+<p>The <span class="code">split</span> method on <span class="code">String</span> can separate a
+string into words<a id="i-456038910-1"></a>, if you specify spaces and punctuation as word
+separators.  The regular expression "<span class="code">[</span>&nbsp;<span class="code">!,.]+</span>" will suffice: it indicates
+the string should be split at each place that one or more space and/or punctuation characters exist:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;text&nbsp;=&nbsp;<span class="quotedstring">"See&nbsp;Spot&nbsp;run.&nbsp;Run,&nbsp;Spot.&nbsp;Run!"</span>
+  <span class="output">text:&nbsp;java.lang.String&nbsp;=&nbsp;See&nbsp;Spot&nbsp;run.&nbsp;Run,&nbsp;Spot.&nbsp;Run!</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;wordsArray&nbsp;=&nbsp;text.split(<span class="quotedstring">"[&nbsp;!,.]+"</span>)&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">wordsArray:&nbsp;Array[java.lang.String]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;Array(See,&nbsp;Spot,&nbsp;run,&nbsp;Run,&nbsp;Spot,&nbsp;Run)</span>
+</pre><!-- -->
+To count the distinct words, you can convert them to the same case and then add them to a set.
+Because sets exclude duplicates, each distinct word will appear exactly
+one time in the set. First, you can create an empty set using the <span class="code">empty</span> method
+provided on the <span class="code">Set</span> companion objects:<a id="i1582603163-1"></a><a id="i1868251958-2"></a>
+<pre>
+  scala&gt;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;words&nbsp;=&nbsp;mutable.Set.empty[<span class="typename">String</span>]
+  <span class="output">words:&nbsp;scala.collection.mutable.Set[String]&nbsp;=&nbsp;Set()</span>
+</pre><!-- -->
+Then, just iterate through the words with a <span class="code">for</span> expression, convert each word
+to lower case, and add it to the mutable set with the <span class="code">+=</span> operator:
+<pre>
+  scala&gt;&nbsp;<span class="vem">for</span>&nbsp;(word&nbsp;&lt;-&nbsp;wordsArray)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;words&nbsp;+=&nbsp;word.toLowerCase
+  <br />  scala&gt;&nbsp;words
+  <span class="output">res25:&nbsp;scala.collection.mutable.Set[String]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Set(spot,&nbsp;run,&nbsp;see)</span>
+</pre><!-- -->
+Thus, the text contained exactly three distinct words: spot, run, and see. The most commonly
+used methods on both mutable and immutable sets are shown in <a href="collections.html#tab:set-operations">Table 17.1</a>.</p>
+
+<h4>Using maps</h4>
+
+
+<p>Maps
+let you associate a value with each element of the collection.
+Using a map looks similar to using an array, except that
+instead of indexing with integers counting from 0, you can use
+any kind of key<a id="i3344023-3"></a>.
+If you import the <span class="code">scala.collection.mutable</span> package, you can create an
+empty mutable map like this:<a id="i-1094653291-1"></a><a id="i-809004496-2"></a>
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;map&nbsp;=&nbsp;mutable.Map.empty[<span class="typename">String</span>,&nbsp;<span class="typename">Int</span>]
+  <span class="output">map:&nbsp;scala.collection.mutable.Map[String,Int]&nbsp;=&nbsp;Map()</span>
+</pre><!-- --></p>
+
+<p><a name="tab:set-operations"></a></p>
+
+<h5>Common operations for sets<a id="i51742212-1"></a></h5>
+<table style="border-collapse: collapse">
+<tr class="topline bottomline">
+  <th>
+<span style="font-size:medium"><span style="font-weight:bold">What it is</span></span>
+  </th>
+  <th>
+<div align="center"><span style="font-size:medium"><span style="font-weight:bold">What it does</span></span>
+</div>
+
+
+  </th>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">val</span>&nbsp;<span class="code">nums</span>&nbsp;<span class="code">=</span>&nbsp;<span class="code">Set(1,</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">3)</span>
+  </td>
+  <td>
+    Creates an immutable set (<span class="code">nums.toString</span> returns <span class="code">Set(1,</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">3)</span>)
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">5</span>
+  </td>
+  <td>
+    Adds an element (returns <span class="code">Set(1,</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">3,</span>&nbsp;<span class="code">5)</span>)<a id="i811921304-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums</span>&nbsp;<span class="code">-</span>&nbsp;<span class="code">3</span>
+  </td>
+  <td>
+    Removes an element (returns <span class="code">Set(1,</span>&nbsp;<span class="code">2)</span>)<a id="i1994870477-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums</span>&nbsp;<span class="code">++</span>&nbsp;<span class="code">List(5,</span>&nbsp;<span class="code">6)</span>
+  </td>
+  <td>
+    Adds multiple elements (returns <span class="code">Set(1,</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">3,</span>&nbsp;<span class="code">5,</span>&nbsp;<span class="code">6)</span>)<a id="i527242564-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums</span>&nbsp;<span class="code">--</span>&nbsp;<span class="code">List(1,</span>&nbsp;<span class="code">2)</span>
+  </td>
+  <td>
+    Removes multiple elements (returns <span class="code">Set(3)</span>)<a id="i649808695-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums</span>&nbsp;<span class="code">**</span>&nbsp;<span class="code">Set(1,</span>&nbsp;<span class="code">3,</span>&nbsp;<span class="code">5,</span>&nbsp;<span class="code">7)</span>
+  </td>
+  <td>
+    Takes the intersection of two sets (returns <span class="code">Set(1,</span>&nbsp;<span class="code">3)</span>)<a id="i1740588383-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums.size</span>
+  </td>
+  <td>
+    Returns the size of the set (returns <span class="code">3</span>)<a id="i-217240950-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums.contains(3)</span>
+  </td>
+  <td>
+    Checks for inclusion (returns <span class="code">true</span>)<a id="i1685795628-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">import</span>&nbsp;<span class="code">scala.collection.mutable</span>
+  </td>
+  <td>
+    Makes the mutable collections easy to access
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">val</span>&nbsp;<span class="code">words</span>&nbsp;<span class="code">=</span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span>&nbsp;<span class="code"></span><br />
+  <span class="code">mutable.Set.empty[String]</span>
+  </td>
+  <td>
+    Creates an empty, mutable set (<span class="code">words.toString</span> returns <span class="code">Set()</span>)<a id="i1582603163-2"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">words</span>&nbsp;<span class="code">+=</span>&nbsp;<span class="code">"the"</span>
+  </td>
+  <td>
+    Adds an element (<span class="code">words.toString</span> returns <span class="code">Set(the)</span>)<a id="i1314992430-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">words</span>&nbsp;<span class="code">-=</span>&nbsp;<span class="code">"the"</span>
+  </td>
+  <td>
+    Removes an element, if it exists (<span class="code">words.toString</span> returns <span class="code">Set()</span>)<a id="i1816671796-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">words</span>&nbsp;<span class="code">++=</span>&nbsp;<span class="code">List("do",</span>&nbsp;<span class="code">"re",</span>&nbsp;<span class="code">"mi")</span>
+  </td>
+  <td>
+    Adds multiple elements (<span class="code">words.toString</span> returns <span class="code">Set(do,</span>&nbsp;<span class="code">re,</span>&nbsp;<span class="code">mi)</span>)<a id="i-1693046362-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">words</span>&nbsp;<span class="code">--=</span>&nbsp;<span class="code">List("do",</span>&nbsp;<span class="code">"re")</span>
+  </td>
+  <td>
+    Removes multiple elements (<span class="code">words.toString</span> returns <span class="code">Set(mi)</span>)<a id="i20218631-1"></a>
+  </td>
+</tr>
+<tr class="bottomline">
+  <td>
+    <span class="code">words.clear</span>
+  </td>
+  <td>
+    Removes all elements (<span class="code">words.toString</span> returns <span class="code">Set()</span>)<a id="i1343184347-1"></a>
+  </td>
+</tr>
+</table>
+
+
+<p>Note that when you create a map, you must specify two types.  The first
+type is for the <em>keys</em> of the map, the second for the <em>values</em>.
+In this case, the keys are strings and the values are integers.</p>
+
+<p>Setting entries in a map looks similar to setting entries in an array:<a id="i648989597-1"></a>
+<pre>
+  scala&gt;&nbsp;map(<span class="quotedstring">"hello"</span>)&nbsp;=&nbsp;<span class="literal">1</span>
+  <br />  scala&gt;&nbsp;map(<span class="quotedstring">"there"</span>)&nbsp;=&nbsp;<span class="literal">2</span>
+  <br />  scala&gt;&nbsp;map
+  <span class="output">res28:&nbsp;scala.collection.mutable.Map[String,Int]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Map(hello&nbsp;-&gt;&nbsp;1,&nbsp;there&nbsp;-&gt;&nbsp;2)</span>
+</pre><!-- -->
+Likewise, reading a map is similar to reading an array:
+<pre>
+  scala&gt;&nbsp;map(<span class="quotedstring">"hello"</span>)
+  <span class="output">res29:&nbsp;Int&nbsp;=&nbsp;1</span>
+</pre><!-- --></p>
+
+<p>Putting it all together, here is a method that counts the number
+of times each word occurs in a string:
+<pre>
+  scala&gt;&nbsp;<span class="vem">def</span>&nbsp;countWords(text:&nbsp;<span class="typename">String</span>)&nbsp;=&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;counts&nbsp;=&nbsp;mutable.Map.empty[<span class="typename">String</span>,&nbsp;<span class="typename">Int</span>]
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(rawWord&nbsp;&lt;-&nbsp;text.split(<span class="quotedstring">"[&nbsp;,!.]+"</span>))&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;word&nbsp;=&nbsp;rawWord.toLowerCase
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;oldCount&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(counts.contains(word))&nbsp;counts(word)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>&nbsp;<span class="literal">0</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;counts&nbsp;+=&nbsp;(word&nbsp;-&gt;&nbsp;(oldCount&nbsp;+&nbsp;<span class="literal">1</span>))
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;counts
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  <span class="output">countWords:&nbsp;(String)scala.collection.mutable.Map[String,Int]</span>
+  <span class="output"></span>
+  <br />  scala&gt;&nbsp;countWords(<span class="quotedstring">"See&nbsp;Spot&nbsp;run!&nbsp;Run,&nbsp;Spot.&nbsp;Run!"</span>)
+  <span class="output">res30:&nbsp;scala.collection.mutable.Map[String,Int]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Map(see&nbsp;-&gt;&nbsp;1,&nbsp;run&nbsp;-&gt;&nbsp;3,&nbsp;spot&nbsp;-&gt;&nbsp;2)</span>
+</pre><!-- -->
+Given these counts, you can see that this text talks a lot about
+running, but not so much about seeing.</p>
+
+<p>The way this code works is that a mutable map, named <span class="code">counts</span>, maps each
+word to the number of times it occurs in the text.  For each word in
+the text, the word's old count is looked up, that count is incremented
+by one, and the new count is saved back into <span class="code">counts</span>.  Note the use
+of <span class="code">contains</span> to check whether a word has been seen yet or
+not.  If
+<span class="code">counts.contains(word)</span> is not true, then the word has not yet been
+seen and zero is used for the count.</p>
+
+<p>Many of the most commonly
+used methods on both mutable and immutable maps are shown in <a href="collections.html#tab:map-operations">Table 17.2</a>.</p>
+
+<p><a name="tab:map-operations"></a></p>
+
+<h5>Common operations for maps<a id="i-498146178-1"></a></h5>
+<table style="border-collapse: collapse">
+<tr class="topline bottomline">
+  <th>
+<span style="font-size:medium"><span style="font-weight:bold">What it is</span></span>
+  </th>
+  <th>
+<div align="center"><span style="font-size:medium"><span style="font-weight:bold">What it does</span></span>
+</div>
+
+
+  </th>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">val</span>&nbsp;<span class="code">nums</span>&nbsp;<span class="code">=</span>&nbsp;<span class="code">Map("i"</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">1,</span>&nbsp;<span class="code">"ii"</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">2)</span>
+  </td>
+  <td>
+    Creates an immutable map (<span class="code">nums.toString</span> returns <span class="code">Map(i</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">1,</span>&nbsp;<span class="code">ii</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">2)</span>)
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">(<span class="quotedstring">"vi"</span></span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code"><span class="literal">6</span>)</span>
+  </td>
+  <td>
+    Adds an entry (returns
+                          <span class="code">Map(i</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">1,</span> <span class="code">ii</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">vi</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">6)</span>)<a id="i-1879414184-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums</span>&nbsp;<span class="code">-</span>&nbsp;<span class="code"><span class="quotedstring">"ii"</span></span>
+  </td>
+  <td>
+    Removes an entry 
+                  (returns 
+                   <span class="code">Map(i</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">1)</span>)<a id="i-696465011-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums</span>&nbsp;<span class="code">++</span>&nbsp;<span class="code"><span class="typename">List</span>(<span class="quotedstring">"iii"</span></span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code"><span class="literal">3</span>,</span>&nbsp;<span class="code"><span class="quotedstring">"v"</span></span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code"><span class="literal">5</span>)</span>
+  </td>
+  <td>
+    Adds multiple entries (returns <span class="code">Map(i</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">1,</span> <span class="code">ii</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">iii</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">3,</span>&nbsp;<span class="code">v</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">5)</span>)<a id="i2130874372-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums</span>&nbsp;<span class="code">--</span>&nbsp;<span class="code"><span class="typename">List</span>(<span class="quotedstring">"i"</span>,</span>&nbsp;<span class="code"><span class="quotedstring">"ii"</span>)</span>
+  </td>
+  <td>
+    Removes multiple entries  (returns
+                          <span class="code">Map()</span>)<a id="i-2041526793-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums.size</span>
+  </td>
+  <td>
+    Returns the size of the map (returns <span class="code">2</span>)
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums.contains(<span class="quotedstring">"ii"</span>)</span>
+  </td>
+  <td>
+    Checks for inclusion (returns <span class="code">true</span>)<a id="i-626462467-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums(<span class="quotedstring">"ii"</span>)</span>
+  </td>
+  <td>
+    Retrieves the value at a specified
+              key (returns <span class="code">2</span>)<a id="i648989597-2"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums.keys</span>
+  </td>
+  <td>
+    Returns the keys (returns an <span class="code">Iterator</span> over
+                the strings <span class="code">"i"</span> and <span class="code">"ii"</span>)<a id="i1213467709-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums.keySet</span>
+  </td>
+  <td>
+    Returns the keys as a set (returns <span class="code">Set(i,</span>&nbsp;<span class="code">ii)</span>)<a id="i891405326-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums.values</span>
+  </td>
+  <td>
+    Returns the values (returns an <span class="code">Iterator</span> over
+                the integers <span class="code">1</span> and <span class="code">2</span>)<a id="i-546077233-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">nums.isEmpty</span>
+  </td>
+  <td>
+    Indicates whether the map is empty (returns false)<a id="i-576053426-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code"><span class="vem">import</span></span>&nbsp;<span class="code">scala.collection.mutable</span>
+  </td>
+  <td>
+    Makes the mutable collections
+                                     easy to access
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code"><span class="vem">val</span></span>&nbsp;<span class="code">words</span>&nbsp;<span class="code">=</span>&nbsp;<span class="code"></span> <br />
+  <span class="code">mutable.Map.empty[<span class="typename">String</span>,</span>&nbsp;<span class="code"><span class="typename">Int</span>]</span>
+  </td>
+  <td>
+    Creates an empty, mutable map<a id="i-1094653291-2"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">words</span>&nbsp;<span class="code">+=</span>&nbsp;<span class="code">(<span class="quotedstring">"one"</span></span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code"><span class="literal">1</span>)</span>
+  </td>
+  <td>
+    Adds a map entry from <span class="code">"one"</span> to <span class="code">1</span> (<span class="code">words.toString</span> returns <span class="code">Map(one</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">1)</span>)<a id="i1314809716-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">words</span>&nbsp;<span class="code">-=</span>&nbsp;<span class="code"><span class="quotedstring">"one"</span></span>
+  </td>
+  <td>
+    Removes a map entry, if it exists (<span class="code">words.toString</span> returns <span class="code">Map()</span>)<a id="i1816489082-1"></a>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">words</span>&nbsp;<span class="code">++=</span>&nbsp;<span class="code"><span class="typename">List</span>(<span class="quotedstring">"one"</span></span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code"><span class="literal">1</span>,</span>&nbsp;<span class="code"></span><br />
+<span class="code"><span class="quotedstring">"two"</span></span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code"><span class="literal">2</span>,</span>&nbsp;<span class="code"><span class="quotedstring">"three"</span></span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code"><span class="literal">3</span>)</span>
+  </td>
+  <td>
+    Adds multiple map entries (<span class="code">words.toString</span> returns <span class="code">Map(one</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">1,</span> <span class="code">two</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">three</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">3)</span>)<a id="i-1693229076-1"></a>
+  </td>
+</tr>
+<tr class="bottomline">
+  <td>
+    <span class="code">words</span>&nbsp;<span class="code">--=</span>&nbsp;<span class="code"><span class="typename">List</span>(<span class="quotedstring">"one"</span>,</span>&nbsp;<span class="code"><span class="quotedstring">"two"</span>)</span>
+  </td>
+  <td>
+    Removes multiple objects (<span class="code">words.toString</span> returns <span class="code">Map(three</span>&nbsp;<span class="code">-&gt;</span>&nbsp;<span class="code">3)</span>)<a id="i20035917-1"></a>
+  </td>
+</tr>
+</table>
+
+
+<h4>Default sets and maps</h4>
+
+
+<p>For most uses, the implementations of mutable and immutable sets and maps provided by<a id="i1372944617-1"></a><a id="i1372761903-1"></a>
+the <span class="code">Set()</span>, <span class="code">scala.collection.mutable.Map()</span>, <i>etc.</i>, factories will likely be sufficient.
+The implementations provided by these factories use a fast lookup algorithm, usually
+involving a hashtable, so they can quickly decide whether or not an
+object is in the collection.</p>
+
+<p>The <span class="code">scala.collection.mutable.Set()</span> factory method, for example, returns a <span class="code">scala.collection.mutable.HashSet</span>, which
+uses a hashtable internally.
+Similarly, the 
+<span class="code">scala.collection.mutable.Map()</span> factory returns a <span class="code">scala.collection.mutable.HashMap</span>.</p>
+
+<p>The story for immutable sets and maps is a bit more involved. The class returned by
+the <span class="code">scala.collection.immutable.Set()</span> factory method, for example, depends on how many elements you
+pass to it, as shown in <a href="collections.html#tab:default-sets">Table 17.3</a>. For sets with fewer than five elements, a special
+class devoted exclusively to sets of each particular size is used, to maximize performance. Once you request a set that has five or
+more elements in it, however, the factory method will return immutable <span class="code">HashSet</span>.</p>
+
+<p><a name="tab:default-sets"></a></p>
+
+<h5>Table 17.3 - Default immutable set implementations</h5>
+
+
+<div align="center">
+<table style="border-collapse: collapse">
+<tr class="topline ">
+  <td>
+    <span style="font-size:medium"><span style="font-weight:bold">Number of elements</span></span>
+  </td>
+  <td>
+    <span style="font-size:medium"><span style="font-weight:bold">Implementation</span></span>
+  </td>
+</tr>
+<tr class="topline ">
+  <td>
+    0
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.EmptySet</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    1
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.Set1</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    2
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.Set2</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    3
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.Set3</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    4
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.Set4</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    5 or more
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.HashSet</span>
+  </td>
+</tr>
+</table>
+
+
+</div>
+
+
+<p>Similarly, the <span class="code">scala.collection.immutable.Map()</span> factory method will return a different class depending on how many key-value pairs you
+pass to it, as shown in <a href="collections.html#tab:default-maps">Table 17.4</a>. As with sets, for immutable maps with fewer than five elements, a special
+class devoted exclusively to maps of each particular size is used, to maximize performance. Once a map has five or
+more key-value pairs in it, however, an immutable <span class="code">HashMap</span> is used.</p>
+
+<p><a name="tab:default-maps"></a></p>
+
+<h5>Table 17.4 - Default immutable map implementations</h5>
+
+
+<div align="center">
+<table style="border-collapse: collapse">
+<tr class="topline ">
+  <td>
+    <span style="font-size:medium"><span style="font-weight:bold">Number of elements</span></span>
+  </td>
+  <td>
+    <span style="font-size:medium"><span style="font-weight:bold">Implementation</span></span>
+  </td>
+</tr>
+<tr class="topline ">
+  <td>
+    0
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.EmptyMap</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    1
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.Map1</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    2
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.Map2</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    3
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.Map3</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    4
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.Map4</span>
+  </td>
+</tr>
+<tr class="">
+  <td>
+    5 or more
+  </td>
+  <td>
+    <span class="code">scala.collection.immutable.HashMap</span>
+  </td>
+</tr>
+</table>
+
+
+</div>
+
+
+<p>The default immutable implementation classes shown in <a href="collections.html#tab:default-sets">Tables 17.3</a> <a href="collections.html#tab:default-maps">and 17.4</a> work together
+to give you maximum performance. For example, if you add an element to an <span class="code">EmptySet</span>, it will return a <span class="code">Set1</span>. If you add an
+element to that <span class="code">Set1</span>, it will return a <span class="code">Set2</span>. If you then remove an element from the <span class="code">Set2</span>, you'll get another <span class="code">Set1</span>.</p>
+
+<h4>Sorted sets and maps</h4>
+
+
+<p>On occasion you may need a set or map whose iterator returns elements in a particular order.
+For this purpose, the Scala collections library provides traits
+<span class="code">SortedSet</span><a id="i849148531-1"></a> and
+<span class="code">SortedMap</span>.<a id="i1172619245-1"></a> These
+traits are implemented by classes
+<span class="code">TreeSet</span><a id="i300430876-1"></a> and
+<span class="code">TreeMap</span>,<a id="i623901590-1"></a> which use a red-black tree to keep
+elements (in the case of <span class="code">TreeSet</span>) or keys (in the case of <span class="code">TreeMap</span>) in order. The order
+is determined by the <span class="code">Ordered</span><a id="i2068605051-2"></a> trait, which the element type of the set, or key type of the map,
+must either mix in or be implicitly convertable to. These classes only come in immutable variants. Here
+are some <span class="code">TreeSet</span> examples:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.immutable.TreeSet
+  <span class="output">import&nbsp;scala.collection.immutable.TreeSet</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;ts&nbsp;=&nbsp;<span class="typename">TreeSet</span>(<span class="literal">9</span>,&nbsp;<span class="literal">3</span>,&nbsp;<span class="literal">1</span>,&nbsp;<span class="literal">8</span>,&nbsp;<span class="literal">0</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">7</span>,&nbsp;<span class="literal">4</span>,&nbsp;<span class="literal">6</span>,&nbsp;<span class="literal">5</span>)
+  <span class="output">ts:&nbsp;scala.collection.immutable.SortedSet[Int]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Set(0,&nbsp;1,&nbsp;2,&nbsp;3,&nbsp;4,&nbsp;5,&nbsp;6,&nbsp;7,&nbsp;8,&nbsp;9)</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;cs&nbsp;=&nbsp;<span class="typename">TreeSet</span>(<span class="quotedstring">'f'</span>,&nbsp;<span class="quotedstring">'u'</span>,&nbsp;<span class="quotedstring">'n'</span>)
+  <span class="output">cs:&nbsp;scala.collection.immutable.SortedSet[Char]&nbsp;=&nbsp;Set(f,&nbsp;n,&nbsp;u)</span>
+</pre><!-- -->
+And here are a few <span class="code">TreeMap</span> examples:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.immutable.TreeMap
+  <span class="output">import&nbsp;scala.collection.immutable.TreeMap</span>
+  <br />  scala&gt;&nbsp;<span class="vem">var</span>&nbsp;tm&nbsp;=&nbsp;<span class="typename">TreeMap</span>(<span class="literal">3</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">1</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">4</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">'x'</span>)
+  <span class="output">tm:&nbsp;scala.collection.immutable.SortedMap[Int,Char]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Map(1&nbsp;-&gt;&nbsp;x,&nbsp;3&nbsp;-&gt;&nbsp;x,&nbsp;4&nbsp;-&gt;&nbsp;x)</span>
+  <br />  scala&gt;&nbsp;tm&nbsp;+=&nbsp;(<span class="literal">2</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">'x'</span>)
+  <br />  scala&gt;&nbsp;tm
+  <span class="output">res38:&nbsp;scala.collection.immutable.SortedMap[Int,Char]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Map(1&nbsp;-&gt;&nbsp;x,&nbsp;2&nbsp;-&gt;&nbsp;x,&nbsp;3&nbsp;-&gt;&nbsp;x,&nbsp;4&nbsp;-&gt;&nbsp;x)</span>
+</pre><!-- --></p>
+
+<h4>Synchronized sets and maps</h4>
+
+
+<p>In <a href="a-scalable-language.html#sec:a-language-that-grows-on-you">Section 1.1</a>, we mentioned that if you needed a thread-safe map,<a id="i181041576-2"></a>
+you could mix the
+<span class="code">SynchronizedMap</span><a id="i809670518-1"></a> trait into whatever particular map implementation you desired.
+For example, you could mix <span class="code">SynchronizedMap</span> into <span class="code">HashMap</span>, as shown in <a href="collections.html#lst:synchronized-map">Listing 17.2</a>.
+This example begins with an import of two traits, <span class="code">Map</span> and <span class="code">SynchronizedMap</span>, and one class, <span class="code">HashMap</span>, from
+package <span class="code">scala.collection.mutable</span>. The rest of the example is the definition of singleton object <span class="code">MapMaker</span>, which
+declares one method, <span class="code">makeMap</span>. The <span class="code">makeMap</span> method declares its result type to be a mutable map of string keys to
+string values.</p>
+
+<p><a name="lst:synchronized-map"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable.{<span class="typename">Map</span>,
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="typename">SynchronizedMap</span>,&nbsp;<span class="typename">HashMap</span>}
+  <br />  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">MapMaker</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;makeMap:&nbsp;<span class="typename">Map[String, String]</span>&nbsp;=&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">HashMap[String, String]</span>&nbsp;<span class="vem">with</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="typename">SynchronizedMap[String, String]</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;default(key:&nbsp;<span class="typename">String</span>)&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="quotedstring">"Why&nbsp;do&nbsp;you&nbsp;want&nbsp;to&nbsp;know?"</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 17.2 - Mixing in the <span class="code">SynchronizedMap</span> trait.</h5>
+
+
+<p>The first statement inside the body of <span class="code">makeMap</span> constructs a new mutable <span class="code">HashMap</span> that mixes in the
+<span class="code">SynchronizedMap</span> trait:
+<pre>
+  <span class="vem">new</span>&nbsp;<span class="typename">HashMap[String, String]</span>&nbsp;<span class="vem">with</span>
+  &nbsp;&nbsp;<span class="typename">SynchronizedMap[String, String]</span>
+</pre><!-- -->
+Given this code, the Scala compiler will generate a synthetic subclass of <span class="code">HashMap</span> that mixes in <span class="code">SynchronizedMap</span>, and create
+(and return) an instance of it. This synthetic class will also override a method named <span class="code">default</span>, because of this code:
+<pre>
+  <span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;default(key:&nbsp;<span class="typename">String</span>)&nbsp;=
+  &nbsp;&nbsp;<span class="quotedstring">"Why&nbsp;do&nbsp;you&nbsp;want&nbsp;to&nbsp;know?"</span>
+</pre><!-- -->
+If you ask a map to give you the value for a particular key, but it doesn't have a mapping for that key, you'll by default get a <span class="code">NoSuchElementException</span>.
+If you define a new map class and override the <span class="code">default</span> method, however, your new map will return the value returned by <span class="code">default</span> when
+queried with a non-existent key. Thus, the synthetic <span class="code">HashMap</span> subclass generated by the compiler from the code
+in <a href="collections.html#lst:synchronized-map">Listing 17.2</a> will return the somewhat curt response string, <span class="code">"Why</span>&nbsp;<span class="code">do</span>&nbsp;<span class="code">you</span>&nbsp;<span class="code">want</span>&nbsp;<span class="code">to</span>&nbsp;<span class="code">know?"</span>, when queried with
+a non-existent key.</p>
+
+<p>Because the mutable map returned by the <span class="code">makeMap</span> method mixes in the <span class="code">SynchronizedMap</span> trait, it can be used by
+multiple threads at once. Each access to the map will be synchronized. Here's an example of the map being used, by one thread,
+in the interpreter:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;capital&nbsp;=&nbsp;MapMaker.makeMap&nbsp;&nbsp;
+  <span class="output">capital:&nbsp;scala.collection.mutable.Map[String,String]&nbsp;=&nbsp;Map()</span>
+  <br />  scala&gt;&nbsp;capital&nbsp;++&nbsp;<span class="typename">List</span>(<span class="quotedstring">"US"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"Washington"</span>,
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="quotedstring">"Paris"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"France"</span>,&nbsp;<span class="quotedstring">"Japan"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"Tokyo"</span>)
+  <span class="output">res0:&nbsp;scala.collection.mutable.Map[String,String]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Map(Paris&nbsp;-&gt;&nbsp;France,&nbsp;US&nbsp;-&gt;&nbsp;Washington,&nbsp;Japan&nbsp;-&gt;&nbsp;Tokyo)</span>
+  <br />  scala&gt;&nbsp;capital(<span class="quotedstring">"Japan"</span>)
+  <span class="output">res1:&nbsp;String&nbsp;=&nbsp;Tokyo</span>
+  <br />  scala&gt;&nbsp;capital(<span class="quotedstring">"New&nbsp;Zealand"</span>)
+  <span class="output">res2:&nbsp;String&nbsp;=&nbsp;Why&nbsp;do&nbsp;you&nbsp;want&nbsp;to&nbsp;know?</span>
+  <br />  scala&gt;&nbsp;capital&nbsp;+=&nbsp;(<span class="quotedstring">"New&nbsp;Zealand"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"Wellington"</span>)
+  <br />  scala&gt;&nbsp;capital(<span class="quotedstring">"New&nbsp;Zealand"</span>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">res3:&nbsp;String&nbsp;=&nbsp;Wellington</span>
+</pre><!-- --></p>
+
+<p>You can create synchronized sets similarly to the way you create synchronized maps. For example, you could create a synchronized <span class="code">HashSet</span>
+by mixing in the
+<span class="code">SynchronizedSet</span><a id="i486199804-1"></a> trait, like this:
+<pre>
+  <span class="vem">import</span>&nbsp;scala.collection.mutable
+  <br />  <span class="vem">val</span>&nbsp;synchroSet&nbsp;=
+  &nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">mutable.HashSet[Int]</span>&nbsp;<span class="vem">with</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="typename">mutable.SynchronizedSet[Int]</span>
+</pre><!-- --></p>
+
+<p>Finally, if you are thinking of using synchronized collections, you may also wish to consider the concurrent collections
+of <span class="code">java.util.concurrent</span> instead. Alternatively, you may prefer to use
+unsynchronized collections with Scala actors<a id="i-1422944994-2"></a>. Actors will
+be covered in detail in <a href="actors-and-concurrency.html">Chapter 30</a>.</p>
+
+<h3><a name="17.4"></a>17.4 Selecting mutable versus immutable collections <span style="font-size: .5em">[<a href="collections.html#17.4">link</a>]</span></h3>
+
+
+<p>For some problems, mutable collections work better, and for others,
+immutable collections work better.<a id="i1445844177-1"></a>  When in doubt, it is better to start with an immutable collection and
+change it later if you need to, because immutable collections can be easier to reason 
+about than mutable ones.<!-- --><!-- --><!-- --></p>
+
+<p>It can also sometimes be worthwhile to go the opposite way.  If you find some code
+that uses mutable collections becoming complicated and hard to reason
+about, consider whether it would help to change some of the
+collections to immutable alternatives<a id="i650543080-1"></a>.  In particular, if you find yourself
+worrying about making copies of mutable collections in just the right places, or thinking a lot about who "owns" or
+"contains" a mutable collection, consider switching some of the
+collections to their immutable counterparts.</p>
+
+<p>Besides being potentially easier to reason about, immutable
+collections can usually be stored more compactly than mutable ones if
+the number of elements stored in the collection is small. For instance
+an empty mutable map in its default representation of <span class="code">HashMap</span> takes up
+about 80 bytes and about 16 more are added for each entry that's added
+to it. An empty immutable <span class="code">Map</span> is a single object that's shared
+between all references, so referring to it essentially costs just a
+single pointer field. What's more, the Scala collections library currently stores
+immutable maps and sets with up to four entries in a single object,
+which typically takes up between 16 and 40 bytes, depending on the
+number of entries stored in the collection.<a href="collections.html#footnote17-4">[4]</a> So for small maps and
+sets, the immutable versions are much more compact than the mutable
+ones. Given that many collections are small, switching them to be
+immutable can give important space savings and performance advantages.</p>
+
+<p>To make it easier to switch from immutable to mutable collections, and vice versa, Scala provides some
+syntactic sugar.  Even though immutable sets and maps do not support a
+true <span class="code">+=</span> method, Scala gives a useful alternate interpretation to
+<span class="code">+=</span>.  Whenever you write <span class="code">a</span>&nbsp;<span class="code">+=</span>&nbsp;<span class="code">b</span>, and <span class="code">a</span> does not support a method named <span class="code">+=</span>,
+Scala will try interpreting it as <span class="code">a</span>&nbsp;<span class="code">=</span>&nbsp;<span class="code">a</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">b</span>.  For example,
+immutable sets do not support a <span class="code">+=</span> operator:<a id="i1301665902-2"></a>
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;people&nbsp;=&nbsp;<span class="typename">Set</span>(<span class="quotedstring">"Nancy"</span>,&nbsp;<span class="quotedstring">"Jane"</span>)
+  <span class="output">people:&nbsp;scala.collection.immutable.Set[java.lang.String]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Set(Nancy,&nbsp;Jane)</span>
+  <br />  scala&gt;&nbsp;people&nbsp;+=&nbsp;<span class="quotedstring">"Bob"</span>
+  <span class="output">&lt;console&gt;:6:&nbsp;error:&nbsp;reassignment&nbsp;to&nbsp;val</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;people&nbsp;+=&nbsp;"Bob"</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+</pre><!-- --></p>
+
+<p>If you declare <span class="code">people</span> as a <span class="code">var</span>, instead of a <span class="code">val</span>, however,
+then the collection can be "updated" with a <span class="code">+=</span> operation, even though it is
+immutable. First, a new collection will be created, and then <span class="code">people</span> 
+will be reassigned to refer to the new collection:
+<pre>
+  scala&gt;&nbsp;<span class="vem">var</span>&nbsp;people&nbsp;=&nbsp;<span class="typename">Set</span>(<span class="quotedstring">"Nancy"</span>,&nbsp;<span class="quotedstring">"Jane"</span>)
+  <span class="output">people:&nbsp;scala.collection.immutable.Set[java.lang.String]&nbsp;=&nbsp;</span>
+  <span class="output">&nbsp;&nbsp;Set(Nancy,&nbsp;Jane)</span>
+  <br />  scala&gt;&nbsp;people&nbsp;+=&nbsp;<span class="quotedstring">"Bob"</span>
+  <br />  scala&gt;&nbsp;people
+  <span class="output">res42:&nbsp;scala.collection.immutable.Set[java.lang.String]&nbsp;=&nbsp;</span>
+  <span class="output">&nbsp;&nbsp;Set(Nancy,&nbsp;Jane,&nbsp;Bob)</span>
+</pre><!-- -->
+After this series of statements, the <span class="code">people</span> variable refers to a new immutable
+set, which contains the added string, <span class="code">"Bob"</span>.
+The same idea applies to any method ending in <span class="code">=</span>, not just
+the <span class="code">+=</span> method. Here's the same syntax used with the <span class="code">-=</span> operator, which removes
+an element from a set, and the <span class="code">++=</span> operator, which adds a collection of elements to
+a set:
+<pre>
+  scala&gt;&nbsp;people&nbsp;-=&nbsp;<span class="quotedstring">"Jane"</span>
+  <br />  scala&gt;&nbsp;people&nbsp;++=&nbsp;<span class="typename">List</span>(<span class="quotedstring">"Tom"</span>,&nbsp;<span class="quotedstring">"Harry"</span>)
+  <br />  scala&gt;&nbsp;people
+  <span class="output">res45:&nbsp;scala.collection.immutable.Set[java.lang.String]&nbsp;=&nbsp;</span>
+  <span class="output">&nbsp;&nbsp;Set(Nancy,&nbsp;Bob,&nbsp;Tom,&nbsp;Harry)</span>
+</pre><!-- -->
+To see how this is useful, consider again the following <span class="code">Map</span> example
+from <a href="a-scalable-language.html#sec:a-language-that-grows-on-you">Section 1.1</a>:
+<pre>
+  <span class="vem">var</span>&nbsp;capital&nbsp;=&nbsp;<span class="typename">Map</span>(<span class="quotedstring">"US"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"Washington"</span>,&nbsp;<span class="quotedstring">"France"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"Paris"</span>)
+  capital&nbsp;+=&nbsp;(<span class="quotedstring">"Japan"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"Tokyo"</span>)
+  println(capital(<span class="quotedstring">"France"</span>))&nbsp;
+</pre><!-- -->
+This code uses immutable collections.  If you want to
+try using mutable collections instead, all that
+is necessary is to import the mutable version of <span class="code">Map</span>,
+thus overriding the default import of the immutable <span class="code">Map</span>:
+<pre>
+  <span class="vem">import</span>&nbsp;scala.collection.mutable.Map&nbsp;&nbsp;<span class="comment">//&nbsp;only&nbsp;change&nbsp;needed!</span>
+  <span class="vem">var</span>&nbsp;capital&nbsp;=&nbsp;<span class="typename">Map</span>(<span class="quotedstring">"US"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"Washington"</span>,&nbsp;<span class="quotedstring">"France"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"Paris"</span>)
+  capital&nbsp;+=&nbsp;(<span class="quotedstring">"Japan"</span>&nbsp;-&gt;&nbsp;<span class="quotedstring">"Tokyo"</span>)
+  println(capital(<span class="quotedstring">"France"</span>))&nbsp;
+</pre><!-- -->
+Not all examples are quite that easy to convert, but the special
+treatment of methods ending in an equals sign will often reduce the
+amount of code that needs changing.</p>
+
+<p>By the way, this syntactic treatment works on any kind of value, not
+just collections.  For example, here it is being used on
+floating-point numbers:
+<pre>
+  scala&gt;&nbsp;<span class="vem">var</span>&nbsp;roughlyPi&nbsp;=&nbsp;<span class="literal">3.0</span>
+  <span class="output">roughlyPi:&nbsp;Double&nbsp;=&nbsp;3.0</span>
+  <br />  scala&gt;&nbsp;roughlyPi&nbsp;+=&nbsp;<span class="literal">0.1</span>
+  <br />  scala&gt;&nbsp;roughlyPi&nbsp;+=&nbsp;<span class="literal">0.04</span>
+  <br />  scala&gt;&nbsp;roughlyPi
+  <span class="output">res48:&nbsp;Double&nbsp;=&nbsp;3.14</span>
+</pre><!-- -->
+The effect of this expansion is similar to
+Java's assignment operators <span class="code">+=</span>, <span class="code">-=</span>, <span class="code">*=</span>, <i>etc.</i>, but it is more general because
+every operator ending in <span class="code">=</span> can be converted.</p>
+
+<h3><a name="17.5"></a>17.5 Initializing collections <span style="font-size: .5em">[<a href="collections.html#17.5">link</a>]</span></h3>
+
+
+<p>As you've seen previously, the most common way to create and initialize a collection is to pass the initial elements to a factory method
+on the companion object of your chosen collection. You just place the elements in parentheses after the
+companion object name, and the Scala compiler will transform that to an invocation of an <span class="code">apply</span> method on that companion object:
+<pre>
+  scala&gt;&nbsp;<span class="typename">List</span>(<span class="literal">1</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  <span class="output">res0:&nbsp;List[Int]&nbsp;=&nbsp;List(1,&nbsp;2,&nbsp;3)</span>
+  <br />  scala&gt;&nbsp;<span class="typename">Set</span>(<span class="quotedstring">'a'</span>,&nbsp;<span class="quotedstring">'b'</span>,&nbsp;<span class="quotedstring">'c'</span>)
+  <span class="output">res1:&nbsp;scala.collection.immutable.Set[Char]&nbsp;=&nbsp;Set(a,&nbsp;b,&nbsp;c)</span>
+  <br />  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable
+  <span class="output">import&nbsp;scala.collection.mutable</span>
+  <br />  scala&gt;&nbsp;<span class="typename">mutable.Map</span>(<span class="quotedstring">"hi"</span>&nbsp;-&gt;&nbsp;<span class="literal">2</span>,&nbsp;<span class="quotedstring">"there"</span>&nbsp;-&gt;&nbsp;<span class="literal">5</span>)
+  <span class="output">res2:&nbsp;scala.collection.mutable.Map[java.lang.String,Int]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Map(hi&nbsp;-&gt;&nbsp;2,&nbsp;there&nbsp;-&gt;&nbsp;5)</span>
+  <br />  scala&gt;&nbsp;<span class="typename">Array</span>(<span class="literal">1.0</span>,&nbsp;<span class="literal">2.0</span>,&nbsp;<span class="literal">3.0</span>)
+  <span class="output">res3:&nbsp;Array[Double]&nbsp;=&nbsp;Array(1.0,&nbsp;2.0,&nbsp;3.0)</span>
+</pre><!-- --></p>
+
+<p>Although most often you can let the Scala compiler infer the element type of a collection from
+the elements passed to its factory method,
+sometimes you may want to create a collection but specify
+a different type from the one the compiler would choose.  This is
+especially an issue with mutable collections. Here's an example:<a id="i-677980410-2"></a>
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable
+  <span class="output">import&nbsp;scala.collection.mutable</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;stuff&nbsp;=&nbsp;<span class="typename">mutable.Set</span>(<span class="literal">42</span>)
+  <span class="output">stuff:&nbsp;scala.collection.mutable.Set[Int]&nbsp;=&nbsp;Set(42)</span>
+  <br />  scala&gt;&nbsp;stuff&nbsp;+=&nbsp;<span class="quotedstring">"abracadabra"</span>
+  <span class="output">&lt;console&gt;:7:&nbsp;error:&nbsp;type&nbsp;mismatch;</span>
+  <span class="output">&nbsp;found&nbsp;&nbsp;&nbsp;:&nbsp;java.lang.String("abracadabra")</span>
+  <span class="output">&nbsp;required:&nbsp;Int</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stuff&nbsp;+=&nbsp;"abracadabra"</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+</pre><!-- --></p>
+
+<p>The problem here is that <span class="code">stuff</span> was given an element type of
+<span class="code">Int</span>.  If you want it to have an element type of <span class="code">Any</span>, you
+need to say so explicitly by putting the element type in square brackets,
+like this:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;stuff&nbsp;=&nbsp;<span class="typename">mutable.Set[Any]</span>(<span class="literal">42</span>)
+  <span class="output">stuff:&nbsp;scala.collection.mutable.Set[Any]&nbsp;=&nbsp;Set(42)</span>
+</pre><!-- --></p>
+
+<p>Another special situation is if you want to initialize a collection with another collection. 
+For example, imagine you have a list, but you want a <span class="code">TreeSet</span> containing the elements in the list. Here's the list:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;colors&nbsp;=&nbsp;<span class="typename">List</span>(<span class="quotedstring">"blue"</span>,&nbsp;<span class="quotedstring">"yellow"</span>,&nbsp;<span class="quotedstring">"red"</span>,&nbsp;<span class="quotedstring">"green"</span>)
+  <span class="output">colors:&nbsp;List[java.lang.String]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;List(blue,&nbsp;yellow,&nbsp;red,&nbsp;green)</span>
+</pre><!-- -->
+You cannot pass the <span class="code">colors</span> list to the factory method for <span class="code">TreeSet</span>:<a id="i-1802169132-1"></a>
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.immutable.TreeSet
+  <span class="output">import&nbsp;scala.collection.immutable.TreeSet</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;treeSet&nbsp;=&nbsp;<span class="typename">TreeSet</span>(colors)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="output">&lt;console&gt;:6:&nbsp;error:&nbsp;no&nbsp;implicit&nbsp;argument&nbsp;matching</span>
+  <span class="output">&nbsp;&nbsp;parameter&nbsp;type&nbsp;(List[java.lang.String])&nbsp;=&gt;</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;Ordered[List[java.lang.String]]&nbsp;was&nbsp;found.</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val&nbsp;treeSet&nbsp;=&nbsp;TreeSet(colors)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+</pre><!-- --></p>
+
+<p>Instead, you'll need to create an empty <span class="code">TreeSet[String]</span> and add to it the elements of the list with the <span class="code">TreeSet</span>'s <span class="code">++</span> operator:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;treeSet&nbsp;=&nbsp;<span class="typename">TreeSet[String]</span>()&nbsp;++&nbsp;colors
+  <span class="output">treeSet:&nbsp;scala.collection.immutable.SortedSet[String]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;Set(blue,&nbsp;green,&nbsp;red,&nbsp;yellow)</span>
+</pre><!-- --></p>
+
+<h4>Converting to array or list</h4>
+
+
+<p>If you need to initialize a list or array with another collection, on the other hand, it is quite straightforward. As
+you've seen previously, to initialize a new list with another collection, simply
+invoke <span class="code">toList</span><a id="i-1723195748-2"></a> on
+that collection<a id="i1406547745-1"></a><a id="i-218379511-1"></a>:
+<pre>
+  scala&gt;&nbsp;treeSet.toList
+  <span class="output">res54:&nbsp;List[String]&nbsp;=&nbsp;List(blue,&nbsp;green,&nbsp;red,&nbsp;yellow)</span>
+</pre><!-- -->
+Or, if you need an array, invoke <span class="code">toArray</span>:
+<pre>
+  scala&gt;&nbsp;treeSet.toArray
+  <span class="output">res55:&nbsp;Array[String]&nbsp;=&nbsp;Array(blue,&nbsp;green,&nbsp;red,&nbsp;yellow)</span>
+</pre><!-- -->
+Note that although the original <span class="code">colors</span> list was not sorted, the elements in the list produced by invoking <span class="code">toList</span> on the
+<span class="code">TreeSet</span> are in alphabetical order. When you invoke <span class="code">toList</span> or <span class="code">toArray</span> on a collection, the order of the elements in the resulting
+list or array will be the same as the order of elements produced by an iterator obtained by invoking <span class="code">elements</span> on that collection.
+Because a <span class="code">TreeSet[String]</span>'s iterator will produce strings in alphabetical order, those strings will appear in alphabetical order
+in the list resulting from invoking <span class="code">toList</span> on that <span class="code">TreeSet</span>.</p>
+
+<p>Keep in mind, however, that conversion to lists or arrays
+usually requires copying all of the elements of the collection, and thus may be
+slow for large collections.  Sometimes you need to do it, though, due
+to an existing API.  Further, many collections only have a few
+elements anyway, in which case there is only a small speed penalty.</p>
+
+<h4>Converting between mutable and immutable sets and maps</h4>
+
+
+<p>Another situation that may arise occasionally is the need to
+convert a mutable set or map to an immutable one, or <i>vice versa</i>. To accomplish this, you
+can use the technique shown previously to initialize a <span class="code">TreeSet</span> with the elements of a list.
+If you have a mutable collection, and want to convert it to a immutable one, for example, create an empty
+immutable collection and add the elements of the mutable one via the <span class="code">++</span> operator. Here's how
+you'd convert the immutable <span class="code">TreeSet</span> from the previous example to a mutable set, and back
+again to an immutable one:
+<pre>
+  scala&gt;&nbsp;<span class="vem">import</span>&nbsp;scala.collection.mutable
+  <span class="output">import&nbsp;scala.collection.mutable</span>
+  <br />  scala&gt;&nbsp;treeSet
+  <span class="output">res5:&nbsp;scala.collection.immutable.SortedSet[String]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Set(blue,&nbsp;green,&nbsp;red,&nbsp;yellow)</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;mutaSet&nbsp;=&nbsp;mutable.Set.empty&nbsp;++&nbsp;treeSet
+  <span class="output">mutaSet:&nbsp;scala.collection.mutable.Set[String]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Set(yellow,&nbsp;blue,&nbsp;red,&nbsp;green)</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;immutaSet&nbsp;=&nbsp;Set.empty&nbsp;++&nbsp;mutaSet
+  <span class="output">immutaSet:&nbsp;scala.collection.immutable.Set[String]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;Set(yellow,&nbsp;blue,&nbsp;red,&nbsp;green)</span>
+</pre><!-- --></p>
+
+<p>You can use the same technique to convert between mutable and immutable maps:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;muta&nbsp;=&nbsp;<span class="typename">mutable.Map</span>(<span class="quotedstring">"i"</span>&nbsp;-&gt;&nbsp;<span class="literal">1</span>,&nbsp;<span class="quotedstring">"ii"</span>&nbsp;-&gt;&nbsp;<span class="literal">2</span>)
+  <span class="output">muta:&nbsp;scala.collection.mutable.Map[java.lang.String,Int]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;Map(ii&nbsp;-&gt;&nbsp;2,&nbsp;i&nbsp;-&gt;&nbsp;1)</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;immu&nbsp;=&nbsp;Map.empty&nbsp;++&nbsp;muta
+  <span class="output">immu:&nbsp;scala.collection.immutable.Map[java.lang.String,Int]&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;Map(ii&nbsp;-&gt;&nbsp;2,&nbsp;i&nbsp;-&gt;&nbsp;1)</span>
+</pre><!-- --></p>
+
+<h3><a name="17.6"></a>17.6 Tuples <span style="font-size: .5em">[<a href="collections.html#17.6">link</a>]</span></h3>
+
+
+<p>As described in <a href="next-steps-in-scala.html#step9">Step 9</a> in <a href="next-steps-in-scala.html">Chapter 3</a>,  a tuple combines a fixed<a id="i-862490197-1"></a>
+number of items together so that they can be passed around as a
+whole.
+Unlike an array or list, a tuple can hold objects with different types.
+Here is an example of a tuple holding an integer, a string, and
+the console:
+<pre>
+  (<span class="literal">1</span>,&nbsp;<span class="quotedstring">"hello"</span>,&nbsp;<span class="typename">Console</span>)
+</pre><!-- -->
+Tuples save you the tedium of defining simplistic data-heavy classes.
+Even though defining a class is already easy, it does require
+a certain minimum effort, which sometimes serves no purpose.
+Tuples save you the effort of choosing a name for the class,
+choosing a scope to define the class in, and choosing names
+for the members of the class.  If your class simply holds
+an integer and a string, there is no clarity added by defining
+a class named <span class="code">AnIntegerAndAString</span>.</p>
+
+<p>Because tuples can combine objects of different types,
+tuples do not inherit from <span class="code">Iterable</span>.
+If you find yourself wanting to group exactly one integer and exactly one
+string, then you want a tuple, not a <span class="code">List</span> or <span class="code">Array</span>.</p>
+
+<p>A common application of tuples is returning multiple values from a method.<a id="i651595778-2"></a><a id="i2120520132-2"></a>
+For example, here is a method that finds the longest word in a
+collection and also returns its index:<a id="i-1690228669-3"></a>
+<pre>
+  <span class="vem">def</span>&nbsp;longestWord(words:&nbsp;<span class="typename">Array[String]</span>)&nbsp;=&nbsp;{
+  &nbsp;&nbsp;<span class="vem">var</span>&nbsp;word&nbsp;=&nbsp;words(<span class="literal">0</span>)
+  &nbsp;&nbsp;<span class="vem">var</span>&nbsp;idx&nbsp;=&nbsp;<span class="literal">0</span>
+  &nbsp;&nbsp;<span class="vem">for</span>&nbsp;(i&nbsp;&lt;-&nbsp;<span class="literal">1</span>&nbsp;until&nbsp;words.length)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(words(i).length&nbsp;&gt;&nbsp;word.length)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;word&nbsp;=&nbsp;words(i)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;idx&nbsp;=&nbsp;i
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;(word,&nbsp;idx)
+  }
+</pre><!-- -->
+Here is an example use of the method:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;longest&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;longestWord(<span class="quotedstring">"The&nbsp;quick&nbsp;brown&nbsp;fox"</span>.split(<span class="quotedstring">"&nbsp;"</span>))
+  <span class="output">longest:&nbsp;(String,&nbsp;Int)&nbsp;=&nbsp;(quick,1)</span>
+</pre><!-- -->
+The <span class="code">longestWord</span> function here computes two items: <span class="code">word</span>, the
+longest word in the array, and <span class="code">idx</span>, the index of that word.
+To keep things simple, the function assumes there is at least<!-- -->
+one word in the list, and it breaks ties by choosing the word
+that comes earlier in the list.
+Once the function has chosen which word and index to return,
+it returns both of them together using the tuple syntax
+<span class="code">(word,</span>&nbsp;<span class="code">idx)</span>.</p>
+
+<p>To access elements of a tuple, you can use method <span class="code">_1</span> to access
+the first element, <span class="code">_2</span> to access the second, and so on:
+<pre>
+  scala&gt;&nbsp;longest._1
+  <span class="output">res56:&nbsp;String&nbsp;=&nbsp;quick</span>
+  <br />  scala&gt;&nbsp;longest._2
+  <span class="output">res57:&nbsp;Int&nbsp;=&nbsp;1</span>
+</pre><!-- --></p>
+
+<p>Additionally, you can assign each element of the tuple to its own<a id="i-467993090-2"></a>
+variable,<a href="collections.html#footnote17-5">[5]</a> like this:</p>
+
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;(word,&nbsp;idx)&nbsp;=&nbsp;longest
+  <span class="output">word:&nbsp;String&nbsp;=&nbsp;quick</span>
+  <span class="output">idx:&nbsp;Int&nbsp;=&nbsp;1</span>
+  <br />  scala&gt;&nbsp;word
+  <span class="output">res58:&nbsp;String&nbsp;=&nbsp;quick</span>
+</pre><!-- -->
+
+
+<p>By the way, if you leave off the parentheses you get a different result:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;word,&nbsp;idx&nbsp;=&nbsp;longest
+  <span class="output">word:&nbsp;(String,&nbsp;Int)&nbsp;=&nbsp;(quick,1)</span>
+  <span class="output">idx:&nbsp;(String,&nbsp;Int)&nbsp;=&nbsp;(quick,1)</span>
+</pre><!-- -->
+This syntax gives <a href="glossary.html#g-181260432"><em>multiple definitions</em></a> of the same
+expression.<a id="i1286114796-1"></a><a id="i664504196-1"></a>
+Each variable is initialized with its own evaluation of the expression
+on the right-hand side.  That the expression evaluates to a tuple in
+this case does not matter.  Both variables are initialized to the
+tuple in its entirety.  See <a href="stateful-objects.html">Chapter 18</a> for
+some examples where multiple definitions are convenient.</p>
+
+<p>As a note of warning, tuples are almost too easy to use.  Tuples are<a id="i-726189942-1"></a><a id="i-516778869-1"></a>
+great when you combine data that has no meaning beyond "an A and a
+B."  However, whenever the combination has some meaning, or you want
+to add some methods to the combination, it is better to go ahead and
+create a class.  For example, do not use a 3-tuple for the combination
+of a month, a day, and a year.  Make a <span class="code">Date</span> class.  It makes your
+intentions explicit, which both clears up the code for human readers
+and gives the compiler and language opportunities to help you
+catch mistakes.</p>
+
+<h3><a name="17.7"></a>17.7 Conclusion <span style="font-size: .5em">[<a href="collections.html#17.7">link</a>]</span></h3>
+
+
+<p>This chapter has given an overview of the Scala collections library and
+the most important classes and traits in it. With this foundation you should
+be able to work effectively with Scala collections, and know where to look in Scaladoc when
+you need more information. In the next chapter, we'll turn our attention from the Scala library back to the 
+language, and discuss Scala's support for mutable objects.</p>
+
+<hr/>
+<h4>Footnotes for Chapter 17:</h4>
+
+
+<p><a name="footnote17-1">[1]</a> The difference in variance of Scala and Java's arrays&mdash;<i>i.e.</i>, whether
+<span class="code">Array[String]</span> is a subtype of <span class="code">Array[AnyRef]</span>&mdash;will be discussed in <a href="type-parameterization.html#sec:first-arrays">Section 19.3</a>.</p>
+
+<p><a name="footnote17-2">[2]</a> The code given <a href="a-scalable-language.html#subsec:scala-is-high-level">here</a> of <a href="a-scalable-language.html">Chapter 1</a>
+presents a similar example.</p>
+
+<p><a name="footnote17-3">[3]</a> The <span class="code">type</span> keyword will be explained in more 
+detail in <a href="abstract-members.html#sec:abstract-types">Section 20.6</a>.</p>
+
+<p><a name="footnote17-4">[4]</a> The "single object" is an
+instance of <span class="code">Set1</span> through <span class="code">Set4</span>, or <span class="code">Map1</span> through <span class="code">Map4</span>, as shown in <a href="collections.html#tab:default-sets">Tables 17.3</a>
+<a href="collections.html#tab:default-maps">and 17.4</a>.</p>
+
+<p><a name="footnote17-5">[5]</a> This syntax is actually a special case of
+<em>pattern matching</em>, as described in detail in
+<a href="case-classes-and-pattern-matching.html#sec:patterns-everywhere">Section 15.7</a>.</p>
+
+
+
+<br clear="all">
+<p>
+<center>
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/collectionsP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/working-with-lists.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/stateful-objects.html">Next</a>
+</div>
+</center>
+</div>
+<hr width="100%" />
+<center>
+<script type="text/javascript"><!--
+google_ad_client = "pub-3911176865765226";
+google_alternate_color = "ffffff";
+google_ad_width = 728;
+google_ad_height = 15;
+google_ad_format = "728x15_0ads_al";
+google_ad_channel = "";
+google_color_border = "ffffff";
+google_color_bg = "FFFFFF";
+google_color_link = "003090";
+google_color_text = "000000";
+google_color_url = "666666";
+//--></script>
+<script type="text/javascript"
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+<br />
+<br />
+<!-- SiteSearch Google -->
+<form method="get" action="http://www.google.com/custom">
+<table border="0" bgcolor="#ffffff">
+<tr><td nowrap="nowrap" valign="top" align="left" height="32">
+<a href="http://www.google.com/">
+<img src="http://www.google.com/logos/Logo_25wht.gif"
+border="0" alt="Google"></img></a>
+</td>
+<td nowrap="nowrap">
+<input type="hidden" name="domains" value="Artima.com"></input>
+<input type="text" name="q" size="31" maxlength="255" value=""></input>
+<input type="submit" name="sa" value="Search"></input>
+</td></tr>
+<tr>
+<td>&nbsp;</td>
+<td nowrap="nowrap">
+<font size="-1" color="#000000">
+<input type="radio" name="sitesearch" value=""></input> Web
+<input type="radio" name="sitesearch" value="Artima.com" checked="checked"></input>Artima.com
+</font>&nbsp;&nbsp;
+<input type="hidden" name="client" value="pub-3911176865765226"></input>
+<input type="hidden" name="forid" value="1"></input>
+<input type="hidden" name="ie" value="ISO-8859-1"></input>
+<input type="hidden" name="oe" value="ISO-8859-1"></input>
+<input type="hidden" name="cof" value="GALT:#008000;GL:1;DIV:#336699;VLC:663399;AH:center;BGC:FFFFFF;LBGC:FFFFFF;ALC:0000FF;LC:0000FF;T:000000;GFNT:0000FF;GIMP:0000FF;LH:50;LW:150;L:http://www.artima.com/images/artima150.gif;S:http://www.artima.com;FORID:1;"></input>
+<input type="hidden" name="hl" value="en"></input>
+</td></tr></table>
+</form>
+<!-- SiteSearch Google -->
+</center>
+<div class="sp">
+<div style="text-align: center">
+<a href="http://www.artima.com/copyright.html">Copyright</a> &copy; 1996-2014 Artima, Inc. All Rights Reserved.</a> - <a href="http://www.artima.com/privacy.html">Privacy Policy</a> - <a href="http://www.artima.com/termsofuse.html">Terms of Use</a> - <a href="http://www.artima.com/advertising.html">Advertise with Us</a>
+</div>
+</div>
+<br />
+</body>
+</html>

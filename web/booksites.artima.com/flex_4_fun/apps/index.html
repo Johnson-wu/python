@@ -1,0 +1,171 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<script language="javascript">
+
+function setDemo(demoName) {
+	var flashFrame = document.getElementById("iframetag");
+	flashFrame.src = chapter + "/bin-release/" + demoName + ".html";
+}
+
+chapter = "Introduction";
+
+function setAllInvisible() {
+	document.getElementById("Graphics").style.display = "none";
+	document.getElementById("Filters").style.display = "none";
+	document.getElementById("States").style.display = "none";
+	document.getElementById("Transitions").style.display = "none";
+	document.getElementById("SkinningComponents").style.display = "none";
+	document.getElementById("Animation").style.display = "none";
+	document.getElementById("AnimationClass").style.display = "none";
+	document.getElementById("BasicEffects").style.display = "none";
+	document.getElementById("AdvancedEffects").style.display = "none";
+	document.getElementById("EffectChoreography").style.display = "none";
+	document.getElementById("PicturePerfekt").style.display = "none";
+}
+
+function setAllchpdemo() {
+	document.getElementById("GraphicsChp").className = "chpdemo";
+	document.getElementById("FiltersChp").className = "chpdemo";
+	document.getElementById("StatesChp").className = "chpdemo";
+	document.getElementById("TransitionsChp").className = "chpdemo";
+	document.getElementById("SkinningComponentsChp").className = "chpdemo";
+	document.getElementById("AnimationChp").className = "chpdemo";
+	document.getElementById("AnimationClassChp").className = "chpdemo";
+	document.getElementById("BasicEffectsChp").className = "chpdemo";
+	document.getElementById("AdvancedEffectsChp").className = "chpdemo";
+	document.getElementById("EffectChoreographyChp").className = "chpdemo";
+	document.getElementById("PicturePerfektChp").className = "chpdemo";
+}
+
+function setVisible(chapterID) {
+	chapter = chapterID;
+	setAllInvisible();
+	setAllchpdemo();
+	document.getElementById(chapterID).style.display = "inline";
+	document.getElementById(chapterID + "Chp").className = "selected";
+}
+	setAllInvisible();
+
+</script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+p.chpdemo {color:#666; line-height:2pt; cursor:pointer}
+p.selected {font-weight:bold; color:#008800; line-height:2pt; cursor:pointer}
+h2.title {color:#666}
+table {width:100%;height:100%;border:0;}
+html, body {height:100%;}
+</style>
+<title>Flex 4 Fun Demo Applications</title>
+</head>
+<body>
+<h1 align="center">
+        Flex 4 Fun: The Demos
+        </h1>
+<p> 
+        Here are the demo applications from the book <a href="http://www.artima.com/shop/flex_4_fun"><em>Flex 4 Fun</em></a>, by Chet Haase. To run an application, first select a chapter title from the top list, then the name of one of the demos in that chapter from the second list. Some demos, especially those with images, take longer to load. The source code for all of these applications can be found in buildable Flash Builder projects on the book's website at <a href="http://booksites.artima.com/flex_4_fun">http://booksites.artima.com/flex_4_fun</a>. You can also browse the source for each chapter by right-clicking (or control-clicking on a Mac) on the running application and selecting the "View Source" item in the menu.</p>
+<table width="100%" height="100%" border="0" cellspacing="10" cellpadding="10">
+<tr height="100%">
+<td style="width: 180px">
+<h2 class="title">Chapter</h2>
+<p class="chpdemo" id="GraphicsChp"><a onclick="setVisible('Graphics')">Graphics</a></p>
+<p class="chpdemo" id="FiltersChp"><a onclick="setVisible('Filters')">Filters</a></p>
+<p class="chpdemo" id="StatesChp"><a onclick="setVisible('States')">States</a></p>
+<p class="chpdemo" id="TransitionsChp"><a onclick="setVisible('Transitions')">Transitions</a></p>
+<p class="chpdemo" id="SkinningComponentsChp"><a onclick="setVisible('SkinningComponents')">Skinning Components</a></p>
+<p class="chpdemo" id="AnimationChp"><a onclick="setVisible('Animation')">Animation</a></p>
+<p class="chpdemo" id="AnimationClassChp"><a onclick="setVisible('AnimationClass')">The Animation Class</a></p>
+<p class="chpdemo" id="BasicEffectsChp"><a onclick="setVisible('BasicEffects')">Flex Effects: The Basics</a></p>
+<p class="chpdemo" id="AdvancedEffectsChp"><a onclick="setVisible('AdvancedEffects')">Advanced Effects</a></p>
+<p class="chpdemo" id="EffectChoreographyChp"><a onclick="setVisible('EffectChoreography')">Effect Choreography</a></p>
+<p class="chpdemo" id="PicturePerfektChp"><a onclick="setVisible('PicturePerfekt')">Picture Perfekt</a></p>
+<p>&nbsp;</p>
+<h2 class="title">Demos</h2>
+<div id="Graphics" style="display:none">
+<p class="chpdemo" onclick="setDemo('BitmapImageTest')">BitmapImageTest</p>
+<p class="chpdemo" onclick="setDemo('LinearGradientProperties')">LinearGradientProperties</p>
+<p class="chpdemo" onclick="setDemo('OneLiner')">OneLiner</p>
+<p class="chpdemo" onclick="setDemo('RadialGradientProperties')">RadialGradientProperties</p>
+<p class="chpdemo" onclick="setDemo('Reflexion')">Reflexion</p>
+<p class="chpdemo" onclick="setDemo('Shapely')">Shapely</p>
+<p class="chpdemo" onclick="setDemo('SimpleComponents')">SimpleComponents</p>
+<p class="chpdemo" onclick="setDemo('SimpleObjects')">SimpleObjects</p>
+<p class="chpdemo" onclick="setDemo('StrokeTest')">StrokeTest</p>
+<p class="chpdemo" onclick="setDemo('ThreeCircles')">ThreeCircles</p>
+</div>
+<div id="Filters" style="display:none">
+<p class="chpdemo" onclick="setDemo('BlurGlowShadow')">BlurGlowShadow</p>
+<p class="chpdemo" onclick="setDemo('BlurSize')">BlurSize</p>
+<p class="chpdemo" onclick="setDemo('FilterProperties')">FilterProperties</p>
+<p class="chpdemo" onclick="setDemo('Grayer')">Grayer</p>
+<p class="chpdemo" onclick="setDemo('Sharpen')">Sharpen</p>
+<p class="chpdemo" onclick="setDemo('ShiftingShadows')">ShiftingShadows</p>
+<p class="chpdemo" onclick="setDemo('SimpleBlur')">SimpleBlur</p>
+<p class="chpdemo" onclick="setDemo('UponFurtherReflection')">UponFurtherReflection</p>
+</div>
+<div id="States" style="display:none">
+<p class="chpdemo" onclick="setDemo('SearchMe')">SearchMe</p>
+<p class="chpdemo" onclick="setDemo('StateGroups')">StateGroups</p>
+<p class="chpdemo" onclick="setDemo('SearchMe2')">SearchMe2</p>
+</div>
+<div id="Transitions" style="display:none">
+<p class="chpdemo" onclick="setDemo('SearchMeTransition')">SearchMeTransition</p>
+<p class="chpdemo" onclick="setDemo('SimpleTransition')">SimpleTransition</p>
+<p class="chpdemo" onclick="setDemo('TransitionMultiple')">TransitionMultiple</p>
+</div>
+<div id="SkinningComponents" style="display:none">
+<p class="chpdemo" onclick="setDemo('ButtonButton')">ButtonButton</p>
+<p class="chpdemo" onclick="setDemo('ButtonSkinSampler')">ButtonSkinSampler</p>
+</div>
+<div id="Animation" style="display:none">
+<p class="chpdemo" onclick="setDemo('EnterFrameMover')">EnterFrameMover</p>
+<p class="chpdemo" onclick="setDemo('TimeBasedMover')">TimeBasedMover</p>
+<p class="chpdemo" onclick="setDemo('TimerMover')">TimerMover</p>
+<p class="chpdemo" onclick="setDemo('TimerMoverVariableDelay')">TimerMoverVariableDelay</p>
+</div>
+<div id="AnimationClass" style="display:none">
+<p class="chpdemo" onclick="setDemo('AnimationMover')">AnimationMover</p>
+<p class="chpdemo" onclick="setDemo('AnimationRepeater')">AnimationRepeater</p>
+<p class="chpdemo" onclick="setDemo('BounceAnimation')">BounceAnimation</p>
+<p class="chpdemo" onclick="setDemo('CustomEaseAnimation')">CustomEaseAnimation</p>
+<p class="chpdemo" onclick="setDemo('EasingSampler')">EasingSampler</p>
+<p class="chpdemo" onclick="setDemo('MotionPathAnimation')">MotionPathAnimation</p>
+<p class="chpdemo" onclick="setDemo('PointAnimation')">PointAnimation</p>
+<p class="chpdemo" onclick="setDemo('SimpleMotionPathAnimation')">SimpleMotionPathAnimation</p>
+<p class="chpdemo" onclick="setDemo('SimpleMotionPathAnimationXY')">SimpleMotionPathAnimationXY</p>
+</div>
+<div id="BasicEffects" style="display:none">
+<p class="chpdemo" onclick="setDemo('AnimateButtonLabelColor')">AnimateButtonLabelColor</p>
+<p class="chpdemo" onclick="setDemo('AnimateButtons')">AnimateButtons</p>
+<p class="chpdemo" onclick="setDemo('AnimatedGradient')">AnimatedGradient</p>
+<p class="chpdemo" onclick="setDemo('AutoFade')">AutoFade</p>
+<p class="chpdemo" onclick="setDemo('FadeButtons')">Fadebuttons</p>
+<p class="chpdemo" onclick="setDemo('MovingConstraints')">MovingConstraints</p>
+<p class="chpdemo" onclick="setDemo('ResizingConstraints')">ResizingConstraints</p>
+<p class="chpdemo" onclick="setDemo('RotationLocation')">RotationLocation</p>
+<p class="chpdemo" onclick="setDemo('TransformedButton')">TransformedButton</p>
+</div>
+<div id="AdvancedEffects" style="display:none">
+<p class="chpdemo" onclick="setDemo('AnimatedCrossfade')">AnimatedCrossfade</p>
+<p class="chpdemo" onclick="setDemo('AnimatedGradient2')">AnimatedGradient2</p>
+<p class="chpdemo" onclick="setDemo('ShaderTransitions')">ShaderTransitions</p>
+<p class="chpdemo" onclick="setDemo('ThreeDButtons')">ThreeDButtons</p>
+</div>
+<div id="EffectChoreography" style="display:none">
+<p class="chpdemo" onclick="setDemo('AddRemoveTransition')">AddRemoveTransition</p>
+<p class="chpdemo" onclick="setDemo('PanelSequenceParallelSlide')">PanelSequenceParallelSlide</p>
+<p class="chpdemo" onclick="setDemo('PanelSlideFade')">PanelSlideFade</p>
+<p class="chpdemo" onclick="setDemo('ReversingPause')">ReversingPause</p>
+</div>
+<div id="PicturePerfekt" style="display:none">
+<p class="chpdemo" onclick="setDemo('PicturePerfekt')">PicturePerfekt</p>
+</div>
+</td>
+<td align="right" height="100%">
+<iframe id="iframetag" frameborder="1" scrolling="no" width="100%" height="100%" src="DemoPlaceholder.html">
+</iframe></td>
+</tr>
+</table>
+</body>
+</html>

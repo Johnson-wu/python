@@ -1,0 +1,413 @@
+<html>
+<head>
+<title>The C++ Source</title>
+<link rel="stylesheet" type="text/css" href="/newlook.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="alternate" type="application/rss+xml" title="The C++ Source" href="/cppsource/feeds/cppsource.rss" />
+</head>
+
+<BODY text="#000000" alink="#006600">
+<div id="header">
+<table width="100%" bgcolor="#FFFFFF" style="margin-top: 5px">
+<tr>
+<td align="center">
+<div id="topbanner" style="height: 90px"><noscript><a href='http://www.artima.com/zcr/adclick.php?n=a86d37e9' target='_top'><img src='http://www.artima.com/zcr/adview.php?what=zone:1&amp;n=a86d37e9' border='0' alt='' /></a></noscript></div>
+</td>
+</tr>
+</table>
+<table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="bottom">
+<a href="../index.jsp"><img src="/images/a7.gif" alt="The Artima Developer Community" border="0" width="550" height="43" /></a>
+</td>
+</tr>
+</table>
+<table width="100%" bgcolor="#333333">
+<tr>
+<td align="center">
+<div class="ml">
+<a href="/articles" class="hl">Articles</a>&nbsp;|
+<a href="/news/index.jsp" class="hl">News</a>&nbsp;|
+<a href="/weblogs/index.jsp" class="hl">Weblogs</a>&nbsp;|
+<a href="/buzz/index.jsp" class="hl">Buzz</a>&nbsp;|
+<a href="/shop/catalog" class="hl">Books</a>&nbsp;|
+<a href="/forums/index.jsp" class="hl">Forums</a>
+</div>
+</td>
+</tr>
+</table>
+<table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="top">
+<img src="/images/cppsource.jpg"></td>
+<td align="right">
+<div class="loginbox">
+
+    Welcome <i>Guest</i><br />
+
+        &nbsp;&nbsp;<a href="/sign_in?d=http://www.artima.com/cppsource">Sign In</a><br /></div>
+</td>
+</tr>
+</table>
+</div>
+
+<table width="100%">
+<tr valign="top">
+<td width="140px">
+<div id="insideleft">
+<div class="plainsideheader" style="color: 006600;">
+        Editor
+</div>
+<div class="sidecontent" style="margin-top: 0.3em;  margin-bottom: 1.5em;">
+Chuck Allison
+</div>
+
+<!--
+<div class="plainsideheader" style="color: 006600;">
+Sections
+</div>
+
+<div class="sidecontent" style="margin-top: 0.3em;  margin-bottom: 1.5em;">
+
+<a href="/cppsource/articles" style="text-decoration: none;">All</a><br>
+</div>
+-->
+<div class="plainsideheader" style="color: 006600;">
+Links
+</div>
+
+<div class="sidecontent" style="margin-top: 0.3em;  margin-bottom: 1.5em;">
+<a href="/cppsource/about.html" style="text-decoration: none;">About</a><br>
+<a href="/cppsource/writeforus.html" style="text-decoration: none;">Write for Us</a><br>
+<a href="/cppsource/feeds/cppsource.rss" style="text-decoration: none;">RSS Feed</a><br>
+</div>
+
+<div class="hsepdots">
+</div>
+<div class="adnotice">
+Advertisement
+</div>
+
+<div id="leftskyscraper"><noscript><a href='http://www.artima.com/zcr/adclick.php?n=a33dde89' target='_top'><img src='http://www.artima.com/zcr/adview.php?what=zone:3&amp;n=a33dde89' border='0' alt='' /></a></noscript></div>
+</div>
+</td>
+<td>
+<div id="insidecenter">
+<div class="itembox">
+<div class="itemtitle"><a href="/cppsource/codefeatures.html">Enforcing Code Feature Requirements in C++</a></div>
+<div class="iteminfo">by Scott Meyers, September 23, 2008, <a href="/forums/flat.jsp?forum=226&amp;thread=238798"><img border="0" src="/images/discussIcon.gif" alt="16 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=238798">16 comments</a></div>
+
+<div class="itemsummary">
+In this article, Scott Meyers describes a technique that enables the specification of arbitrary combinations of user-defined code features on a per-function basis and that detects violations of feature constraints during compilation.
+</div>
+</div>
+<div id="centerbottom">
+<div id="floatingbox">
+<div class="adtitle">Sponsored Links</div>
+<div id="sponsoredlinks">
+</div>
+</div>
+<div class="itembox">
+<div class="itemtitle"><a href="/cppsource/rvalue.html">A Brief Introduction to Rvalue References</a></div>
+<div class="iteminfo">by Howard E. Hinnant, Bjarne Stroustrup, and Bronek Kozicki, March 10, 2008, <a href="/forums/flat.jsp?forum=226&amp;thread=226637"><img border="0" src="/images/discussIcon.gif" alt="62 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=226637">62 comments</a></div>
+
+<div class="itemsummary">
+Rvalue references is a small technical extension to the C++ language. Rvalue references allow programmers to avoid logically unnecessary copying and to provide perfect forwarding functions. They are primarily meant to aid in the design of higher performance and more robust libraries.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/how_to_go_slow.html">How To Go Slow</a></div>
+<div class="iteminfo">by Greg Colvin, February 8, 2008, <a href="/forums/flat.jsp?forum=226&amp;thread=224539"><img border="0" src="/images/discussIcon.gif" alt="54 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=224539">54 comments</a></div>
+
+<div class="itemsummary">
+Computers make life easier because they're so fast, right? Well, yes and no. Do you write efficient code? The author reveals some disconcerting inefficiencies lurking in commonly used software and development practices.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/type_erasure.html">On the Tension Between Object-Oriented and Generic Programming in C++</a></div>
+<div class="iteminfo">by Thomas Becker, October 15, 2007, <a href="/forums/flat.jsp?forum=226&amp;thread=216972"><img border="0" src="/images/discussIcon.gif" alt="32 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=216972">32 comments</a></div>
+
+<div class="itemsummary">
+The author discusses how the use of generic programming in C++ can lead to conflicts with object-oriented design principles. He demonstrates how a technique known as type erasure can often be used to resolve these conflicts.
+An in-depth example is presented: any_iterator, a type-safe, heterogeneous C++ iterator.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/safelabels.html">Safe Labels in C++</a></div>
+<div class="iteminfo">by Fedor Pikus, October 1, 2007, <a href="/forums/flat.jsp?forum=226&amp;thread=215912"><img border="0" src="/images/discussIcon.gif" alt="20 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=215912">20 comments</a></div>
+
+<div class="itemsummary">
+C++ is a language for writing efficient high-performance programs,
+and bit manipulations are bread and butter of many such programs.
+This article presents a solution to the problem of constraining bit
+operations to allow only safe and legitimate ones, and turn all invalid
+bit manipulations into compile-time errors.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/scattered_io.html">Gathering Scattered I/O in C++</a></div>
+<div class="iteminfo">by Matthew Wilson, September 18, 2007, <a href="/forums/flat.jsp?forum=226&amp;thread=214774"><img border="0" src="/images/discussIcon.gif" alt="2 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=214774">2 comments</a></div>
+
+<div class="itemsummary">
+Have your cake and eat it, too, with STL extensions. In this chapter extract from his latest book, Matthew Wilson shows you how to take full advantage of the STL Iterator abstraction, without sacrificing block-transfer efficiency of Scatter/Gather I/O memory.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/subscription_problem.html">Subscribing Template Classes with Object Factories in C++</a></div>
+<div class="iteminfo">by Guy Peleg, September 14, 2007, <a href="/forums/flat.jsp?forum=226&amp;thread=214541"><img border="0" src="/images/discussIcon.gif" alt="6 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=214541">6 comments</a></div>
+
+<div class="itemsummary">
+Object factories provide a useful abstraction for object construction. A special problem with object factories must be considered, however, when subscribing template classes with object factories. This article presents an overview of the &quot;subscription problem&quot; along with several solutions.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/boost_con_07_up_close.html">BoostCon'07 Up Close and Personal (and a Little Sleepy)</a></div>
+<div class="iteminfo">by Greg Colvin, July 16, 2007, <a href="/forums/flat.jsp?forum=226&amp;thread=210436"><img border="0" src="/images/discussIcon.gif" alt="1 comment"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=210436">1 comment</a></div>
+
+<div class="itemsummary">
+This article is a personal, behind-the-scenes look at BoostCon '07 from a veteran who has seen it all.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/cooperative_visitor.html">Cooperative Visitor: A Template Technique for Visitor Creation</a></div>
+<div class="iteminfo">by Anand Shankar Krishnamoorthi, July 11, 2007, <a href="/forums/flat.jsp?forum=226&amp;thread=210081"><img border="0" src="/images/discussIcon.gif" alt="11 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=210081">11 comments</a></div>
+
+<div class="itemsummary">
+This article presents a flexible and efficient variation of the Visitor design pattern in C++ that accommodates arbitrary argument and return types.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/boost_con_07.html">BoostCon'07 Trip Report</a></div>
+<div class="iteminfo">by Eric Niebler, June 26, 2007, <a href="/forums/flat.jsp?forum=226&amp;thread=209069"><img border="0" src="/images/discussIcon.gif" alt="11 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=209069">11 comments</a></div>
+
+<div class="itemsummary">
+Couldn’t make it to BoostCon'07, the inaugural annual Boost Conference? Here’s the next best thing--a lively trip report from one of its presenters.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/xml_data_binding.html">An Introduction to XML Data Binding in C++</a></div>
+<div class="iteminfo">by Boris Kolpackov, May 4, 2007, <a href="/forums/flat.jsp?forum=226&amp;thread=204721"><img border="0" src="/images/discussIcon.gif" alt="20 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=204721">20 comments</a></div>
+
+<div class="itemsummary">
+XML processing has become a common task that many C++ application developers have to deal with. This article introduces XML Data Binding and shows how it can simplify XML processing in C++.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/pure_virtual.html">Pure Virtual Function Called: An Explanation</a></div>
+<div class="iteminfo">by Paul S. R. Chisholm, February 26, 2007, <a href="/forums/flat.jsp?forum=226&amp;thread=196881"><img border="0" src="/images/discussIcon.gif" alt="12 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=196881">12 comments</a></div>
+
+<div class="itemsummary">
+&quot;Pure virtual function called&quot; is the dying message of the occasional crashed C++ program. What does it mean? This article covers all of the possible explanations.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/threads_meeting.html">Trip Report: Ad-Hoc Meeting on Threads in C++</a></div>
+<div class="iteminfo">by Eric Niebler, October 17, 2006, <a href="/forums/flat.jsp?forum=226&amp;thread=180936"><img border="0" src="/images/discussIcon.gif" alt="67 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=180936">67 comments</a></div>
+
+<div class="itemsummary">
+The C++ standardization committee is hard at work standardizing threads for the next version of C++. Some members recently met to discuss the issues, and The C++ Source was there. Read on to learn what the world’s leading experts on concurrency are planning for C++0x.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/lazy_builder.html">The Lazy Builder’s Complexity Lesson</a></div>
+<div class="iteminfo">by Thomas Guest, October 9, 2006, <a href="/forums/flat.jsp?forum=226&amp;thread=177146"><img border="0" src="/images/discussIcon.gif" alt="9 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=177146">9 comments</a></div>
+
+<div class="itemsummary">
+This article investigates the complexity guarantees made by the C++ Standard Library. By analyzing and measuring the performance of alternative solutions to the same problem it shows how this library allows us to write code that is both simple and efficient.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/top_cpp_aha_moments.html">My Most Important C++ Aha! Moments...Ever</a></div>
+<div class="iteminfo">by Scott Meyers, September 6, 2006, <a href="/forums/flat.jsp?forum=226&amp;thread=175294"><img border="0" src="/images/discussIcon.gif" alt="25 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=175294">25 comments</a></div>
+
+<div class="itemsummary">
+In this article, Scott Meyers shares his picks for the five most meaningful Aha! moments in his involvement with C++, along with why he chose them.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/top_cpp_people.html">The Most Important C++ People...Ever</a></div>
+<div class="iteminfo">by Scott Meyers, August 30, 2006, <a href="/forums/flat.jsp?forum=226&amp;thread=174250"><img border="0" src="/images/discussIcon.gif" alt="36 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=174250">36 comments</a></div>
+
+<div class="itemsummary">
+In this article, Scott Meyers shares his picks for the five most important people in the history of C++, along with why he chose them.
+</div>
+</div><div class="itembox">
+<div class="itemtitle"><a href="/cppsource/top_cpp_software.html">The Most Important C++ Software...Ever</a></div>
+<div class="iteminfo">by Scott Meyers, August 23, 2006, <a href="/forums/flat.jsp?forum=226&amp;thread=173303"><img border="0" src="/images/discussIcon.gif" alt="18 comments"></a>&nbsp;<a href="/forums/flat.jsp?forum=226&amp;thread=173303">18 comments</a></div>
+
+<div class="itemsummary">
+In this article, Scott Meyers shares his picks for the five most important software packages in the history of C++, along with why he chose them.
+</div>
+</div>
+</div>
+
+</div>
+</td>
+<td width="315px">
+<div id="insideright">
+<div class="plainsideheader" style="color: 006600; text-align: center;">
+Advisory Board
+</div>
+
+<div class="sidecontent" style="margin-top: 0.3em;  margin-bottom: 0.5em;">
+<table align="center" cellspacing="5" cellpadding="5px"><tr valign="top"><td><div class="sidecontent">David Abrahams<br />Andrei Alexandrescu<br />Matthew Austern<br />Walter Bright<br />Steve Clamage<br />Greg Colvin<br />Jim Coplien<br />Stephen Dewhurst<br />Neil Harrison<br />Kevlin Henney<br />Howard Hinnant</div></td><td><div class="sidecontent">Andrew Koenig<br />Angelika Langer<br />Nathan Myers<br />Eric Niebler<br />Thorsten Ottosen<br />Thomas Plum<br />Dan Saks<br />Jeremy Siek<br />Bjarne Stroustrup<br />Herb Sutter<br />Matthew Wilson</div></td></tr></table>
+</div>        
+
+<div class="hsepdots">
+</div>
+
+<div class="adnotice">
+Advertisement
+</div>
+<div style="margin-bottom: 1em;">
+<script language='JavaScript' type='text/javascript' src='http://www.artima.com/zcr/adx.js'></script>
+<script language='JavaScript' type='text/javascript'>
+<!--
+if (!document.phpAds_used) document.phpAds_used = ',';
+phpAds_random = new String (Math.random()); phpAds_random = phpAds_random.substring(2,11);
+document.write ("<" + "script language='JavaScript' type='text/javascript' src='");
+document.write ("http://www.artima.com/zcr/adjs.php?n=" + phpAds_random);
+document.write ("&amp;what=zone:2");
+document.write ("&amp;exclude=" + document.phpAds_used);
+if (document.referrer)
+document.write ("&amp;referer=" + escape(document.referrer));
+document.write ("'><" + "/script>");
+//-->
+</script><noscript><a href='http://www.artima.com/zcr/adclick.php?n=a74ab060' target='_blank'><img src='http://www.artima.com/zcr/adview.php?what=zone:2&amp;n=a74ab060' border='0' alt=''></a></noscript>
+
+</div>
+<div class="hsepdots">
+</div>
+
+<div style="margin-top: 1em;"></div>
+<div class="boxedcontents"
+    style="border-color: 006600;">
+    <center>
+    Subscribe to be notified of new articles published in
+        <i>The C++ Source</i> via RSS.
+        <a href="/cppsource/feeds/cppsource.rss"><img src="/images/xml.gif" align="top" border="0"></a>
+        </center>
+</div>
+</div>
+</td>
+</tr>
+</table>
+
+
+<div style="margin-top: 1em;text-align: center; font-size: 0.85em">
+Browse <a href="/articles?i=cppsource">all articles from The C++ Source</a>.<br /><br />
+The C++ Source is a trademark of Artima, Inc.
+</div>
+
+<div id="footer">
+<hr width="100%" />
+<center>
+
+<table width="66%" align="center">
+<tr>
+<td>
+<div class="horizontaltextadbox">
+<div class="adheadline">
+Crystal Reports - New Royalty-Free Runtime and Free 30-Day Trial Download</div>
+<div id="sponsoredlinks">
+  <a href="http://www.artima.com/zcr/adclick.php?bannerid=302&zoneid=8&source=&dest=http%3A%2F%2Fad.doubleclick.net%2Fclk%3B211682720%3B33194743%3Bc">
+    Check out the new simplified licensing option that enables unlimited royalty-free distribution of the report
+    engine for externally facing server and web deployment.
+  </A>
+  <A HREF="http://ad.doubleclick.net/jump/N5072.Artima/B3424356.4;sz=1x1;ord=1409880564800?">
+    <IMG SRC="http://ad.doubleclick.net/ad/N5072.Artima/B3424356.4;sz=1x1;ord=1409880564800?" BORDER=0 WIDTH=1 HEIGHT=1 ALT="Click Here">
+  </A>
+</div>
+</div>
+</td>
+</tr>
+</table>
+
+<script type="text/javascript"><!--
+google_ad_client = "pub-3911176865765226";
+google_alternate_color = "ffffff";
+google_ad_width = 728;
+google_ad_height = 15;
+google_ad_format = "728x15_0ads_al";
+google_ad_channel = "";
+google_color_border = "ffffff";
+google_color_bg = "FFFFFF";
+google_color_link = "003090";
+google_color_text = "000000";
+google_color_url = "666666";
+//--></script>
+<script type="text/javascript"
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+<br />
+<br /><center>
+<!-- SiteSearch Google -->
+<form method="get" action="http://www.google.com/custom">
+<table border="0" bgcolor="#ffffff">
+<tr><td nowrap="nowrap" valign="top" align="left" height="32">
+<a href="http://www.google.com/">
+<img src="http://www.google.com/logos/Logo_25wht.gif"
+border="0" alt="Google"></img></a>
+</td>
+<td nowrap="nowrap">
+<input type="hidden" name="domains" value="Artima.com"></input>
+<input type="text" name="q" size="31" maxlength="255" value=""></input>
+<input type="submit" name="sa" value="Search"></input>
+</td></tr>
+<tr>
+<td>&nbsp;</td>
+
+<td nowrap="nowrap">
+<font size="-1" color="#000000">
+<input type="radio" name="sitesearch" value=""></input> Web
+<input type="radio" name="sitesearch" value="Artima.com" checked="checked"></input>Artima.com
+</font>&nbsp;&nbsp;
+<input type="hidden" name="client" value="pub-3911176865765226"></input>
+<input type="hidden" name="forid" value="1"></input>
+<input type="hidden" name="ie" value="ISO-8859-1"></input>
+<input type="hidden" name="oe" value="ISO-8859-1"></input>
+<input type="hidden" name="cof" value="GALT:#008000;GL:1;DIV:#336699;VLC:663399;AH:center;BGC:FFFFFF;LBGC:FFFFFF;ALC:0000FF;LC:0000FF;T:000000;GFNT:0000FF;GIMP:0000FF;LH:50;LW:150;L:http://www.artima.com/images/artima150.gif;S:http://www.artima.com;FORID:1;"></input>
+<input type="hidden" name="hl" value="en"></input>
+</td></tr></table>
+</form>
+<!-- SiteSearch Google -->
+</center>
+<br />
+<div class="sp">
+<div style="text-align: center">
+<a href="http://www.artima.com/copyright.html">Copyright</a> &copy; 1996-2009 Artima, Inc. All Rights Reserved.</a> - <a href="http://www.artima.com/privacy.html">Privacy Policy</a> - <a href="http://www.artima.com/termsofuse.html">Terms of Use</a> - <a href="http://www.artima.com/advertising.html">Advertise with Us</a>
+
+</div>
+</div>
+<br />
+</div>
+<script language='JavaScript' type='text/javascript'>
+<!--
+function initBannerVarForZone(zone) {
+
+        if (!document.phpAds_used) document.phpAds_used = ',';
+        phpAds_random = new String (Math.random());
+        phpAds_random = phpAds_random.substring(2,11);
+
+        var nextScriptSrc = 'http://www.artima.com/zcr/adjs_modified.php?n=' +
+                phpAds_random  +
+                '&amp;what=zone:' + zone + '&amp;target=_top&amp;block=1&amp;blockcampaign=1' +
+                '&amp;exclude=' + document.phpAds_used;
+
+        document.write("<script language='JavaScript' type='text/javascript' src='");
+        document.write(nextScriptSrc);
+        document.write("'><\/script>");
+
+}
+
+function replaceDiv(divID) {
+        document.getElementById(divID).innerHTML = phpadsbanner;
+}
+-->
+</script><script language='JavaScript' type='text/javascript'>
+<!--
+initBannerVarForZone(5);
+-->
+</script>
+<script language='JavaScript' type="text/javascript">
+<!--
+replaceDiv('topbanner');
+-->
+</script><script language='JavaScript' type='text/javascript'>
+<!--
+initBannerVarForZone(3);
+-->
+</script>
+<script language='JavaScript' type="text/javascript">
+<!--
+replaceDiv('leftskyscraper');
+-->
+</script>
+</body>
+</html>

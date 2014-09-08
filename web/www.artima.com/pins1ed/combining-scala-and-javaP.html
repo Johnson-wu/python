@@ -1,0 +1,664 @@
+<html>
+<head>
+<title>Combining Scala and Java</title>
+<meta name="description" content="
+" />
+<meta name="keywords" content="scala" />
+<meta name="author" content="Martin Odersky, Lex Spoon, and Bill Venners" />
+<link rel="stylesheet" type="text/css" href="/artimapf.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+</head>
+<body><table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="bottom">
+<a href="/index.jsp"><img src="/images/a7.gif" alt="The Artima Developer Community" border="0" width="550" height="43" /></a>
+</td>
+</table>
+<table width="100%" bgcolor="#333333">
+<tr>
+<td align="center">
+<div class="ml">
+<a href="/articles" class="hl">Articles</a>&nbsp;|
+<a href="/news/index.jsp" class="hl">News</a>&nbsp;|
+<a href="/weblogs/index.jsp" class="hl">Weblogs</a>&nbsp;|
+<a href="/buzz/index.jsp" class="hl">Buzz</a>&nbsp;|
+<a href="/shop/catalog" class="hl">Books</a>&nbsp;|
+<a href="/forums/index.jsp" class="hl">Forums</a>
+</div>
+</td>
+</tr>
+</table>
+<table width="100%" bgcolor="#AACCFF">
+<tr>
+<td align="center">
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/combining-scala-and-java.html">Screen Friendly Version</a>&nbsp;| 
+<a href="/pins1ed/object-equality.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/actors-and-concurrency.html">Next</a>
+</div>
+</td>
+</tr>
+</table>
+<BR>
+<div class="vegies">
+<div class="tc">
+<span class="sts">Chapter 29 of Programming in Scala, First Edition</span><br />
+<span class="ts">Combining Scala and Java</span><br />
+<span class="as">by Martin Odersky, Lex Spoon, and Bill Venners</span><br />
+<span class="pd">December 10, 2008</span><br />
+</div>
+
+
+
+
+<p>Scala code is often used in tandem with large Java programs and<!-- -->
+frameworks.<a id="i373161214-1"></a><a id="i1128780868-2"></a> Since Scala is highly compatible with Java, most of the
+time you can combine the languages without worrying very much.  For
+example, standard frameworks such as Swing, Servlets, and JUnit are
+known to work just fine with Scala.  Nonetheless, from time to time
+you will run into some issue with combining Java and Scala.</p>
+
+<p>This chapter describes two aspects of combining Java and Scala.
+First, it discusses how Scala is translated to Java, which is
+especially important if you call Scala code from Java.  Second, it
+discusses the use of Java annotations in Scala, an important feature
+if you want to use Scala with an existing Java framework.</p>
+
+<h3><a name="29.1"></a>29.1 Using Scala from Java <span style="font-size: .5em">[<a href="combining-scala-and-java.html#29.1">link</a>]</span></h3>
+
+
+<p>Most of the time you can think of Scala at the source code level.
+However, you will have a richer understanding of how the system
+works if you know something about its translation.  Further, if you
+call Scala code from Java, you will need to know what Scala code looks
+like from a Java point of view.</p>
+
+<h4>General rules</h4>
+
+
+<p>Scala is implemented as a translation to standard Java
+bytecodes<a id="i-1806853862-1"></a>. As
+much as possible, Scala features map directly onto the equivalent Java
+features.  Scala classes, methods, strings, exceptions, for example,
+are all compiled to the same in Java bytecode as their Java counterparts.</p>
+
+<p>To make this happen required an occasional hard choice in the design
+of Scala.  For example, it might have been nice to resolve overloaded
+methods at run time, using run-time types, rather than at compile time.
+Such a design would break with Java's, however, making it much
+trickier to mesh Java and Scala.  In this case, Scala stays with
+Java's overloading resolution, and thus Scala methods and method calls
+can map directly to Java methods and method calls.</p>
+
+<p>For other features Scala has its own design.  For example, traits have
+no equivalent in Java.  Similarly, while both Scala and Java have
+generic types, the details of the two systems clash.  For language
+features like these, Scala code cannot be mapped directly to a Java
+construct, so it must be encoded using some combination of the
+structures Java does have.</p>
+
+<p>For these features that are mapped indirectly, the encoding is not
+fixed.  There is an ongoing effort to make the translations as simple
+as possible, so by the time you read this, some details may be
+different than at the time of writing.  You can find out what
+translation your current Scala compiler uses by examining the
+"<span class="texttt">.class</span>" files with tools like <span class="texttt">javap</span>.</p>
+
+<p>Those are the general rules.  Consider now some special cases.</p>
+
+<h4>Value types</h4>
+
+
+<p>A value type like <span class="code">Int</span> can be translated in two different ways to
+Java.<a id="i840866566-1"></a>  Whenever possible, the compiler translates a Scala <span class="code">Int</span> to a
+Java <span class="code">int</span> to get better performance.<a id="i884498802-4"></a>  Sometimes this is not possible, though,
+because the compiler is not sure whether it is translating an <span class="code">Int</span>
+or some other data type.  For example, a particular List[Any] might
+hold only <span class="code">Int</span>s, but the compiler has no way to be sure.</p>
+
+<p>In cases like this, where the compiler is unsure whether an object
+is a value type or not, the compiler uses objects and relies on wrapper
+classes.  Wrapper classes such as, for example, <span class="code">java.lang.Integer</span> allow
+a value type to be wrapped inside a Java object and thereby manipulated
+by code that needs objects.<a href="combining-scala-and-java.html#footnote29-1">[1]</a></p>
+
+<h4>Singleton objects</h4>
+
+
+<p>Java has no exact equivalent to a singleton object, but it does have
+static methods.<a id="i-1734369148-1"></a> 
+The Scala translation of singleton objects uses a combination of static
+and instance methods.<a id="i-855208314-1"></a>
+For every Scala singleton object, the compiler will create a Java class
+for the object with a dollar sign added to the end.  For a singleton
+object named <span class="code">App</span>, the compiler produces a Java class named
+<span class="code">App$</span>.  This class has all the methods and fields of the Scala
+singleton object.  The Java class also has a single static field named
+<span class="code">MODULE$</span> to hold the one instance of the class that is created at
+run time.</p>
+
+<p>As a full example, suppose you compile the following singleton object:
+<pre>
+  <span class="vem">object</span>&nbsp;<span class="typename">App</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;main(args:&nbsp;<span class="typename">Array[String]</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"Hello,&nbsp;world!"</span>)
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+Scala will generate a Java <span class="code">App$</span> class with the following
+fields and methods:</p>
+
+<pre>
+  $&nbsp;javap&nbsp;<span class="typename">App</span>$
+  <span class="output">public&nbsp;final&nbsp;class&nbsp;App$&nbsp;extends&nbsp;java.lang.Object</span>
+  <span class="output">implements&nbsp;scala.ScalaObject{</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;static&nbsp;final&nbsp;App$&nbsp;MODULE$;</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;static&nbsp;{};</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;App$();</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;void&nbsp;main(java.lang.String[]);</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;int&nbsp;$tag();</span>
+  <span class="output">}</span>
+</pre><!-- -->
+That's the translation for the general case.
+An important special case is if you have a "standalone" singleton object, one which does 
+not come with a class of the same name.  For example, you might have a
+singleton object named <span class="code">App</span>, and not have any class named
+<span class="code">App</span>.  In that case, the compiler will create a Java class named
+<span class="code">App</span> that has a static forwarder method for each method of
+the Scala singleton object:
+
+
+<pre>
+  $&nbsp;javap&nbsp;<span class="typename">App</span>
+  <span class="output">Compiled&nbsp;from&nbsp;"App.scala"</span>
+  <span class="output">public&nbsp;final&nbsp;class&nbsp;App&nbsp;extends&nbsp;java.lang.Object{</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;static&nbsp;final&nbsp;int&nbsp;$tag();</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;static&nbsp;final&nbsp;void&nbsp;main(java.lang.String[]);</span>
+  <span class="output">}</span>
+</pre><!-- -->
+To contrast, if you did have a class named <span class="code">App</span>, Scala would
+create a corresponding Java <span class="code">App</span> class to hold the members
+of the <span class="code">App</span> class you defined.  In that case it would not add any forwarding
+methods for the same-named singleton object, and Java code would have
+to access the singleton via the <span class="code">MODULE$</span>
+field.
+
+
+<h4>Traits as interfaces</h4>
+
+
+<p>Compiling any trait creates a Java interface of the same
+name.<a id="i286095114-1"></a><a id="i1983011802-1"></a>  This
+interface is usable as a Java type, and it lets you call methods on
+Scala objects through variables of that type.</p>
+
+<p>Implementing a trait in Java is another story.  
+In the general case it is not practical.
+One special case is
+important, however.  If you make a Scala trait that includes only
+abstract methods, then that trait will be translated directly to a
+Java interface, with no other code to worry about.  Essentially this
+means that you can write a Java interface in Scala syntax if you like.</p>
+
+<h3><a name="29.2"></a>29.2 Annotations <span style="font-size: .5em">[<a href="combining-scala-and-java.html#29.2">link</a>]</span></h3>
+
+
+<p><a name="sec:annotations"></a></p>
+
+<p>Scala's general annotations system is discussed in
+<a href="annotations.html">Chapter 25</a>.  This section discusses Java-specific
+aspects of annotations.<a id="i-311881081-1"></a></p>
+
+<h4>Additional effects from standard annotations</h4>
+
+
+<p>Several annotations cause the compiler to emit extra information when
+targeting the Java platform.  When the compiler sees such an annotation, it first
+processes it according to the general Scala rules, and then it
+does something extra for Java.</p>
+
+<p><b>Deprecation</b>
+For any method or class marked <span class="code">@deprecated</span>,<a id="i-1632344653-2"></a> the
+compiler will add Java's own deprecation annotation to the
+emitted code.  Because of this, Java compilers can issue
+deprecation warnings when Java code accesses
+deprecated Scala methods.</p>
+
+<p><b>Volatile fields</b>
+Likewise, any field marked <span class="code">@volatile</span><a id="i-882906061-2"></a> in Scala is given the
+Java <span class="code">volatile</span> modifier in the emitted code.  Thus, volatile
+fields in Scala behave exactly according to Java's semantics, and
+accesses to volatile fields are sequenced precisely according to the
+rules specified for volatile fields in the Java memory model.</p>
+
+<p><b>Serialization</b></p>
+
+<p>Scala's three standard serialization annotations are all
+translated to Java equivalents.  A <span class="code">@serializable</span><a id="i-534731536-2"></a><a id="i-897281643-2"></a> class has
+Java's <span class="code">Serializable</span> interface added to it.  A
+<span class="code">@SerialVersionUID(1234L)</span> annotation is converted to the
+following Java field definition:
+<pre>
+  <span class="comment">//&nbsp;Java&nbsp;serial&nbsp;version&nbsp;marker</span>
+  <span class="vem">private</span>&nbsp;<span class="vem">final</span>&nbsp;static&nbsp;long&nbsp;<span class="typename">SerialVersionUID</span>&nbsp;=&nbsp;<span class="literal">1234L</span>
+</pre><!-- -->
+Any variable marked <span class="code">@transient</span> is given the Java
+<span class="code">transient</span> modifier.</p>
+
+<h4>Exceptions thrown</h4>
+
+
+<p>Scala does not check that thrown exceptions are caught.<a id="i-767472144-1"></a>  That is,
+Scala has no equivalent to Java's <span class="code">throws</span> declarations on
+methods.<a id="i1515336401-1"></a><a id="i993633856-1"></a><a id="i1490895901-2"></a>
+All Scala methods are translated to Java methods that declare no thrown
+exceptions.<a href="combining-scala-and-java.html#footnote29-2">[2]</a></p>
+
+<p>The reason this feature is omitted from Scala is that the Java
+experience with it has not been purely positive.  Because annotating methods with <span class="code">throws</span>
+clauses is a heavy burden, too many developers write code
+that swallows and drops exceptions, just to get the code to compile without adding all those <span class="code">throws</span> clauses.
+They may intend to improve the exception handling later, but experience
+shows that all too often time-pressed programmers will never come back
+and add proper exception handling.  The twisted result is that this
+well-intentioned feature often ends up making code <em>less</em>
+reliable.  A large amount of production Java code swallows and hides
+runtime exceptions, and the reason it does so is to satisfy the
+compiler.</p>
+
+<p>Sometimes when interfacing to Java, however, you may need to write Scala code that
+has
+Java-friendly annotations describing which exceptions your methods may throw.
+For example, each method in an RMI remote interface is required to
+mention <span class="code">java.io.RemoteException</span> in its <span class="code">throws</span> clause.
+Thus, if you wish to write an RMI remote interface as a Scala trait with abstract methods, you would need to 
+list <span class="code">RemoteException</span> in the <span class="code">throws</span> clauses for those methods.
+To accomplish this, all you have to do
+is mark your methods with <span class="code">@throws</span><a id="i-1229583646-1"></a><a id="i1626806115-1"></a> annotations.
+For example, the Scala class shown in <a href="combining-scala-and-java.html#lst:throws-clause">Listing 29.1</a> has a method marked as throwing
+<span class="code">IOException</span>.</p>
+
+<p><a name="lst:throws-clause"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;java.io._
+  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Reader</span>(fname:&nbsp;<span class="typename">String</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">val</span>&nbsp;in&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">BufferedReader</span>(<span class="vem">new</span>&nbsp;<span class="typename">FileReader</span>(fname))
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;@throws(classOf[<span class="typename">IOException</span>])
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;read()&nbsp;=&nbsp;in.read()
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 29.1 - A Scala method that declares a Java <span class="code">throws</span> clause.</h5>
+
+
+<p>Here is how it looks from Java:<a id="i1433885554-2"></a><a id="i385195690-2"></a></p>
+
+<pre>
+  $&nbsp;javap&nbsp;Reader
+  <span class="output">Compiled&nbsp;from&nbsp;"Reader.scala"</span>
+  <span class="output">public&nbsp;class&nbsp;Reader&nbsp;extends&nbsp;java.lang.Object&nbsp;implements</span>
+  <span class="output">scala.ScalaObject{</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;Reader(java.lang.String);</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;int&nbsp;read()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;throws&nbsp;java.io.IOException;</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;int&nbsp;$tag();</span>
+  <span class="output">}</span>
+  $
+</pre><!-- -->
+Note that the <span class="code">read</span> method indicates with a Java <span class="code">throws</span> clause that it
+may throw
+an <span class="code">IOException</span>.<!-- -->
+
+
+<h4>Java annotations</h4>
+
+
+<p>Existing annotations from Java frameworks can be used directly in Scala code.
+Any Java framework will see the annotations you write just as if you
+were writing in Java.</p>
+
+<p>A wide variety of Java packages use annotations.  As an example,
+consider JUnit 4.<a id="i70981870-3"></a> JUnit is a framework for writing automated tests
+and for running those tests.  The latest version, JUnit 4, uses
+annotations to indicate which parts of your code are tests.  The idea
+is that you write a lot of tests for your code, and then you run those
+tests whenever you change the source code.  That way, if your changes
+add a new bug, one of the tests will fail and you will find out
+immediately.</p>
+
+<p>Writing a test is easy.  You simply write a method in a top-level
+class that exercises your code, and you use an annotation to mark the
+method as a test.  It looks like this:
+<pre>
+  <span class="vem">import</span>&nbsp;org.junit.Test
+  <span class="vem">import</span>&nbsp;org.junit.Assert.assertEquals
+  <br />  <span class="vem">class</span>&nbsp;<span class="typename">SetTest</span>&nbsp;{
+  <br />  &nbsp;&nbsp;@<span class="typename">Test</span>
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;testMultiAdd&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;set&nbsp;=&nbsp;<span class="typename">Set</span>()&nbsp;+&nbsp;<span class="literal">1</span>&nbsp;+&nbsp;<span class="literal">2</span>&nbsp;+&nbsp;<span class="literal">3</span>&nbsp;+&nbsp;<span class="literal">1</span>&nbsp;+&nbsp;<span class="literal">2</span>&nbsp;+&nbsp;<span class="literal">3</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;assertEquals(<span class="literal">3</span>,&nbsp;set.size)
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+The <span class="code">testMultiAdd</span> method is a test.  This test adds multiple items
+to a set and makes sure that each is added only once.  The
+<span class="code">assertEquals</span> method, which comes as part of the JUnit API, checks
+that its two arguments are equal.  If they are different, then the
+test fails.  In this case, the test verifies that repeatedly adding
+the same numbers does not increase the size of a set.</p>
+
+<p>The test is marked using the annotation <span class="code">org.junit.Test</span>. Note that
+this annotation has been imported, so it can be referred to as simply
+<span class="code">@Test</span> instead of the more cumbersome <span class="code">@org.junit.Test</span>.<a id="i-1737029383-1"></a><a id="i-380372540-1"></a></p>
+
+<p>That's all there is to it.  The test can be run using any JUnit test
+runner.  Here it is being run with the command-line test
+runner:<!-- --></p>
+
+<pre>
+  $&nbsp;scala&nbsp;-cp&nbsp;junit-4.3.<span class="literal">1.</span>jar:.&nbsp;<span class="typename">org.junit.runner.JUnitCore</span>&nbsp;<span class="typename">SetTest</span>
+  <span class="output">JUnit&nbsp;version&nbsp;4.3.1</span>
+  <span class="output">.</span>
+  <span class="output">Time:&nbsp;0.023</span>
+  <span class="output"></span>
+  <span class="output">OK&nbsp;(1&nbsp;test)</span>
+</pre><!-- -->
+
+
+<h4>Writing your own annotations</h4>
+
+
+<p>To make an annotation that is visible to Java reflection,<a id="i-244877014-1"></a> you must use<a id="i-1366299605-1"></a>
+Java notation and compile it with <span class="code">javac</span><a id="i-1137870217-1"></a>.
+For this use case, writing the annotation in Scala does not seem
+helpful, so the standard compiler does not support it.
+The reasoning is that the Scala support would inevitably fall short of
+the full possibilities of Java annotations, and further, Scala will probably
+one day have its own reflection, in which case you would want to
+access Scala annotations with Scala reflection.</p>
+
+<p>Here is an example annotation:
+<pre>
+  <span class="vem">import</span>&nbsp;java.lang.annotation.*;
+  @<span class="typename">Retention</span>(RetentionPolicy.RUNTIME)
+  @<span class="typename">Target</span>(ElementType.METHOD)
+  public&nbsp;@interface&nbsp;<span class="typename">Ignore</span>&nbsp;{&nbsp;}
+</pre><!-- -->
+After compiling the above with <span class="code">javac</span>, you can use the annotation
+as follows:
+<pre>
+  <span class="vem">object</span>&nbsp;<span class="typename">Tests</span>&nbsp;{
+  &nbsp;&nbsp;@<span class="typename">Ignore</span>
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;testData&nbsp;=&nbsp;<span class="typename">List</span>(<span class="literal">0</span>,&nbsp;<span class="literal">1</span>,&nbsp;-<span class="literal">1</span>,&nbsp;<span class="literal">5</span>,&nbsp;-<span class="literal">5</span>)
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;test1&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;assert(testData&nbsp;==&nbsp;(testData.head&nbsp;::&nbsp;testData.tail))
+  &nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;test2&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;assert(testData.contains(testData.head))
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+In this example, <span class="code">test1</span> and <span class="code">test2</span> are supposed to be
+test methods, but <span class="code">testData</span> should be ignored even though
+its name starts with "test".</p>
+
+<p>To see when these annotations are present, you can use the Java
+reflection APIs.  Here is sample code to show how it works:
+<pre>
+  <span class="vem">for</span>&nbsp;{
+  &nbsp;&nbsp;method&nbsp;&lt;-&nbsp;Tests.getClass.getMethods
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;method.getName.startsWith(<span class="quotedstring">"test"</span>)
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;method.getAnnotation(classOf[<span class="typename">Ignore</span>])&nbsp;==&nbsp;<span class="vem">null</span>
+  }&nbsp;{
+  &nbsp;&nbsp;println(<span class="quotedstring">"found&nbsp;a&nbsp;test&nbsp;method:&nbsp;"</span>&nbsp;+&nbsp;method)
+  }
+</pre><!-- -->
+Here, the reflective methods <span class="code">getClass</span> and <span class="code">getMethods</span> are
+used to
+inspect all the fields of the input object's class.  These are
+normal reflection methods.  The annotation-specific part is the use of
+method <span class="code">getAnnotation</span>.  As of Java 1.5, many reflection objects have
+a <span class="code">getAnnotation</span> method for searching for annotations of a specific
+type.  In this case, the code looks for an annotation of our new
+<span class="code">Ignore</span> type.  Since this is a Java API, success is indicated by
+whether the result is <span class="code">null</span> or is an actual annotation object.</p>
+
+<p>Here is the code in action:</p>
+
+<pre>
+  $&nbsp;javac&nbsp;Ignore.java
+  $&nbsp;scalac&nbsp;Tests.scala
+  $&nbsp;scalac&nbsp;FindTests.scala
+  $&nbsp;scala&nbsp;<span class="typename">FindTests</span>
+  <span class="output">found&nbsp;a&nbsp;test&nbsp;method:&nbsp;public&nbsp;void&nbsp;Tests$.test2()</span>
+  <span class="output">found&nbsp;a&nbsp;test&nbsp;method:&nbsp;public&nbsp;void&nbsp;Tests$.test1()</span>
+</pre><!-- -->
+As an aside, notice that the methods are in class <span class="code">Tests$</span> instead
+of class <span class="code">Tests</span> when viewed with Java reflection.  As described at
+the beginning of the chapter, the implementation of a Scala singleton
+object is placed in a Java class with a dollar sign added to the end
+of its name.  In this case, the implementation of <span class="code">Tests</span> is in the
+Java class <span class="code">Tests$</span>.
+
+
+<p>Be aware that when you use Java annotations you have to work within
+their limitations.  For example, you can only use constants,
+not expressions, in the arguments to annotations.  You can support
+<span class="code">@serial(1234)</span> but not <span class="code">@serial(x * 2)</span>, because <span class="code">x</span>&nbsp;<span class="code">*</span>&nbsp;<span class="code">2</span> is
+not a constant.</p>
+
+<h3><a name="29.3"></a>29.3 Existential types <span style="font-size: .5em">[<a href="combining-scala-and-java.html#29.3">link</a>]</span></h3>
+
+
+<p><a name="sec:existentials"></a></p>
+
+<p>All Java types have a Scala equivalent.<a id="i-531244609-2"></a><a id="i1673589657-2"></a>  This is necessary so that
+Scala code can access any legal Java class.  Most of the time the
+translation is straightforward.  <span class="code">Pattern</span> in Java is <span class="code">Pattern</span> in
+Scala, and <span class="code">Iterator&lt;Component&gt;</span> in Java is <span class="code">Iterator[Component]</span> in
+Scala.  For some cases, though, the Scala types you have seen so far
+are not enough.  What can be done with Java wildcard types such as
+<span class="code">Iterator&lt;?&gt;</span> or <span class="code">Iterator&lt;?</span>&nbsp;<span class="code">extends</span>&nbsp;<span class="code">Component&gt;</span>?  What can be
+done about raw types like <span class="code">Iterator</span>, where the type parameter is omitted?
+For wildcard types and raw types, Scala uses an extra kind of type<a id="i414933374-2"></a><a id="i1163979645-2"></a><a id="i-119763145-1"></a><a id="i-315542260-1"></a>
+called an <a href="glossary.html#g-1470033894"><em>existential type</em></a>.</p>
+
+<p>Existential types are a fully supported part of the language, but in
+practice they are mainly used when accessing Java types from Scala.
+This section gives a brief overview of how existential types work, but mostly
+this is only useful so that you can understand compiler error messages
+when your Scala code accesses Java code.</p>
+
+<p>The general form of an existential type is as follows:<a id="i1318155814-1"></a>
+<pre>
+  <i>type</i>&nbsp;<span class="vem">forSome</span>&nbsp;{&nbsp;<i>declarations</i>&nbsp;}
+</pre><!-- -->
+The <em>type</em> part is an arbitrary Scala type, and the
+<em>declarations</em> part is a list of abstract <span class="code">val</span>s and <span class="code">type</span>s.
+The interpretation is that the declared variables and types exist
+but are unknown, just like abstract members of a class.  The
+<em>type</em> is then allowed to refer to the declared variables and
+types even though it is unknown what they refer to.</p>
+
+<p>Take a look at some concrete examples.  A Java
+<span class="code">Iterator&lt;?&gt;</span> would be written in Scala as:
+<pre>
+  <span class="typename">Iterator[T]</span>&nbsp;<span class="vem">forSome</span>&nbsp;{&nbsp;<span class="vem">type</span>&nbsp;T&nbsp;}
+</pre><!-- -->
+Read this from left to right.  This is an <span class="code">Iterator</span> of <span class="code">T</span>'s for
+some type <span class="code">T</span>.  The type <span class="code">T</span> is unknown, and could be anything, but
+it is known to be fixed for this particular <span class="code">Iterator</span>.  Similarly,
+a Java <span class="code">Iterator&lt;?</span>&nbsp;<span class="code">extends</span>&nbsp;<span class="code">Component&gt;</span> would be viewed in Scala
+as:
+<pre>
+  <span class="typename">Iterator[T]</span>&nbsp;<span class="vem">forSome</span>&nbsp;{&nbsp;<span class="vem">type</span>&nbsp;T&nbsp;&lt;:&nbsp;<span class="typename">Component</span>&nbsp;}
+</pre><!-- -->
+This is an <span class="code">Iterator</span> of <span class="code">T</span>, for some type <span class="code">T</span> that is a subtype
+of <span class="code">Component</span>.  In this case <span class="code">T</span> is still unknown, but now it is
+sure to be a subtype of <span class="code">Component</span>.</p>
+
+<p>By the way, there is a shorter way to write these examples.  If you
+write <span class="code">Iterator[_]</span>, it means the same thing as
+<span class="code">Iterator[T]</span>&nbsp;<span class="code">forSome</span>&nbsp;<span class="code">{</span>&nbsp;<span class="code">type</span>&nbsp;<span class="code">T</span>&nbsp;<span class="code">}</span>.  This is <em>placeholder syntax</em>
+for existential types, and is similar in spirit to the placeholder
+syntax for function literals that was described in
+<a href="functions-and-closures.html#sec:placeholder-syntax">Section 8.5</a>.<a id="i394425348-1"></a>
+If you use an underscore (<span class="code">_</span>) in place of
+an expression, then Scala treats this as a placeholder and makes a
+function literal for you.  For types it works similarly.  If you use an
+underscore in place of a type, Scala makes an existential type for you.
+Each underscore becomes one type parameter in a <span class="code">forSome</span> clause, so if you
+use two underscores in the same type, you will get the effect of a
+<span class="code">forSome</span> clause with two types in it.</p>
+
+<p>You can also insert upper and lower bounds when using this placeholder
+syntax.  Simply add them to the underscore instead of in the <span class="code">forSome</span>
+clause.  The type <span class="code">Iterator[_</span>&nbsp;<span class="code">&lt;:</span>&nbsp;<span class="code">Component]</span> is the same as this one,
+which you just saw:
+<pre>
+  <span class="typename">Iterator[T]</span>&nbsp;<span class="vem">forSome</span>&nbsp;{&nbsp;<span class="vem">type</span>&nbsp;T&nbsp;&lt;:&nbsp;<span class="typename">Component</span>&nbsp;}
+</pre><!-- --></p>
+
+<p>Enough about the existential types themselves.  How do you actually
+use them?
+Well, in simple cases, you use an existential type just as if the <span class="code">forSome</span>
+were not there.  Scala will check that the program is sound even
+though the types and values in the <span class="code">forSome</span> clause are unknown.
+For example, suppose you had the following Java class:
+<pre>
+  //&nbsp;This&nbsp;is&nbsp;a&nbsp;Java&nbsp;class&nbsp;with&nbsp;wildcards
+  public&nbsp;class&nbsp;Wild&nbsp;{
+  &nbsp;&nbsp;Collection&lt;?&gt;&nbsp;contents()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;Collection&lt;String&gt;&nbsp;stuff&nbsp;=&nbsp;new&nbsp;Vector&lt;String&gt;();
+  &nbsp;&nbsp;&nbsp;&nbsp;stuff.add("a");
+  &nbsp;&nbsp;&nbsp;&nbsp;stuff.add("b");
+  &nbsp;&nbsp;&nbsp;&nbsp;stuff.add("see");
+  &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;stuff;
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+If you access this in Scala code you will see that it has an
+existential type:</p>
+
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;contents&nbsp;=&nbsp;(<span class="vem">new</span>&nbsp;<span class="typename">Wild</span>).contents
+  <span class="output">contents:&nbsp;java.util.Collection[?0]&nbsp;forSome&nbsp;{&nbsp;type&nbsp;?0&nbsp;}&nbsp;=</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;[a,&nbsp;b,&nbsp;see]</span>
+</pre><!-- -->
+If you want to find out how many elements are in this collection, you
+can simply ignore the existential part and call the <span class="code">size</span> method as
+normal:
+<pre>
+  scala&gt;&nbsp;contents.size()
+  <span class="output">res0:&nbsp;Int&nbsp;=&nbsp;3</span>
+</pre><!-- -->
+In more complicated cases, existential types can be more awkward,
+because there is no way to name the existential type.  For example,
+suppose you wanted to create a mutable Scala set and initialize
+it with the elements of <span class="code">contents</span>:
+<pre>
+  <span class="vem">import</span>&nbsp;scala.collection.mutable.Set
+  <span class="vem">val</span>&nbsp;iter&nbsp;=&nbsp;(<span class="vem">new</span>&nbsp;<span class="typename">Wild</span>).contents.iterator
+  <span class="vem">val</span>&nbsp;set&nbsp;=&nbsp;Set.empty[???]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;what&nbsp;type&nbsp;goes&nbsp;here?</span>
+  <span class="vem">while</span>&nbsp;(iter.hasMore)
+  &nbsp;&nbsp;set&nbsp;+=&nbsp;iter.next()
+</pre><!-- -->
+A problem strikes on the third line.  There is no way to name the type of
+elements in the Java collection, so you cannot write down a
+satisfactory type for <span class="code">set</span>.  To work around this kind of problem,
+here are two tricks you should consider:
+
+
+<ol>
+<li>When passing an existential type into a method, move type parameters
+      from the <span class="code">forSome</span> clause to type parameters of the method.  Inside
+      the body of the method, you can use the type parameters to refer
+      to the types that were in the <span class="code">forSome</span> clause.
+
+
+    </li>
+<li>Instead of returning an existential type from a method,
+      return an object that has abstract members for each of the types
+      in the <span class="code">forSome</span> clause.  (See
+      <a href="abstract-members.html">Chapter 20</a> for information
+      on abstract members.)
+</li></ol>
+Using these two tricks together, the previous code can be
+written as follows:<!-- -->
+<pre>
+  <span class="vem">import</span>&nbsp;scala.collection.mutable.Set
+  <span class="vem">import</span>&nbsp;java.util.Collection
+  <br />  <span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">SetAndType</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">type</span>&nbsp;<span class="typename">Elem</span>
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;set:&nbsp;<span class="typename">Set[Elem]</span>
+  }
+  <br />  <span class="vem">def</span>&nbsp;javaSet2ScalaSet[T](jset:&nbsp;<span class="typename">Collection[T]</span>):&nbsp;<span class="typename">SetAndType</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;sset&nbsp;=&nbsp;Set.empty[T]&nbsp;&nbsp;<span class="comment">//&nbsp;now&nbsp;T&nbsp;can&nbsp;be&nbsp;named!</span>
+  <br />  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;iter&nbsp;=&nbsp;jset.iterator
+  &nbsp;&nbsp;<span class="vem">while</span>&nbsp;(iter.hasNext)
+  &nbsp;&nbsp;&nbsp;&nbsp;sset&nbsp;+=&nbsp;iter.next()
+  <br />  &nbsp;&nbsp;<span class="vem">return</span>&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">SetAndType</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">type</span>&nbsp;<span class="typename">Elem</span>&nbsp;=&nbsp;T
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;set&nbsp;=&nbsp;sset
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+You can see why Scala code normally does not use existential types.
+To do anything sophisticated with them, you tend to convert them to
+use abstract members.  So you may as well use abstract
+members to begin with.
+
+
+<h3><a name="29.4"></a>29.4 Conclusion <span style="font-size: .5em">[<a href="combining-scala-and-java.html#29.4">link</a>]</span></h3>
+
+
+<p>Most of the time, you can ignore how Scala is implemented and simply
+write and run your code.  Sometimes it is nice to "look under the
+hood," however, so this chapter has gone into three aspects of
+Scala's implementation on the Java platform: what the translation
+looks like, how Scala and Java annotations work together, and how
+Scala's existential types let you access Java wildcard types.  These
+topics are important whenever you use Scala and Java
+together.</p>
+
+<hr/>
+<h4>Footnotes for Chapter 29:</h4>
+
+
+<p><a name="footnote29-1">[1]</a> The implementation of value types was discussed in detail in
+<a href="scalas-hierarchy.html#sec:impl-primitives">Section 11.2</a>.</p>
+
+<p><a name="footnote29-2">[2]</a> The reason it all works is that the Java bytecode
+verifier does not check the declarations, anyway!  The Java compiler checks,
+but not the verifier.</p>
+
+
+
+<p>
+<center>
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/combining-scala-and-java.html">Screen Friendly Version</a>&nbsp;| 
+<a href="/pins1ed/object-equality.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/actors-and-concurrency.html">Next</a>
+</div>
+</center>
+</div>
+<hr width="100%" />
+<div class="sp">
+<div style="text-align: center">
+<a href="http://www.artima.com/copyright.html">Copyright</a> &copy; 1996-2014 Artima, Inc. All Rights Reserved.</a> - <a href="http://www.artima.com/privacy.html">Privacy Policy</a> - <a href="http://www.artima.com/termsofuse.html">Terms of Use</a> - <a href="http://www.artima.com/advertising.html">Advertise with Us</a>
+</div>
+</div>
+<br />
+</body>
+</html>

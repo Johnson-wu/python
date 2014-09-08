@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+  <rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://purl.org/rss/1.0/"
+  >
+
+  <channel rdf:about="http://www.artima.com/spotlight/feeds/spotlight.rss">
+    <title>Artima Developer Spotlight</title>
+    <link>http://www.artima.com/spotlight/</link>
+    <description>
+Highlights of the content flowing through Artima Developer.
+    </description>
+    <image rdf:resource="http://www.artima.com/images/artima88x33.gif"/>
+    <items>
+      <rdf:Seq>
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=359793" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=354444" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=352051" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=352017" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=351929" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=351309" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=349293" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=346485" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=344823" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=344289" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=344124" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=341298" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=340842" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=340485" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=339522" />
+      </rdf:Seq>
+    </items>
+  </channel>
+
+  <image rdf:about="http://www.artima.com/images/artima88x33.gif">
+    <title>Artima.com</title>
+    <url>http://www.artima.com/images/artima88x33.gif</url>
+    <link>http://www.artima.com/</link>
+  </image>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=359793">
+    <title>Scala Puzzlers now available as PrePrint</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=359793</link>
+    <description>
+Scala Puzzlers, by Andrew Phillips and Nermin Serifovic, is a collection of puzzles that provide an entertaining and instructive way to understand the Scala language better.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=354444">
+    <title>A Hazard of Covariant Return Types and Bridge Methods</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=354444</link>
+    <description>
+A combination of bridge methods, covariant return types and dynamic dispatch can lead to some surprising and unfortunate results.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=352051">
+    <title>ScalaTest 2.0.M6 Preview</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=352051</link>
+    <description>
+The 2.0.M6 milestone release of ScalaTest is coming soon. It is a major release with many new features. In this post, I give a preview of the new features, and ask for feedback.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=352017">
+    <title>ScalaCheck: The Definitive Guide PrePrint released</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=352017</link>
+    <description>
+This new book explains the big ideas behind ScalaCheck, a property-based testing library for Scala, and shows how to use it effectively to write tests at the higher level of property specifications.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=351929">
+    <title>Akka Concurrency by Derek Wyatt Published!</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=351929</link>
+    <description>
+Derek Wyatt's Akka Concurrency is in print and shipping! This book picks up where the Akka documentation leaves off, exploring the how and the why of Akka. It is an entertaining and insightful guide that will teach you how best to program with actors and futures.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=351309">
+    <title>Use Uncertainty As a Driver</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=351309</link>
+    <description>
+Uncertainty is normally seen as something you must either suppress or avoid. Of this many people appear, well, certain. That you should embrace it and use it to help determine schedule and design is not immediately obvious.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=349293">
+    <title>How the Use of Scala's Features Affects Compile Time</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=349293</link>
+    <description>
+The compiletime project is an attempt to better understand the relationship between the use of Scala's features and compile time. This article gives a quick overview of what we've learned so far.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=346485">
+    <title>Akka Concurrency - PrePrint Published!</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=346485</link>
+    <description>
+Artima has release a PrePrint edition of Akka Concurrency, by Derek Wyatt. This book aims not only to teach you the ins and outs of Akka, but show you new ways to think about your software--to focus more on the business of your software and less on the concurrency of it.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=344823">
+    <title>Monadic Design Patterns for the Web - PrePrint Published!</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=344823</link>
+    <description>
+Artima has release a PrePrint edition of Monadic Design Patterns for the Web, by L. G. Meredith. This book aims to demystify the monad. Using web applications as an example, this book will show you how you can apply monadic design patterns to help you solve practical, real-world programming problems.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=344289">
+    <title>Getting Started with Play 2, Scala, and Squeryl</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=344289</link>
+    <description>
+In this article you will learn how to get started building web applications with Play 2, Scala, Squeryl, JSON, CoffeeScript, and jQuery. You will also learn how to test the application with ScalaTest and then deploy the application on the cloud with Heroku.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=344124">
+    <title>Coding with JRebel: Java Forever Changed</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=344124</link>
+    <description>
+This article addresses the ways in which JRebel has made an impact on how developers spend their day coding.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=341298">
+    <title>Down on the Upside</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=341298</link>
+    <description>
+Abstraction is a question of less over more. But is it also a question of high over low? It turns out that the common way of describing abstractions in terms of high-level and low-level hides a number of assumptions, some of which suggest that we often look at abstraction the wrong way up (or down).
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=340842">
+    <title>A Test of Knowledge</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=340842</link>
+    <description>
+What can you learn from testing? When you look beyond the red and the green, the fail and the pass, you can learn a lot more about the nature of the code and the nature of the problem domain. And there is a lot to learn — software development is called knowledge work for a reason.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=340485">
+    <title>Pushing the Limits in Java's Random</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=340485</link>
+    <description>
+What is the largest double that could in theory be produced by Math.random()? In this newsletter, we look at ways to calculate this based on the 48-bit random generator available in standard Java. We also prove why in a single-threaded program, (int)(Random.nextDouble() + 1) can never be rounded up to 2.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=339522">
+    <title>Is Scala Only for Computer Scientists?</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=270&amp;thread=339522</link>
+    <description>
+I'm not talking about the early adopters writing obscure code here -- that can probably be solved with a suitable style guide. I just debugged my way through an example that should have been trivial but I only figured out because:
+    </description>
+  </item>
+
+</rdf:RDF>

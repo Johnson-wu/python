@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+  <rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://purl.org/rss/1.0/"
+  >
+
+  <channel rdf:about="http://www.artima.com/buzz/feeds/buzz.rss">
+    <title>Artima Developer Buzz</title>
+    <link>http://www.artima.com/buzz/</link>
+    <description>
+A community of developers who blog.
+    </description>
+    <image rdf:resource="http://www.artima.com/images/artima88x33.gif"/>
+    <items>
+      <rdf:Seq>
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363630" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363628" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363626" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363624" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363622" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363620" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363618" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363616" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363614" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363612" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363601" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363599" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363597" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363594" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363592" />
+      </rdf:Seq>
+    </items>
+  </channel>
+
+  <image rdf:about="http://www.artima.com/images/artima88x33.gif">
+    <title>Artima.com</title>
+    <url>http://www.artima.com/images/artima88x33.gif</url>
+    <link>http://www.artima.com/</link>
+  </image>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363630">
+    <title>Java Concurrency Tutorial – Locking: Intrinsic locks</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363630</link>
+    <description>
+In previous posts we reviewed some of the main risks of sharing data between different threads (like atomicity and visibility) and how to design classes in order to be shared safely (thread-safe designs). In many situations though, we will need to share mutable data, where some threads will write and others will act as readers. [&amp;hellip;]
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363628">
+    <title>jUnit: Rules</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363628</link>
+    <description>
+Rules add special handling around tests, test cases or test suites. They can do additional validations common for all tests in the class, concurrently run multiple test instances, set up resources before each test or test case and tear them down afterwards. The rule gets complete control over what will done with the test method, [&amp;hellip;]
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363626">
+    <title>JUnit RunWith Example</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363626</link>
+    <description>
+In this example we are going to explain how to run simultaneously more than one test cases using JUnit testing framework and Eclipse IDE. This collection of different test cases that will be executed all together is otherwise called JUnit test suite and for this purpose we use the @RunWith and @Suite annotations. 1. Create [&amp;hellip;]
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363624">
+    <title>Java List to Array Example</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363624</link>
+    <description>
+In this example we will see how to convert java.util.List into an array. java.util.List has 2 methods to do so : T[] toArray(T[] a) Object[] toArray() Both these methods return an array containing all of the elements in this list in proper sequence. The difference between the two methods, as we can see in the [&amp;hellip;]
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363622">
+    <title>EJB 3.x : Lifecycle and Concurrency models (part 2)</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363622</link>
+    <description>
+This is the second post&amp;nbsp;of the two part series. The first part covered the life cycle and the concurrency behavior of Stateful and Stateless EJBs. I&amp;rsquo;ll cover&amp;nbsp;Singleton EJBs&amp;nbsp;in this post. The Singleton pattern is arguably the most used (some times&amp;nbsp;misused!) pattern out there. &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; Java EE frees us...
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363620">
+    <title>Setting up a ruby development VM with Vagrant, Chef, and rbenv</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363620</link>
+    <description>
+Some notes from my experiences in setting up a Vagrant VM to help collaborators use my web publishing toolchain. I used Chef to provision the VM and rbenv to install and control the right version of ruby.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363618">
+    <title>Ontologies and Domain-Specific Modeling</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363618</link>
+    <description>
+A little while back a customer asked about the difference between DSM and ontologies, here's my opinion. A Domain-Specific Modeling language has many things in common with an ontology: classes in a hierarchy, slots and rules about what values they can hold (including instances of other classes), and of course the ability to instantiate the...
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363616">
+    <title>Agile Bodensee, Constance, Germany, October 1–2 2014</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363616</link>
+    <description>
+The Agile Bodensee conference is a two-day event focused on Agile and Scrum and that takes places on the shore of the Lake Constance (the Bodensee in German) in the southern part of Germany. The first day is dedicated to workshops and the second day to presentations. Most of them are in German but there are also some English talks. In the...
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363614">
+    <title>Why you should control Visibility of Class and Interface in Java</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363614</link>
+    <description>
+One of the important aspects of software development is maintenance, and &amp;nbsp;it&amp;rsquo;s proven by experience that a piece of software which keeps visibility of its components low is more maintainable than one that exposes its components more. You won&amp;rsquo;t realize it upfront, but you will miss it badly, while redesigning your application...
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363612">
+    <title>OptaPlanner – Vehicle routing with real road distances</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363612</link>
+    <description>
+In the real world, vehicles in a Vehicle Routing Problem (VRP) have to follow the roads: they can&amp;rsquo;t travel in a straight line from customer to customer. Most VRP research papers and demo&amp;rsquo;s happily ignore this implementation detail. As did I, in the past. Although using road distances (instead of air distances) doesn&amp;rsquo;t impact...
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363601">
+    <title>Agile outside of software</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363601</link>
+    <description>
+Later this week I&amp;rsquo;m doing a presentation at Agile On The Beach entitled: &amp;ldquo;Agile outside of software development&amp;rdquo;. (I resisted the temptation to call it &amp;ldquo;Agile Beyond Software&amp;rdquo;). The presentation will attempt to answer a question which is often asked at, and around, Agile On The Beach: &amp;ldquo;Is Agile only for...
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363599">
+    <title>Really Dynamic Declarative Components</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363599</link>
+    <description>
+In this short post I am going to focus on ADF dynamic declarative components. I mean a well known ADF tag af:declarativeComponent. It can be used as a pretty convenient way to design a page as a composition of page fragments and components. For example, our page can contain the following code snippet: &amp;nbsp; &amp;nbsp; [&amp;hellip;]
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363597">
+    <title>Git, reconsidered</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363597</link>
+    <description>
+I’ve expressed my skepticism before that DVCS (distributed version control systems) like Git offer a lot of benefits over traditional version control systems like Subversion. I’ve had the opportunity to use Git exclusively for quite a few months now, and have had the opportunity to appreciate its benefits. My opinion on this matter is somewhat...
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363594">
+    <title>Beyond average: 10 best practices for coding Java APIs</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363594</link>
+    <description>
+Published around this time last year, jOOQ creator Lukas Eder's Java programming best practices are written as a series of caveats to the standard wisdom of API design. Eder writes: &quot;Being an internal DSL, jOOQ challenges Java compilers and generics to the max, combining generics, varargs and overloading in a way that Josh Bloch probably...
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363592">
+    <title>Use Cases for Elasticsearch: Geospatial Search</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=196&amp;thread=363592</link>
+    <description>
+In the previous posts we have seen that Elasticsearch can be used to store documents in JSON format and distribute the data across multiple nodes as shards and replicas. Lucene, the underlying library, provides the implementation of the inverted index that can be used to search the documents. Analyzing is a crucial step for building [&amp;hellip;]
+    </description>
+  </item>
+
+</rdf:RDF>

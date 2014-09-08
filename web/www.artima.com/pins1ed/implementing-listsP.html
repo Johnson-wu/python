@@ -1,0 +1,666 @@
+<html>
+<head>
+<title>Implementing Lists</title>
+<meta name="description" content="
+" />
+<meta name="keywords" content="scala" />
+<meta name="author" content="Martin Odersky, Lex Spoon, and Bill Venners" />
+<link rel="stylesheet" type="text/css" href="/artimapf.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+</head>
+<body><table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="bottom">
+<a href="/index.jsp"><img src="/images/a7.gif" alt="The Artima Developer Community" border="0" width="550" height="43" /></a>
+</td>
+</table>
+<table width="100%" bgcolor="#333333">
+<tr>
+<td align="center">
+<div class="ml">
+<a href="/articles" class="hl">Articles</a>&nbsp;|
+<a href="/news/index.jsp" class="hl">News</a>&nbsp;|
+<a href="/weblogs/index.jsp" class="hl">Weblogs</a>&nbsp;|
+<a href="/buzz/index.jsp" class="hl">Buzz</a>&nbsp;|
+<a href="/shop/catalog" class="hl">Books</a>&nbsp;|
+<a href="/forums/index.jsp" class="hl">Forums</a>
+</div>
+</td>
+</tr>
+</table>
+<table width="100%" bgcolor="#AACCFF">
+<tr>
+<td align="center">
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/implementing-lists.html">Screen Friendly Version</a>&nbsp;| 
+<a href="/pins1ed/implicit-conversions-and-parameters.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/for-expressions-revisited.html">Next</a>
+</div>
+</td>
+</tr>
+</table>
+<BR>
+<div class="vegies">
+<div class="tc">
+<span class="sts">Chapter 22 of Programming in Scala, First Edition</span><br />
+<span class="ts">Implementing Lists</span><br />
+<span class="as">by Martin Odersky, Lex Spoon, and Bill Venners</span><br />
+<span class="pd">December 10, 2008</span><br />
+</div>
+
+
+
+
+<p>Lists have been ubiquitous in this book. Class <span class="code">List</span> is probably the
+most commonly used structured data type in Scala.
+<a href="working-with-lists.html">Chapter 16</a> showed you how to use
+lists.<a id="i2054390305-1"></a>
+This chapter "opens up the covers" and explains a bit how
+lists are implemented in Scala.</p>
+
+<p>Knowing the internals of the <span class="code">List</span>
+class is useful for several reasons. You gain a better idea of the
+relative efficiency of list operations, which will help you in writing
+fast and compact code using lists. You also learn a toolbox of techniques
+that you can apply in the design of your own libraries. Finally, the
+<span class="code">List</span> class is a sophisticated application of Scala's type system in
+general and its genericity concepts in particular. So studying class
+<span class="code">List</span> will deepen your knowledge in these areas.</p>
+
+<h3><a name="22.1"></a>22.1 The <span class="code">List</span> class in principle <span style="font-size: .5em">[<a href="implementing-lists.html#22.1">link</a>]</span></h3>
+
+
+<p><a name="sec:list-impl-principle"></a></p>
+
+<p>Lists are not "built-in" as a language construct in Scala; they are defined by an abstract class
+<span class="code">List</span> in the <span class="code">scala</span> package, which comes with two subclasses for
+<span class="code">::</span><a id="i304418243-1"></a> and
+<span class="code">Nil</span>.<a id="i1899558990-3"></a>
+In the following we present a quick tour through class <span class="code">List</span>.
+This section presents a somewhat simplified account of the class, 
+compared to its real implementation in the Scala standard library,
+which is covered in <a href="implementing-lists.html#sec:list-impl-practice">Section 22.3</a>.
+<pre>
+  <span class="vem">package</span>&nbsp;scala
+  <span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">List[+T]</span>&nbsp;{
+</pre><!-- -->
+<span class="code">List</span> is an abstract class, so you cannot define elements by
+calling the empty <span class="code">List</span> constructor. For instance the expression
+"<span class="code">new</span>&nbsp;<span class="code">List</span>" would be illegal.
+The class has a type parameter <span class="code">T</span>.
+The <span class="code">+</span> in front of this type parameter specifies that
+lists are covariant, as discussed in
+<a href="type-parameterization.html">Chapter 19</a><a id="i-588033271-1"></a>.
+Because of this property, you can assign a value of type <span class="code">List[Int]</span>, say, to a variable
+of type <span class="code">List[Any]</span>:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;xs&nbsp;=&nbsp;<span class="typename">List</span>(<span class="literal">1</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  <span class="output">xs:&nbsp;List[Int]&nbsp;=&nbsp;List(1,&nbsp;2,&nbsp;3)</span>
+  <br />  scala&gt;&nbsp;<span class="vem">var</span>&nbsp;ys:&nbsp;<span class="typename">List[Any]</span>&nbsp;=&nbsp;xs
+  <span class="output">ys:&nbsp;List[Any]&nbsp;=&nbsp;List(1,&nbsp;2,&nbsp;3)</span>
+</pre><!-- -->
+All list operations can be defined in terms of three basic methods:
+<pre>
+  <span class="vem">def</span>&nbsp;isEmpty:&nbsp;<span class="typename">Boolean</span>
+  <span class="vem">def</span>&nbsp;head:&nbsp;T
+  <span class="vem">def</span>&nbsp;tail:&nbsp;<span class="typename">List[T]</span>
+</pre><!-- -->
+These three methods are all abstract in class
+<span class="code">List</span><a id="i1657074897-3"></a><a id="i-735890706-3"></a><a id="i849842526-3"></a>. They are defined in the 
+subobject <span class="code">Nil</span> and the subclass <span class="code">::</span>. The hierarchy for <span class="code">List</span> is
+shown in <a href="implementing-lists.html#fig:list-hierarchy">Figure 22.1</a>.</p>
+
+<div class="figure"><a name="fig:list-hierarchy"></a>
+
+
+<p><img src="images/listHierarchy53.jpg" alt="image images/listHierarchy53.jpg"/></p>
+
+</div>
+<h5> Figure 22.1 - Class hierarchy for Scala lists.<a id="i-490886053-1"></a><a id="i-322128956-1"></a><a id="i164593921-1"></a></h5>
+
+
+<h4>The <span class="code">Nil</span> object</h4>
+
+
+<p>The <span class="code">Nil</span> object defines an empty list.<a id="i1899558990-4"></a> Its definition is shown in <a href="implementing-lists.html#lst:nil-definition">Listing 22.1</a>.
+<a name="lst:nil-definition"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">Nil</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">List[Nothing]</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;isEmpty&nbsp;=&nbsp;<span class="vem">true</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;head:&nbsp;<span class="typename">Nothing</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">throw</span>&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">NoSuchElementException</span>(<span class="quotedstring">"head&nbsp;of&nbsp;empty&nbsp;list"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;tail:&nbsp;<span class="typename">List[Nothing]</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">throw</span>&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">NoSuchElementException</span>(<span class="quotedstring">"tail&nbsp;of&nbsp;empty&nbsp;list"</span>)
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 22.1 - The definition of the <span class="code">Nil</span> singleton object.</h5>
+
+
+<p>The <span class="code">Nil</span> object inherits from type <span class="code">List[Nothing]</span>.  Because of covariance, this
+means that <span class="code">Nil</span> is compatible with every instance of the <span class="code">List</span> type.</p>
+
+<p>The three abstract methods of class <span class="code">List</span> are implemented in the <span class="code">Nil</span> object in a
+straightforward way: the <span class="code">isEmpty</span> method returns <span class="code">true</span> and the
+<span class="code">head</span> and <span class="code">tail</span> methods both throw an exception.  Note that
+throwing an exception is not only reasonable, but practically the only
+possible thing to do for <span class="code">head</span>: Because <span class="code">Nil</span> is a <span class="code">List</span> of <span class="code">Nothing</span>,
+the result type of <span class="code">head</span> must be <span class="code">Nothing</span>. Since there is no value
+of this type, this means that <span class="code">head</span> cannot return a normal value. It
+has to return abnormally by throwing an exception.<a href="implementing-lists.html#footnote22-1">[1]</a></p>
+
+<h4>The <span class="code">::</span> class</h4>
+
+
+<p>Class <span class="code">::</span>, pronounced "cons" for "construct," represents non-empty
+lists.<a id="i55390901-3"></a><a id="i-1839436249-3"></a><a id="i1411857630-4"></a><a id="i1732245321-1"></a>
+It's named that way in order to support pattern matching with the infix
+<span class="code">::</span><a id="i1357014823-1"></a>.
+You have seen in <a href="working-with-lists.html#sec:list-patterns">Section 16.5</a>
+that every infix operation in a pattern is treated as 
+a constructor application of the infix operator to its arguments. So the pattern 
+<span class="code">x</span>&nbsp;<span class="code">::</span>&nbsp;<span class="code">xs</span> is treated as <span class="code">::(x,</span>&nbsp;<span class="code">xs)</span> where <span class="code">::</span> is a case class.
+Here is the definition of the <span class="code">::</span> class:
+<pre>
+  <span class="vem">final</span>&nbsp;<span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;::[T](hd:&nbsp;T,&nbsp;tl:&nbsp;<span class="typename">List[T]</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">List[T]</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;head&nbsp;=&nbsp;hd
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;tail&nbsp;=&nbsp;tl
+  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;isEmpty:&nbsp;<span class="typename">Boolean</span>&nbsp;=&nbsp;<span class="vem">false</span>
+  }
+</pre><!-- -->
+The implementation of the <span class="code">::</span> class
+is straightforward.  It takes two parameters <span class="code">hd</span> and <span class="code">tl</span>,
+representing the head and the tail of the list to be constructed. The
+definitions of the <span class="code">head</span> and <span class="code">tail</span> method simply return the
+corresponding parameter. In fact, this pattern can be abbreviated 
+by letting the parameters directly implement the <span class="code">head</span> and <span class="code">tail</span> 
+methods of the superclass <span class="code">List</span>, as in the following equivalent but shorter 
+definition of  the <span class="code">::</span> class:
+<pre>
+  <span class="vem">final</span>&nbsp;<span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;::[T](head:&nbsp;T,&nbsp;tail:&nbsp;<span class="typename">List[T]</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">List[T]</span>&nbsp;{
+  <br />  &nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;isEmpty:&nbsp;<span class="typename">Boolean</span>&nbsp;=&nbsp;<span class="vem">false</span>
+  }
+</pre><!-- -->
+This works because every case class parameter is implicitly also a
+field of the class (it's like the parameter declaration was prefixed
+with <span class="code">val</span>).<a id="i1467639728-1"></a> Recall from <a href="abstract-members.html#sec:abstract-vals">Section 20.3</a> that
+Scala allows you to implement an abstract parameterless
+method such as <span class="code">head</span> or <span class="code">tail</span> with a
+field.<a id="i748048051-2"></a><a id="i1692897037-2"></a><a id="i84167179-2"></a>
+So the code above directly uses the parameters <span class="code">head</span> and <span class="code">tail</span> as implementations of
+the abstract methods <span class="code">head</span> and <span class="code">tail</span> that were inherited from class <span class="code">List</span>.</p>
+
+<h4>Some more methods</h4>
+
+
+<p>All other <span class="code">List</span> methods can be written using the basic three. 
+For instance:
+<pre>
+  <span class="vem">def</span>&nbsp;length:&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(isEmpty)&nbsp;<span class="literal">0</span>&nbsp;<span class="vem">else</span>&nbsp;<span class="literal">1</span>&nbsp;+&nbsp;tail.length
+</pre><!-- -->
+or:<!-- -->
+<pre>
+  <span class="vem">def</span>&nbsp;drop(n:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">List[T]</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(isEmpty)&nbsp;<span class="typename">Nil</span>
+  &nbsp;&nbsp;<span class="vem">else</span>&nbsp;<span class="vem">if</span>&nbsp;(n&nbsp;&lt;=&nbsp;<span class="literal">0</span>)&nbsp;<span class="vem">this</span>
+  &nbsp;&nbsp;<span class="vem">else</span>&nbsp;tail.drop(n&nbsp;-&nbsp;<span class="literal">1</span>)
+</pre><!-- -->
+or:
+<pre>
+  <span class="vem">def</span>&nbsp;map[U](f:&nbsp;T&nbsp;=&gt;&nbsp;U):&nbsp;<span class="typename">List[U]</span>&nbsp;=
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(isEmpty)&nbsp;<span class="typename">Nil</span>
+  &nbsp;&nbsp;<span class="vem">else</span>&nbsp;f(head)&nbsp;::&nbsp;tail.map(f)
+</pre><!-- --></p>
+
+<h4>List construction</h4>
+
+
+<p>The list construction methods <span class="code">::</span> and <span class="code">:::</span> are special. Because
+they end in a colon, they are bound to their right operand. That is,
+an operation such as <span class="code">x</span>&nbsp;<span class="code">::</span>&nbsp;<span class="code">xs</span> is treated as the method call
+<span class="code">xs.::(x)</span>, not <span class="code">x.::(xs)</span>. In fact, <span class="code">x.::(xs)</span> would not make
+sense, as <span class="code">x</span> is of the list element type, which can be arbitrary, so
+we cannot assume that this type would have a <span class="code">::</span> method.</p>
+
+<p>For this reason, the <span class="code">::</span> method should take an element value
+and yield a new list. What is the required type of the element value?
+You might be tempted to say, it should be the same as the list's element type, but in fact this
+is more restrictive than necessary. To see why, consider this class hierarchy:
+<pre>
+  <span class="vem">abstract</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">Fruit</span>&nbsp;
+  <span class="vem">class</span>&nbsp;<span class="typename">Apple</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Fruit</span>
+  <span class="vem">class</span>&nbsp;<span class="typename">Orange</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Fruit</span>
+</pre><!-- -->
+<a href="implementing-lists.html#lst:supertype-cons">Listing 22.2</a> shows what happens when you construct lists of fruit:
+<a name="lst:supertype-cons"></a></p>
+
+<pre>
+  &nbsp;&nbsp;scala&gt;&nbsp;<span class="vem">val</span>&nbsp;apples&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Apple</span>&nbsp;::&nbsp;<span class="typename">Nil</span>
+  <span class="output">&nbsp;&nbsp;apples:&nbsp;List[Apple]&nbsp;=&nbsp;List(Apple@585fa9)</span>
+  <br />  &nbsp;&nbsp;scala&gt;&nbsp;<span class="vem">val</span>&nbsp;fruits&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Orange</span>&nbsp;::&nbsp;apples
+  <span class="output">&nbsp;&nbsp;fruits:&nbsp;List[Fruit]&nbsp;=&nbsp;List(Orange@cd6798,&nbsp;Apple@585fa9)</span>
+</pre><!-- -->
+
+
+<h5>Listing 22.2 - Prepending a supertype element to a subtype list.</h5>
+
+
+<p>The <span class="code">apples</span> value is treated as a <span class="code">List</span> of <span class="code">Apple</span>s, as expected. 
+However, the definition of <span class="code">fruits</span> shows that it's still possible to 
+add an element of a different type to that list. The element type of the resulting 
+list is <span class="code">Fruit</span>, which is the most precise common supertype of the original list element type
+(<i>i.e.</i>, <span class="code">Apple</span>) and the type of the element to be added (<i>i.e.</i>, <span class="code">Orange</span>).
+This flexibility is obtained by defining the <span class="code">::</span> method (cons) as shown in <a href="implementing-lists.html#lst:cons-method-def">Listing 22.3</a>.
+<a name="lst:cons-method-def"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;::[U&nbsp;&gt;:&nbsp;T](x:&nbsp;U):&nbsp;<span class="typename">List[U]</span>&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;scala.::(x,&nbsp;<span class="vem">this</span>)
+</pre><!-- -->
+
+
+<h5>Listing 22.3 - The definition of method <span class="code">::</span> (cons) in class <span class="code">List</span>.</h5>
+
+
+<p>Note that the method is itself polymorphic&mdash;it takes a type parameter named <span class="code">U</span>. Furthermore, 
+<span class="code">U</span> is constrained in <span class="code">[U</span>&nbsp;<span class="code">&gt;:</span>&nbsp;<span class="code">T]</span> to be a supertype of the list element type <span class="code">T</span>.
+The element to be added is required to be of type <span class="code">U</span> and the result is a <span class="code">List[U]</span>.</p>
+
+<p>With the formulation of <span class="code">::</span> shown in <a href="implementing-lists.html#lst:cons-method-def">Listing 22.3</a>, you can check how the definition of <span class="code">fruits</span> shown in <a href="implementing-lists.html#lst:supertype-cons">Listing 22.2</a> works out type-wise:
+in that definition the type parameter <span class="code">U</span> of <span class="code">::</span> is instantiated to <span class="code">Fruit</span>.
+The lower-bound constraint of <span class="code">U</span> is satisfied, because the list <span class="code">apples</span> has type
+<span class="code">List[Apple]</span> and <span class="code">Fruit</span> is a supertype of <span class="code">Apple</span>.
+The argument to the <span class="code">::</span> is <span class="code">new</span>&nbsp;<span class="code">Orange</span>, which conforms to type <span class="code">Fruit</span>.
+Therefore, the method application is type-correct with result type <span class="code">List[Fruit]</span>.
+<a href="implementing-lists.html#fig:more-fruit">Figure 22.2</a> illustrates the structure of the lists that result from executing the code shown
+in <a href="implementing-lists.html#lst:cons-method-def">Listing 22.3</a>.</p>
+
+<div class="figure"><a name="fig:more-fruit"></a>
+
+
+<p><img src="images/moreFruit.jpg" alt="image images/moreFruit.jpg"/></p>
+
+</div>
+<h5> Figure 22.2 - The structure of the Scala lists shown in <a href="implementing-lists.html#lst:supertype-cons">Listing 22.2</a>.<a id="i-1313439186-1"></a></h5>
+
+
+<p>In fact, the polymorphic definition of <span class="code">::</span> with the lower bound <span class="code">T</span>
+is not only convenient; it is also necessary to render the definition of class <span class="code">List</span> 
+type-correct. This is because <span class="code">List</span>s are defined to be
+covariant<a id="i-1469695991-2"></a>. 
+Assume for a moment that we had defined <span class="code">::</span> like this:
+<pre>
+  <span class="comment">//&nbsp;A&nbsp;thought&nbsp;experiment&nbsp;(which&nbsp;wouldn't&nbsp;work)</span>
+  <span class="vem">def</span>&nbsp;::(x:&nbsp;T):&nbsp;<span class="typename">List[T]</span>&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;scala.::(x,&nbsp;<span class="vem">this</span>)
+</pre><!-- -->
+You saw in <a href="type-parameterization.html">Chapter 19</a> that method parameters count as 
+contravariant positions, so the list element type <span class="code">T</span> is in contravariant position in the
+definition above. But then <span class="code">List</span> cannot be declared covariant in <span class="code">T</span>. 
+The lower bound <span class="code">[U</span>&nbsp;<span class="code">&gt;:</span>&nbsp;<span class="code">T]</span> thus kills two birds with one stone: it removes 
+a typing problem, and it leads to a <span class="code">::</span> method that's more flexible to use.</p>
+
+<p>The list concatenation method <span class="code">:::</span> is defined in a similar way to <span class="code">::</span>,
+as shown in <a href="implementing-lists.html#lst:concatenate-def">Listing 22.4</a>.
+<a name="lst:concatenate-def"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;:::[U&nbsp;&gt;:&nbsp;T](prefix:&nbsp;<span class="typename">List[U]</span>):&nbsp;<span class="typename">List[U]</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(prefix.isEmpty)&nbsp;<span class="vem">this</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>&nbsp;prefix.head&nbsp;::&nbsp;prefix.tail&nbsp;:::&nbsp;<span class="vem">this</span>
+</pre><!-- -->
+
+
+<h5>Listing 22.4 - The definition of method <span class="code">:::</span> in class <span class="code">List</span>.</h5>
+
+
+<p>Like cons, concatenation is polymorphic. The result type is 
+"widened" as necessary to include the types of all list elements.
+Note also that again the order of the arguments is swapped 
+between an infix operation and an explicit method call. 
+Because both <span class="code">:::</span> and <span class="code">::</span> end in a colon, 
+they both bind to the right and are both right associative.
+For instance, the <span class="code">else</span> part of the definition of <span class="code">:::</span> shown in <a href="implementing-lists.html#lst:concatenate-def">Listing 22.4</a> contains 
+infix operations of both <span class="code">::</span> and <span class="code">:::</span>. These infix operations
+can be expanded to equivalent method calls as follows:
+<pre>
+  prefix.head&nbsp;::&nbsp;prefix.tail&nbsp;:::&nbsp;<span class="vem">this</span>
+  &nbsp;&nbsp;<span class="rm"><em>equals</em></span>&nbsp;<span class="rm">(because <span class="code">::</span> and <span class="code">:::</span> are right-associative)</span>
+  <br />  prefix.head&nbsp;::&nbsp;(prefix.tail&nbsp;:::&nbsp;<span class="vem">this</span>)
+  &nbsp;&nbsp;<span class="rm"><em>equals</em></span>&nbsp;<span class="rm">(because <span class="code">::</span> binds to the right)</span>
+  <br />  (prefix.tail&nbsp;:::&nbsp;<span class="vem">this</span>).::(prefix.head)
+  &nbsp;&nbsp;<span class="rm"><em>equals</em></span>&nbsp;<span class="rm">(because <span class="code">:::</span> binds to the right)</span>
+  <br />  <span class="vem">this</span>.:::(prefix.tail).::(prefix.head)
+</pre><!-- --></p>
+
+<h3><a name="22.2"></a>22.2 The <span class="code">ListBuffer</span> class <span style="font-size: .5em">[<a href="implementing-lists.html#22.2">link</a>]</span></h3>
+
+
+<p><a name="sec:the-listbuffer-class"></a></p>
+
+<p>The typical access pattern for a list is recursive. For instance, to 
+increment every element of a list without using <span class="code">map</span> you could write:
+<pre>
+  <span class="vem">def</span>&nbsp;incAll(xs:&nbsp;<span class="typename">List[Int]</span>):&nbsp;<span class="typename">List[Int]</span>&nbsp;=&nbsp;xs&nbsp;<span class="vem">match</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">case</span>&nbsp;<span class="typename">List</span>()&nbsp;=&gt;&nbsp;<span class="typename">List</span>()
+  &nbsp;&nbsp;<span class="vem">case</span>&nbsp;x&nbsp;::&nbsp;xs1&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;<span class="literal">1</span>&nbsp;::&nbsp;incAll(xs1)
+  }
+</pre><!-- -->
+One shortcoming of this program pattern is that it is not
+tail recursive<a id="i2133301138-2"></a>. Note that the recursive call to <span class="code">incAll</span> above occurs
+inside a <span class="code">::</span> operation. Therefore each recursive call requires a new
+stack frame. On today's virtual machines this means that you cannot<a id="i10962622-2"></a>
+apply <span class="code">incAll</span> to lists of much more than about 30,000 to 50,000 elements. This is a
+pity.</p>
+
+<p>How do you write a version of <span class="code">incAll</span> that 
+can work on lists of arbitrary size (as much as heap-capacity allows)?
+One approach is to use a loop: 
+<pre>
+  <span class="vem">for</span>&nbsp;(x&nbsp;&lt;-&nbsp;xs)&nbsp;<span class="comment">//&nbsp;??</span>
+</pre><!-- -->
+But what should go in the loop body? Note that where <span class="code">incAll</span> above constructs
+the list by prepending elements to the result of the recursive call, the loop
+needs to append new elements at the end of the result list. 
+One, very inefficient possibility is to use <span class="code">:::</span>, the list append operator:
+<pre>
+  <span class="vem">var</span>&nbsp;result&nbsp;=&nbsp;<span class="typename">List[Int]</span>()&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;a&nbsp;very&nbsp;inefficient&nbsp;approach</span>
+  <span class="vem">for</span>&nbsp;(x&nbsp;&lt;-&nbsp;xs)&nbsp;result&nbsp;=&nbsp;result&nbsp;:::&nbsp;<span class="typename">List</span>(x&nbsp;+&nbsp;<span class="literal">1</span>)
+  result
+</pre><!-- -->
+This has terrible efficiency, though. 
+Because <span class="code">:::</span> takes time proportional to the length of its first operand, 
+the whole operation takes time proportional to the square of the length of the list.
+This is clearly unacceptable.</p>
+
+<p>A better alternative is to use a list buffer. 
+List buffers let you<a id="i-737429794-2"></a>
+accumulate the elements of a list. To do this, you use an
+operation such as "<span class="code">buf</span>&nbsp;<span class="code">+=</span>&nbsp;<span class="code">elem</span>", which appends the element <span class="code">elem</span> at
+the end of the list buffer <span class="code">buf</span>. Once you are done appending
+elements, you can turn the buffer into a list using the <span class="code">toList</span>
+operation.</p>
+
+<p><span class="code">ListBuffer</span> is a class in package
+<span class="code">scala.collection.mutable</span><a id="i-1815843466-3"></a>.
+To use the simple name only, you can import <span class="code">ListBuffer</span>
+from its package:
+<pre>
+  <span class="vem">import</span>&nbsp;scala.collection.mutable.ListBuffer
+</pre><!-- -->
+Using a list buffer, the body of <span class="code">incAll</span> can now be written as follows: 
+<pre>
+  <span class="vem">val</span>&nbsp;buf&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ListBuffer[Int]</span>
+  <span class="vem">for</span>&nbsp;(x&nbsp;&lt;-&nbsp;xs)&nbsp;buf&nbsp;+=&nbsp;x&nbsp;+&nbsp;<span class="literal">1</span>
+  buf.toList
+</pre><!-- -->
+This is a very efficient way to build lists. In fact, the list buffer
+implementation is organized so that both the append operation
+(<span class="code">+=</span>)<a id="i714754650-2"></a>
+and the <span class="code">toList</span> operation take (very short) constant
+time.<a id="i-1804214425-1"></a></p>
+
+<h3><a name="22.3"></a>22.3 The <span class="code">List</span> class in practice <span style="font-size: .5em">[<a href="implementing-lists.html#22.3">link</a>]</span></h3>
+
+
+<p><a name="sec:list-impl-practice"></a></p>
+
+<p>The implementations of list methods given 
+in <a href="implementing-lists.html#sec:list-impl-principle">Section 22.1</a> are concise and clear, but suffer
+from the same stack overflow problem as the non-tail recursive
+implementation of <span class="code">incAll</span>.  Therefore, most methods in the real
+implementation of class <span class="code">List</span> avoid recursion and use loops with
+list buffers instead. For example, <a href="implementing-lists.html#lst:map-definition">Listing 22.5</a> shows the real implementation
+of <span class="code">map</span> in class <span class="code">List</span>:
+<a name="lst:map-definition"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">final</span>&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;map[U](f:&nbsp;T&nbsp;=&gt;&nbsp;U):&nbsp;<span class="typename">List[U]</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;b&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">ListBuffer[U]</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">var</span>&nbsp;these&nbsp;=&nbsp;<span class="vem">this</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">while</span>&nbsp;(!these.isEmpty)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;+=&nbsp;f(these.head)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;these&nbsp;=&nbsp;these.tail
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;b.toList
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 22.5 - The definition of method <span class="code">map</span> in class <span class="code">List</span>.</h5>
+
+
+<p>This revised implementation traverses the list with a simple loop,
+which is highly efficient. A tail recursive implementation would be<a id="i-666165524-1"></a>
+similarly efficient, but a general recursive implementation would be
+slower and less scalable. But what about the operation <span class="code">b.toList</span> at
+the end? What is its complexity? In fact, the call to the <span class="code">toList</span>
+method takes only a small number of cycles, which is independent of
+the length of the list.</p>
+
+<p>To understand why, take a second look at class 
+<span class="code">::</span>, which constructs non-empty lists. In practice, this class does not
+quite correspond to its idealized definition given previously
+in <a href="implementing-lists.html#sec:list-impl-principle">Section 22.1</a>. The real definition is shown
+in <a href="implementing-lists.html#lst:class-doublecolon-definition">Listing 22.6</a>.
+<a name="lst:class-doublecolon-definition"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">final</span>&nbsp;<span class="vem">case</span>&nbsp;<span class="vem">class</span>&nbsp;::[U](hd:&nbsp;U,&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">private</span>[scala]&nbsp;<span class="vem">var</span>&nbsp;tl:&nbsp;<span class="typename">List[U]</span>)&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">List[U]</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;head&nbsp;=&nbsp;hd
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;tail&nbsp;=&nbsp;tl
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;isEmpty:&nbsp;<span class="typename">Boolean</span>&nbsp;=&nbsp;<span class="vem">false</span>
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 22.6 - The definition of the <span class="code">::</span> subclass of <span class="code">List</span>.</h5>
+
+
+<p>There's one peculiarity:
+the <span class="code">tl</span> argument is a <span class="code">var</span>! This
+means that it is possible to modify the tail of a list after the list
+is constructed. However, because the variable <span class="code">tl</span> has the
+modifier <span class="code">private[scala]</span>, it can be accessed only from within package
+<span class="code">scala</span>. Client code outside this package can neither read nor write
+<span class="code">tl</span>.</p>
+
+<p>Since the <span class="code">ListBuffer</span> class is contained in a subpackage of package <span class="code">scala</span>,
+<span class="code">scala.collection.mutable</span>, <span class="code">ListBuffer</span> can access the <span class="code">tl</span> field of a
+cons cell. In fact the elements of a list buffer are represented as a
+list and appending new elements involves a modification of <span class="code">tl</span> field
+of the last <span class="code">::</span> cell in that list. Here's the start of class
+<span class="code">ListBuffer</span>:
+<pre>
+  <span class="vem">package</span>&nbsp;scala.collection.immutable
+  <span class="vem">final</span>&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ListBuffer[T]</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Buffer[T]</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;start:&nbsp;<span class="typename">List[T]</span>&nbsp;=&nbsp;<span class="typename">Nil</span>
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;last0:&nbsp;::[T]&nbsp;=&nbsp;_
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">var</span>&nbsp;exported:&nbsp;<span class="typename">Boolean</span>&nbsp;=&nbsp;<span class="vem">false</span>
+  &nbsp;&nbsp;...
+</pre><!-- -->
+You see three private fields that characterize a <span class="code">ListBuffer</span>:</p>
+
+<table style="border-collapse: collapse">
+<tr class="">
+  <td>
+    <span class="code">start</span>
+  </td>
+  <td>
+    points to the list of all elements 
+                 stored in the buffer
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">last0</span>
+  </td>
+  <td>
+    points to the last <span class="code">::</span> cell in that list
+  </td>
+</tr>
+<tr class="">
+  <td>
+    <span class="code">exported</span>
+  </td>
+  <td>
+    indicates whether the buffer has been turned into
+  </td>
+</tr>
+<tr class="">
+  <td>
+  </td>
+  <td>
+    a list using a <span class="code">toList</span> operation
+  </td>
+</tr>
+</table>
+
+
+<p>The <span class="code">toList</span> operation is very simple:
+<pre>
+  <span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;toList:&nbsp;<span class="typename">List[T]</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;exported&nbsp;=&nbsp;!start.isEmpty
+  &nbsp;&nbsp;start
+  }
+</pre><!-- -->
+It returns the list of elements referred to by <span class="code">start</span> and also sets 
+<span class="code">exported</span> to <span class="code">true</span> if that list is nonempty. So <span class="code">toList</span> is very
+efficient, because it does not copy the list which is stored in a
+<span class="code">ListBuffer</span>. But what happens if the list is further extended after
+the <span class="code">toList</span> operation? Of course, once a list is returned from
+<span class="code">toList</span>, it must be immutable. However, appending to the <span class="code">last0</span>
+element will modify the list which is referred to by <span class="code">start</span>.</p>
+
+<p>To maintain the correctness of the list buffer operations, you need to work on a fresh list instead.  This is achieved by the first
+line in the implementation of the <span class="code">+=</span> operation:
+<pre>
+  <span class="vem">override</span>&nbsp;<span class="vem">def</span>&nbsp;+=&nbsp;(x:&nbsp;T)&nbsp;{
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(exported)&nbsp;copy()
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(start.isEmpty)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;last0&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;scala.::(x,&nbsp;<span class="typename">Nil</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;start&nbsp;=&nbsp;last0
+  &nbsp;&nbsp;}&nbsp;<span class="vem">else</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;last1&nbsp;=&nbsp;last0
+  &nbsp;&nbsp;&nbsp;&nbsp;last0&nbsp;=&nbsp;<span class="vem">new</span>&nbsp;scala.::(x,&nbsp;<span class="typename">Nil</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;last1.tl&nbsp;=&nbsp;last0
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+You see that <span class="code">+=</span> copies the list pointed to by <span class="code">start</span> if <span class="code">exported</span>
+is true. So, in the end, there is no free lunch. If you want to go
+from lists which can be extended at the end to immutable lists, there
+needs to be some copying. However, the implementation of <span class="code">ListBuffer</span>
+is such that copying is necessary only for list buffers that are
+further extended after they have been turned into lists. This case is
+quite rare in practice. Most use cases of list buffers add
+elements incrementally and then do one <span class="code">toList</span> operation at the
+end. In such cases, no copying is necessary.</p>
+
+<h3><a name="22.4"></a>22.4 Functional on the outside <span style="font-size: .5em">[<a href="implementing-lists.html#22.4">link</a>]</span></h3>
+
+
+<p>The previous section showed key elements of the implementation of Scala's<a id="i-381431720-1"></a><a id="i536175291-1"></a>
+<span class="code">List</span> and <span class="code">ListBuffer</span> classes. You saw that lists are purely
+functional on the "outside" but have an imperative implementation
+using list buffers on the "inside." This is a typical strategy in Scala
+programming: trying to combine purity with efficiency by carefully
+delimiting the effects of impure operations.<a id="i-1924040307-1"></a><a id="i982015373-1"></a>
+You might ask, why
+insist on purity? Why not just open up the definition of lists, making
+the <span class="code">tail</span> field, and maybe also the <span class="code">head</span> field, mutable? The
+disadvantage of such an approach is that it would make programs much
+more fragile. Note that constructing lists with <span class="code">::</span> re-uses the
+tail of the constructed list. So when you write:
+<pre>
+  <span class="vem">val</span>&nbsp;ys&nbsp;=&nbsp;<span class="literal">1</span>&nbsp;::&nbsp;xs
+  <span class="vem">val</span>&nbsp;zs&nbsp;=&nbsp;<span class="literal">2</span>&nbsp;::&nbsp;xs
+</pre><!-- -->
+the tails of lists <span class="code">ys</span> and <span class="code">zs</span> are shared; they point to the same data structure. 
+This is essential for efficiency; if the list <span class="code">xs</span> was copied every time you 
+added a new element onto it, this would be much slower. Because sharing is pervasive, 
+changing list elements, if it were possible, would be quite dangerous.
+For instance, taking the code above, if you wanted to truncate list <span class="code">ys</span> 
+to its first two elements by writing:
+<pre>
+  ys.drop(<span class="literal">2</span>).tail&nbsp;=&nbsp;<span class="typename">Nil</span>&nbsp;&nbsp;<span class="comment">//&nbsp;can't&nbsp;do&nbsp;this&nbsp;in&nbsp;Scala!</span>
+</pre><!-- -->
+you would also truncate lists <span class="code">zs</span> and <span class="code">xs</span> as a
+side effect. Clearly, it would be quite difficult to keep track of
+what gets changed. That's why Scala opts for pervasive
+sharing and no mutation for lists.  The <span class="code">ListBuffer</span> class still
+allows you to build up lists imperatively and incrementally, if you
+wish to. But since list buffers are not lists, the 
+types keep mutable buffers and immutable lists separate.</p>
+
+<p>The design of Scala's <span class="code">List</span> and <span class="code">ListBuffer</span> is quite similar to what's done in
+Java's pair of classes <span class="code">String</span> and <span class="code">StringBuffer</span>.
+This is no coincidence.
+In both situations the designers wanted to maintain a pure immutable
+data structure but also wanted to provide an efficient way to
+construct this structure incrementally. For Java and Scala strings,
+<span class="code">StringBuffer</span>s (or, in Java 5, <span class="code">StringBuilder</span>s) provide a
+way to construct a string incrementally. For Scala's lists, you have a
+choice: You can either construct lists incrementally by adding
+elements to the beginning of a list using <span class="code">::</span>, or you use a
+list buffer for adding elements to the end.  Which one is preferable
+depends on the situation. Usually, <span class="code">::</span> lends itself well to
+recursive algorithms in the divide-and-conquer style.  List buffers
+are often used in a more traditional loop-based style.</p>
+
+<h3><a name="22.5"></a>22.5 Conclusion <span style="font-size: .5em">[<a href="implementing-lists.html#22.5">link</a>]</span></h3>
+
+
+<p>In this chapter, you saw how lists are implemented in Scala.  <span class="code">List</span> is one of
+the most heavily used data structures in Scala, and it has a refined
+implementation.  <span class="code">List</span>'s two
+subclasses, <span class="code">Nil</span> and <span class="code">::</span>, are both case classes.  Instead
+of recursing through this structure, however, many core list methods
+are implemented using a <span class="code">ListBuffer</span>.  <span class="code">ListBuffer</span>, in turn, is
+carefully implemented so that it can efficiently build lists without
+allocating extraneous memory.  It is functional on the outside, but
+uses mutation internally to speed up the common case where a buffer is
+discarded after <span class="code">toList</span> is been called.  After studying all of this,
+you now know the list classes inside and out, and you might have
+learned an implementation trick or two.</p>
+
+<hr/>
+<h4>Footnotes for Chapter 22:</h4>
+
+
+<p><a name="footnote22-1">[1]</a> To be precise, the
+types would also permit for <span class="code">head</span> to always go into an infinite loop
+instead of throwing an exception, but this is clearly not what's
+wanted.</p>
+
+
+
+<p>
+<center>
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/implementing-lists.html">Screen Friendly Version</a>&nbsp;| 
+<a href="/pins1ed/implicit-conversions-and-parameters.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/for-expressions-revisited.html">Next</a>
+</div>
+</center>
+</div>
+<hr width="100%" />
+<div class="sp">
+<div style="text-align: center">
+<a href="http://www.artima.com/copyright.html">Copyright</a> &copy; 1996-2014 Artima, Inc. All Rights Reserved.</a> - <a href="http://www.artima.com/privacy.html">Privacy Policy</a> - <a href="http://www.artima.com/termsofuse.html">Terms of Use</a> - <a href="http://www.artima.com/advertising.html">Advertise with Us</a>
+</div>
+</div>
+<br />
+</body>
+</html>

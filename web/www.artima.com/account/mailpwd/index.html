@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>Mail Password Reminder</title>
+<link rel="stylesheet" type="text/css" href="/artima.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+</head>
+<body>
+<div class="dialog"><table width="100%">
+<tr valign="bottom">
+<td align="left"><a href="http://www.artima.com/index.jsp"><img src="/images/adl_dev.gif" alt="The Artima Developer Community" style="border-width: 0" width="211" height="31" /></a></td>
+</tr>
+</table>
+<hr style="width: 100%; margin: 0; padding: 0" /><br />
+
+<P>
+Enter your nickname or email
+address. We'll send you a new password via email.
+
+<form action="/account/mailpwd" method="post" name="reminderForm">
+<input type="hidden" name="doneURL" value="/articles?i=cppsource&p=3">
+
+<center>
+
+<table cellpadding="2" cellspacing="0" border="0">
+<tr>
+    <td>
+        <font>
+        Nickname or Email:
+        </font>
+    </td>
+    <td>
+    <input type="text" name="nickoremail" size="20" maxlength="150"
+     value="">
+    </td>
+</tr>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr>
+    <td colspan="2" align="center">
+    <input type="submit" name="reminderButton" value="Mail Password">
+    </td>
+</tr>
+</table>
+</form>
+</center>
+
+<script language="JavaScript" type="text/javascript">
+<!--
+document.reminderForm.nickoremail.focus();
+//-->
+</script>
+
+<div class="smallprint">
+<p style="text-align: center">
+Copyright &copy; 2014 Artima, Inc. All rights reserved.
+</p>
+</div>
+</div>
+</body>
+</html>

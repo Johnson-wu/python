@@ -1,0 +1,682 @@
+<html>
+<head>
+<title>Assertions and Unit Testing</title>
+<meta name="description" content="
+" />
+<meta name="keywords" content="scala" />
+<meta name="author" content="Martin Odersky, Lex Spoon, and Bill Venners" />
+<link rel="stylesheet" type="text/css" href="/artima.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+</head>
+<body><table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="bottom">
+<a href="/index.jsp"><img src="/images/a7.gif" alt="The Artima Developer Community" border="0" width="550" height="43" /></a>
+</td>
+</table>
+<table width="100%" bgcolor="#333333">
+<tr>
+<td align="center">
+<div class="ml">
+<a href="/articles" class="hl">Articles</a>&nbsp;|
+<a href="/news/index.jsp" class="hl">News</a>&nbsp;|
+<a href="/weblogs/index.jsp" class="hl">Weblogs</a>&nbsp;|
+<a href="/buzz/index.jsp" class="hl">Buzz</a>&nbsp;|
+<a href="/shop/catalog" class="hl">Books</a>&nbsp;|
+<a href="/forums/index.jsp" class="hl">Forums</a>
+</div>
+</td>
+</tr>
+</table>
+<table width="100%" bgcolor="#AACCFF">
+<tr>
+<td align="center">
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/assertions-and-unit-testingP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/packages-and-imports.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/case-classes-and-pattern-matching.html">Next</a>
+</div>
+</td>
+</tr>
+</table>
+<BR>
+<div class="vegies">
+<div class="tc">
+<span class="sts">Chapter 14 of Programming in Scala, First Edition</span><br />
+<span class="ts">Assertions and Unit Testing</span><br />
+<span class="as">by Martin Odersky, Lex Spoon, and Bill Venners</span><br />
+<span class="pd">December 10, 2008</span><br />
+</div>
+
+
+
+
+<p>Two important ways to check that the behavior of the software you write
+is as you expect are assertions and unit tests. In this chapter, we'll
+show you several options you have in Scala to write and run
+them.<a id="i2091567537-1"></a></p>
+
+<h3><a name="14.1"></a>14.1 Assertions <span style="font-size: .5em">[<a href="assertions-and-unit-testing.html#14.1">link</a>]</span></h3>
+
+
+<p><a name="sec:assert"></a></p>
+
+<p>Assertions in Scala are written as calls of a predefined method
+<span class="code">assert</span>.<a id="i1445339835-2"></a><a id="i-176392533-2"></a><a href="assertions-and-unit-testing.html#footnote14-1">[1]</a>  The expression <span class="code">assert(condition)</span> throws an <span class="code">AssertionError</span> if
+<span class="code">condition</span> does not hold.<a id="i-1578657506-1"></a> There's also a two-argument version
+of <span class="code">assert</span>. The expression
+<span class="code">assert(condition,</span>&nbsp;<span class="code">explanation)</span> tests <span class="code">condition</span>, and, if it does
+not hold, throws an <span class="code">AssertionError</span> that contains the given
+explanation. The type of explanation is <span class="code">Any</span>, so you can pass any object
+as the explanation. The 
+<span class="code">assert</span> method will call <span class="code">toString</span> on it to get a string explanation to
+place inside the <span class="code">AssertionError</span>.</p>
+
+<p>For example, in the method named "<span class="code">above</span>" of class <span class="code">Element</span>, shown in 
+<a href="composition-and-inheritance.html#lst:widen-heighten-methods">Listing 10.13</a> <a href="composition-and-inheritance.html#lst:widen-heighten-methods">here</a>, you might place an assert
+after the calls to <span class="code">widen</span> to make sure that the widened elements
+have equal widths. This is shown in <a href="assertions-and-unit-testing.html#lst:using-an-assert">Listing 14.1</a>.</p>
+
+<p><a name="lst:using-an-assert"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;above(that:&nbsp;<span class="typename">Element</span>):&nbsp;<span class="typename">Element</span>&nbsp;=&nbsp;{&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;this1&nbsp;=&nbsp;<span class="vem">this</span>&nbsp;widen&nbsp;that.width&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;that1&nbsp;=&nbsp;that&nbsp;widen&nbsp;<span class="vem">this</span>.width&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;assert(this1.width&nbsp;==&nbsp;that1.width)
+  &nbsp;&nbsp;&nbsp;&nbsp;elem(this1.contents&nbsp;++&nbsp;that1.contents)&nbsp;
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 14.1 - Using an assertion.</h5>
+
+
+<p>Another way you might choose to do this is to check the widths at the end of
+the <span class="code">widen</span> method, right before you return the value. You can accomplish this by storing
+the result in a <span class="code">val</span>, performing an assertion on the result, then mentioning the <span class="code">val</span> 
+last so the result is returned if the assertion succeeds.
+You can do this more concisely, however, with a convenience method in <span class="code">Predef</span> named
+<span class="code">ensuring</span>, as shown in
+<a href="assertions-and-unit-testing.html#lst:using-ensuring">Listing 14.2</a>.<a id="i1797680614-1"></a><a id="i538992544-1"></a></p>
+
+<p><a name="lst:using-ensuring"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">def</span>&nbsp;widen(w:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Element</span>&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(w&nbsp;&lt;=&nbsp;width)&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">this</span>&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">else</span>&nbsp;{&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;left&nbsp;=&nbsp;elem(<span class="quotedstring">'&nbsp;'</span>,&nbsp;(w&nbsp;-&nbsp;width)&nbsp;/&nbsp;<span class="literal">2</span>,&nbsp;height)&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">var</span>&nbsp;right&nbsp;=&nbsp;elem(<span class="quotedstring">'&nbsp;'</span>,&nbsp;w&nbsp;-&nbsp;width&nbsp;-&nbsp;left.width,&nbsp;height)&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;left&nbsp;beside&nbsp;<span class="vem">this</span>&nbsp;beside&nbsp;right&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;ensuring&nbsp;(w&nbsp;&lt;=&nbsp;_.width)
+</pre><!-- -->
+
+
+<h5>Listing 14.2 - Using <span class="code">ensuring</span> to assert a function's result.</h5>
+
+
+<p>The <span class="code">ensuring</span> method can be used with any result type because of an
+implicit conversion.<a id="i456777265-2"></a>
+Although it looks in this code as if we're invoking
+<span class="code">ensuring</span> on <span class="code">widen</span>'s result, which is type <span class="code">Element</span>, we're actually invoking
+<span class="code">ensuring</span> on a type to which <span class="code">Element</span> is implicitly converted. The <span class="code">ensuring</span> method
+takes one argument, a predicate function that takes a result type and returns <span class="code">Boolean</span>.
+<span class="code">ensuring</span> will pass the result to the predicate. If the predicate returns true, <span class="code">ensuring</span> will return the result.
+Otherwise, <span class="code">ensuring</span> will throw an <span class="code">AssertionError</span>.</p>
+
+<p>In this example, the predicate is "<span class="code">w</span>&nbsp;<span class="code">&lt;=</span>&nbsp;<span class="code">_.width</span>". The underscore is a placeholder for the one argument
+passed to the predicate, the <span class="code">Element</span> result of the <span class="code">widen</span> method. If the width passed as <span class="code">w</span> to <span class="code">widen</span> is
+less than or equal to the <span class="code">width</span> of the result <span class="code">Element</span>, the predicate will result in true, and <span class="code">ensuring</span>
+will result in the <span class="code">Element</span> on which it was invoked. Because this is the last expression of the <span class="code">widen</span> method,
+<span class="code">widen</span> itself will then result in the <span class="code">Element</span>.</p>
+
+<p>Assertions (and <span class="code">ensuring</span> checks) can be enabled and disabled using the JVM's <span class="code">-ea</span> and <span class="code">-da</span> command-line flags.
+When enabled, each assertion serves as a little test 
+that uses the actual data encountered as the software runs. In the remainder of this chapter, we'll focus on the 
+writing of external unit tests, which provide their own test data and run independently from the application.</p>
+
+<h3><a name="14.2"></a>14.2 Unit testing in Scala <span style="font-size: .5em">[<a href="assertions-and-unit-testing.html#14.2">link</a>]</span></h3>
+
+
+<p>You have many options for unit testing in Scala, from established Java tools,<a id="i-1422446064-2"></a><a id="i2091567537-2"></a><a id="i-2030836876-3"></a>
+such as JUnit and TestNG, to new tools written in Scala, such as
+ScalaTest, specs, and
+ScalaCheck.<a id="i-517954686-1"></a><a id="i122343128-1"></a><a id="i109641752-1"></a>
+In the remainder of this chapter, we'll give you a quick tour of these tools. We'll start with
+ScalaTest.</p>
+
+<p>ScalaTest provides several ways to write tests, the simplest of which is to create classes
+that extend <span class="code">org.scalatest.Suite</span> and define test methods in those classes. A <span class="code">Suite</span>
+represents a suite of tests. Test methods start with <span class="code">"test"</span>. <a href="assertions-and-unit-testing.html#lst:test-method">Listing 14.3</a> shows an example:</p>
+
+<p><a name="lst:test-method"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;org.scalatest.Suite
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;Element.elem
+  <br />  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ElementSuite</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Suite</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;testUniformElement()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert(ele.width&nbsp;==&nbsp;<span class="literal">2</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 14.3 - Writing a test method with <span class="code">Suite</span>.</h5>
+
+
+<p>Although ScalaTest includes a <span class="code">Runner</span> application, you can also
+run a <span class="code">Suite</span> directly from the Scala interpreter by invoking <span class="code">execute</span> on it.
+Trait <span class="code">Suite</span>'s <span class="code">execute</span> method uses reflection to discover its test methods and
+invokes them. Here's an example:
+<pre>
+  scala&gt;&nbsp;(<span class="vem">new</span>&nbsp;<span class="typename">ElementSuite</span>).execute()
+  <span class="output">Test&nbsp;Starting&nbsp;-&nbsp;ElementSuite.testUniformElement</span>
+  <span class="output">Test&nbsp;Succeeded&nbsp;-&nbsp;ElementSuite.testUniformElement</span>
+</pre><!-- --></p>
+
+<p>ScalaTest facilitates different styles of testing, because <span class="code">execute</span> can be overridden in <span class="code">Suite</span> subtypes.
+For example, ScalaTest offers a trait called <span class="code">FunSuite</span>, which overrides <span class="code">execute</span> so that you can define
+tests as function values rather than methods. <a href="assertions-and-unit-testing.html#lst:test-function">Listing 14.4</a> shows an example:</p>
+
+<p><a name="lst:test-function"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;org.scalatest.FunSuite
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;Element.elem
+  <br />  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ElementSuite</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">FunSuite</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;test(<span class="quotedstring">"elem&nbsp;result&nbsp;should&nbsp;have&nbsp;passed&nbsp;width"</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert(ele.width&nbsp;==&nbsp;<span class="literal">2</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 14.4 - Writing a test function with <span class="code">FunSuite</span>.</h5>
+
+
+<p>The "<span class="code">Fun</span>" in <span class="code">FunSuite</span> stands for function. "<span class="code">test</span>" is a method defined in <span class="code">FunSuite</span>, which will be invoked
+by the primary constructor of <span class="code">ElementSuite</span>. You specify the name of the test as
+a string between the parentheses, and the test code itself between curly braces. 
+The test code is a function passed as a by-name parameter to <span class="code">test</span>, which registers
+it for later execution. One benefit of <span class="code">FunSuite</span> is you need not name all your
+tests starting with "<span class="code">test</span>". In addition, you can more easily give long names to
+your tests, because you need not encode them in camel case, as you must do
+with test methods.<a href="assertions-and-unit-testing.html#footnote14-2">[2]</a></p>
+
+<h3><a name="14.3"></a>14.3 Informative failure reports <span style="font-size: .5em">[<a href="assertions-and-unit-testing.html#14.3">link</a>]</span></h3>
+
+
+<p>The tests in the previous two examples attempt to create an element of width 2 and assert
+that the width of the resulting element is indeed 2.
+Were this assertion to fail, you would see
+a message that indicated an assertion failed. You'd be given a line number, but wouldn't know the two
+values that were unequal. You could find out by placing a string message in the assertion that
+includes both values, but a more concise approach is to use the triple-equals operator, which ScalaTest provides
+for this purpose:<a id="i-1828469615-1"></a><a id="i-1929417832-1"></a>
+<pre>
+  assert(ele.width&nbsp;===&nbsp;<span class="literal">2</span>)
+</pre><!-- -->
+Were this assertion to fail, you would see a message such as "3 did not equal 2" in the failure report.
+This would tell you that <span class="code">ele.width</span> wrongly returned 3. The triple-equals operator does not differentiate
+between the actual and expected result. It just indicates that the left operand did not equal the right
+operand. If you wish to emphasize this distinction, you could alternatively use ScalaTest's <span class="code">expect</span> method, like
+this:
+<pre>
+  expect(<span class="literal">2</span>)&nbsp;{
+  &nbsp;&nbsp;ele.width
+  }
+</pre><!-- -->
+With this expression you indicate that you expect the code between the curly braces to result in 2. Were the code
+between the braces to result in 3, you'd see the message, "Expected 2, but got 3" in the test failure
+report.</p>
+
+<p>If you want to check that a method throws an expected exception, you can use ScalaTest's <span class="code">intercept</span>
+method, like this:<a id="i1433885554-1"></a><a id="i385195690-1"></a>
+<pre>
+  intercept[<span class="typename">IllegalArgumentException</span>]&nbsp;{
+  &nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;-<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  }
+</pre><!-- -->
+If the code between the curly braces completes abruptly with an instance of the passed exception class, <span class="code">intercept</span>
+will return the caught exception, in case you want to inspect it further. Most often, you'll probably only care that
+the expected exception was thrown, and ignore the result of <span class="code">intercept</span>, as is done in this example. On the other hand, if the code does not throw an
+exception, or throws a different exception, the <span class="code">intercept</span> method will throw a <span class="code">TestFailedException</span>, and you'll get a helpful error message in the failure report, such as:
+<pre>
+  Expected&nbsp;IllegalArgumentException&nbsp;to&nbsp;be&nbsp;thrown,
+  &nbsp;&nbsp;but&nbsp;NegativeArraySizeException&nbsp;was&nbsp;thrown.
+</pre><!-- --></p>
+
+<p>The goal of ScalaTest's <span class="code">===</span> operator and its <span class="code">expect</span> and <span class="code">intercept</span> methods is to help you 
+write assertion-based tests that are clear and concise.
+In the next section, we'll show you how to use this syntax in JUnit and TestNG tests written in Scala.</p>
+
+<h3><a name="14.4"></a>14.4 Using JUnit and TestNG <span style="font-size: .5em">[<a href="assertions-and-unit-testing.html#14.4">link</a>]</span></h3>
+
+
+<p>The most popular unit testing framework on the Java platform is JUnit, an open source tool
+written by Kent Beck and Erich Gamma.<a id="i255451135-1"></a><a id="i1607862342-1"></a><a id="i70981870-1"></a> You can write JUnit tests in Scala quite easily. Here's an
+example using JUnit 3.8.1:<a id="i70981870-2"></a><a id="i-1793303061-1"></a>
+<pre>
+  <span class="vem">import</span>&nbsp;junit.framework.TestCase
+  <span class="vem">import</span>&nbsp;junit.framework.Assert.assertEquals
+  <span class="vem">import</span>&nbsp;junit.framework.Assert.fail
+  <span class="vem">import</span>&nbsp;Element.elem
+  <br />  <span class="vem">class</span>&nbsp;<span class="typename">ElementTestCase</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">TestCase</span>&nbsp;{
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;testUniformElement()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;assertEquals(<span class="literal">2</span>,&nbsp;ele.width)
+  &nbsp;&nbsp;&nbsp;&nbsp;assertEquals(<span class="literal">3</span>,&nbsp;ele.height)
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">try</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;-<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fail()
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">catch</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">case</span>&nbsp;e:&nbsp;<span class="typename">IllegalArgumentException</span>&nbsp;=&gt;&nbsp;<span class="comment">//&nbsp;expected</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+Once you compile this class, JUnit will run it like any other <span class="code">TestCase</span>. JUnit doesn't care that it was
+written in Scala. If you wish to use ScalaTest's assertion syntax in your JUnit 3 test, however, you can instead subclass
+<span class="code">JUnit3Suite</span>, as shown <a href="assertions-and-unit-testing.html#lst:junit3-test-method">Listing 14.5</a>.</p>
+
+<p><a name="lst:junit3-test-method"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;org.scalatest.junit.JUnit3Suite
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;Element.elem
+  <br />  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ElementSuite</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">JUnit3Suite</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;testUniformElement()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert(ele.width&nbsp;===&nbsp;<span class="literal">2</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;expect(<span class="literal">3</span>)&nbsp;{&nbsp;ele.height&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intercept[<span class="typename">IllegalArgumentException</span>]&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;-<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 14.5 - Writing a JUnit test with <span class="code">JUnit3Suite</span>.</h5>
+
+
+<p>Trait <span class="code">JUnit3Suite</span> extends <span class="code">TestCase</span>, so once you compile this class, JUnit will run it just fine, even though
+it uses ScalaTest's more concise assertion syntax. Moreover, because <span class="code">JUnit3Suite</span> mixes in ScalaTest's trait <span class="code">Suite</span>,
+you can alternatively run this test class with ScalaTest's runner. The goal is to provide a gentle
+migration path to enable JUnit users to start writing JUnit tests in Scala that take advantage of the conciseness afforded by
+Scala. ScalaTest also has a <span class="code">JUnitWrapperSuite</span>, which enables you to run existing JUnit tests written in Java with ScalaTest's runner.</p>
+
+<p>ScalaTest offers similar integration classes for JUnit 4 and
+TestNG,<a id="i-1793303061-2"></a> both of which make heavy use of
+annotations.<a id="i-178828245-1"></a> We'll show an example
+using TestNG, an open source framework written by Cedric Beust and Alexandru Popescu.<a id="i898040326-1"></a><a id="i203352055-1"></a> As with JUnit, you can simply write TestNG tests in Scala, compile them, and run them with TestNG's runner. Here's an example:
+<pre>
+  <span class="vem">import</span>&nbsp;org.testng.annotations.Test
+  <span class="vem">import</span>&nbsp;org.testng.Assert.assertEquals
+  <span class="vem">import</span>&nbsp;Element.elem
+  <br />  <span class="vem">class</span>&nbsp;<span class="typename">ElementTests</span>&nbsp;{
+  &nbsp;&nbsp;@<span class="typename">Test</span>&nbsp;<span class="vem">def</span>&nbsp;verifyUniformElement()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;assertEquals(ele.width,&nbsp;<span class="literal">2</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;assertEquals(ele.height,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;}
+  &nbsp;&nbsp;@<span class="typename">Test</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;expectedExceptions&nbsp;=
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="typename">Array</span>(classOf[<span class="typename">IllegalArgumentException</span>])
+  &nbsp;&nbsp;}
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;elemShouldThrowIAE()&nbsp;{&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;-<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)&nbsp;}
+  }
+</pre><!-- -->
+If you prefer to use ScalaTest's assertion syntax in your TestNG tests, however, you can extend trait <span class="code">TestNGSuite</span>, as shown in <a href="assertions-and-unit-testing.html#lst:testng-test">Listing 14.6</a>:<a id="i-1278827628-1"></a><a id="i-126685847-1"></a></p>
+
+<p><a name="lst:testng-test"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;org.scalatest.testng.TestNGSuite
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;org.testng.annotations.Test
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;Element.elem
+  <br />  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ElementSuite</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">TestNGSuite</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;@<span class="typename">Test</span>&nbsp;<span class="vem">def</span>&nbsp;verifyUniformElement()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert(ele.width&nbsp;===&nbsp;<span class="literal">2</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;expect(<span class="literal">3</span>)&nbsp;{&nbsp;ele.height&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intercept[<span class="typename">IllegalArgumentException</span>]&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;-<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 14.6 - Writing a TestNG test with <span class="code">TestNGSuite</span>.</h5>
+
+
+<p>As with <span class="code">JUnit3Suite</span>, you can run a <span class="code">TestNGSuite</span> with either TestNG or ScalaTest, and ScalaTest also
+provides a <span class="code">TestNGWrapperSuite</span> that enables you to run existing TestNG tests written in Java with ScalaTest.
+To see an example of JUnit 4 tests written in Scala, see
+<a href="combining-scala-and-java.html#sec:annotations">Section 29.2</a>.</p>
+
+<h3><a name="14.5"></a>14.5 Tests as specifications <span style="font-size: .5em">[<a href="assertions-and-unit-testing.html#14.5">link</a>]</span></h3>
+
+
+<p>In the <em>behavior-driven development</em> (BDD) testing style,
+the emphasis is on writing human-readable specifications of the expected behavior of code, and accompanying tests that
+verify the code has the specified behavior.<a id="i2079947888-1"></a> 
+ScalaTest includes a trait, <span class="code">Spec</span>, which facilitates this style of testing. An example is shown
+in <a href="assertions-and-unit-testing.html#lst:scalatest-spec-example">Listing 14.7</a>.</p>
+
+<p><a name="lst:scalatest-spec-example"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;org.scalatest.Spec
+  <br />  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ElementSpec</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Spec</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;describe(<span class="quotedstring">"A&nbsp;UniformElement"</span>)&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;it(<span class="quotedstring">"should&nbsp;have&nbsp;a&nbsp;width&nbsp;equal&nbsp;to&nbsp;the&nbsp;passed&nbsp;value"</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert(ele.width&nbsp;===&nbsp;<span class="literal">2</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;it(<span class="quotedstring">"should&nbsp;have&nbsp;a&nbsp;height&nbsp;equal&nbsp;to&nbsp;the&nbsp;passed&nbsp;value"</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert(ele.height&nbsp;===&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;it(<span class="quotedstring">"should&nbsp;throw&nbsp;an&nbsp;IAE&nbsp;if&nbsp;passed&nbsp;a&nbsp;negative&nbsp;width"</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intercept[<span class="typename">IllegalArgumentException</span>]&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;-<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 14.7 - Specifying and testing behavior with a ScalaTest <span class="code">Spec</span>.</h5>
+
+
+<p>A <span class="code">Spec</span> contains "describers" and "specifiers." A describer, written as <span class="code">describe</span> followed by a string in parentheses and then a block, describes
+the "subject" being specified and tested. A specifier, written as <span class="code">it</span> followed by a string in parentheses and a block, specifies a small bit of
+behavior of that subject (in the string) and provides code that verifies that behavior (in the block). When a <span class="code">Spec</span> is executed, it will run each specifier as a ScalaTest test.
+A <span class="code">Spec</span> can generate output when it is executed that reads more like a specification.
+For example, here's what the output
+will look like if you run <span class="code">ElementSpec</span> from <a href="assertions-and-unit-testing.html#lst:scalatest-spec-example">Listing 14.7</a> in the interpreter:
+<pre>
+  scala&gt;&nbsp;(<span class="vem">new</span>&nbsp;<span class="typename">ElementSpec</span>).execute()
+  <span class="output">A&nbsp;UniformElement</span>
+  <span class="output">-&nbsp;should&nbsp;have&nbsp;a&nbsp;width&nbsp;equal&nbsp;to&nbsp;the&nbsp;passed&nbsp;value</span>
+  <span class="output">-&nbsp;should&nbsp;have&nbsp;a&nbsp;height&nbsp;equal&nbsp;to&nbsp;the&nbsp;passed&nbsp;value</span>
+  <span class="output">-&nbsp;should&nbsp;throw&nbsp;an&nbsp;IAE&nbsp;if&nbsp;passed&nbsp;a&nbsp;negative&nbsp;width</span>
+</pre><!-- --></p>
+
+<p>The specs testing framework, an open
+source tool written in Scala by Eric Torreborre<a id="i774197993-1"></a>,
+also supports the BDD style of testing but with a different
+syntax.<a id="i109641752-2"></a>
+For example, you could use specs to write the test shown in <a href="assertions-and-unit-testing.html#lst:specs-example">Listing 14.8</a>.</p>
+
+<p><a name="lst:specs-example"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;org.specs._
+  <br />  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">ElementSpecification</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">Specification</span>&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="quotedstring">"A&nbsp;UniformElement"</span>&nbsp;should&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="quotedstring">"have&nbsp;a&nbsp;width&nbsp;equal&nbsp;to&nbsp;the&nbsp;passed&nbsp;value"</span>&nbsp;in&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ele.width&nbsp;must&nbsp;be_==(<span class="literal">2</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="quotedstring">"have&nbsp;a&nbsp;height&nbsp;equal&nbsp;to&nbsp;the&nbsp;passed&nbsp;value"</span>&nbsp;in&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;ele&nbsp;=&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ele.height&nbsp;must&nbsp;be_==(<span class="literal">3</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="quotedstring">"throw&nbsp;an&nbsp;IAE&nbsp;if&nbsp;passed&nbsp;a&nbsp;negative&nbsp;width"</span>&nbsp;in&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elem(<span class="quotedstring">'x'</span>,&nbsp;-<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)&nbsp;must
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;throwA[<span class="typename">IllegalArgumentException</span>]
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 14.8 - Specifying and testing behavior with the specs framework.</h5>
+
+
+<p>One goal of specs is to enable you to write assertions that read more like natural language and
+generate descriptive failure messages. Specs provides a large number of <em>matchers</em> for this purpose. You can
+also create your own matchers. You can see some examples of matchers in action in <a href="assertions-and-unit-testing.html#lst:specs-example">Listing 14.8</a> in 
+the lines that contain "<span class="code">must</span>&nbsp;<span class="code">be_==</span>" and "<span class="code">must</span>&nbsp;<span class="code">throwA</span>". You can also use specs matchers in ScalaTest, JUnit, or TestNG tests written in Scala
+by mixing trait <span class="code">org.specs.SpecsMatchers</span> into your test
+classes.
+You can use specs standalone, but it is also
+integrated with ScalaTest and JUnit, so you can run specs tests with those tools as well.<a href="assertions-and-unit-testing.html#footnote14-3">[3]</a></p>
+
+<h3><a name="14.6"></a>14.6 Property-based testing <span style="font-size: .5em">[<a href="assertions-and-unit-testing.html#14.6">link</a>]</span></h3>
+
+
+<p>Another useful testing tool for Scala is ScalaCheck, an open source framework written by Rickard Nilsson. ScalaCheck
+enables you to specify properties that the code under test must
+obey.<a id="i568084816-1"></a><a id="i-517954686-2"></a> For each property, ScalaCheck will generate test data and run tests that check whether the property holds. <a href="assertions-and-unit-testing.html#lst:property-based-tests">Listing 14.9</a> show an example
+of using ScalaCheck from a ScalaTest suite.</p>
+
+<p><a name="lst:property-based-tests"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;org.scalatest.prop.FunSuite
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;org.scalacheck.Prop._
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;Element.elem
+  <br />  &nbsp;&nbsp;<span class="vem">class</span>&nbsp;<span class="typename">ElementSuite</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">FunSuite</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;test(<span class="quotedstring">"elem&nbsp;result&nbsp;should&nbsp;have&nbsp;passed&nbsp;width"</span>,&nbsp;(w:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;w&nbsp;&gt;&nbsp;<span class="literal">0</span>&nbsp;==&gt;&nbsp;(elem(<span class="quotedstring">'x'</span>,&nbsp;w,&nbsp;<span class="literal">3</span>).width&nbsp;==&nbsp;w)
+  &nbsp;&nbsp;&nbsp;&nbsp;)
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;test(<span class="quotedstring">"elem&nbsp;result&nbsp;should&nbsp;have&nbsp;passed&nbsp;height"</span>,&nbsp;(h:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;h&nbsp;&gt;&nbsp;<span class="literal">0</span>&nbsp;==&gt;&nbsp;(elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;h).height&nbsp;==&nbsp;h)
+  &nbsp;&nbsp;&nbsp;&nbsp;)
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 14.9 - Writing property-based tests with ScalaCheck.</h5>
+
+
+<p>In this example, we check two properties that the <span class="code">elem</span> factory
+should obey. ScalaCheck properties are expressed as function values that take as parameters the required
+test data, which will be generated by ScalaCheck. In the first property shown in <a href="assertions-and-unit-testing.html#lst:property-based-tests">Listing 14.9</a>, the test data is an integer named <span class="code">w</span> that
+represents a width. Inside the body of the function, you see:
+<pre>
+  w&nbsp;&gt;&nbsp;<span class="literal">0</span>&nbsp;==&gt;&nbsp;(elem(<span class="quotedstring">'x'</span>,&nbsp;w,&nbsp;<span class="literal">3</span>).width&nbsp;==&nbsp;w)
+</pre><!-- -->
+The <span class="code">==&gt;</span> symbol is an <em>implication operator</em>. It implies that whenever the left hand expression is true,
+the expression on the right must hold true.
+Thus in this case, the expression on the right of <span class="code">==&gt;</span> must hold true whenever <span class="code">w</span> is greater than 0. The right-hand expression in this case
+will yield true if the width passed to the <span class="code">elem</span> factory
+is the same as the width of the <span class="code">Element</span> returned by the factory.</p>
+
+<p>With this small amount
+of code, ScalaCheck will generate possibly hundreds of values for <span class="code">w</span> and test each one, looking for
+a value for which the property doesn't hold. If the property holds true for every value ScalaCheck tries, the
+test will pass. Otherwise, the test will complete abruptly with an <span class="code">AssertionError</span> that
+contains information including the value that caused the
+failure.</p>
+
+<p>In <a href="assertions-and-unit-testing.html#lst:property-based-tests">Listing 14.9</a>, each test was composed of a single property. Sometimes, however, you may want to make multiple property
+checks within a single test, or perform both property checks and assertions in the same test. ScalaTest's <span class="code">Checkers</span> trait makes
+this easy. Simply mix <span class="code">Checkers</span> into your test class, and pass properties to one of several "<span class="code">check</span>" methods. For example, <a href="assertions-and-unit-testing.html#lst:trait-checkers">Listing 14.10</a>
+shows a <span class="code">JUnit3Suite</span> performing the same two ScalaCheck property checks shown in the previous example, but this time in a single test. As with all <span class="code">JUnit3Suite</span>s, this class is a JUnit <span class="code">TestCase</span> and can therefore be run with either
+ScalaTest or JUnit.<a id="i-1082654974-1"></a><a href="assertions-and-unit-testing.html#footnote14-4">[4]</a>
+<a name="lst:trait-checkers"></a></p>
+
+<pre>
+  <span class="vem">import</span>&nbsp;org.scalatest.junit.JUnit3Suite
+  <span class="vem">import</span>&nbsp;org.scalatest.prop.Checkers
+  <span class="vem">import</span>&nbsp;org.scalacheck.Prop._
+  <span class="vem">import</span>&nbsp;Element.elem
+  <br />  <span class="vem">class</span>&nbsp;<span class="typename">ElementSuite</span>&nbsp;<span class="vem">extends</span>&nbsp;<span class="typename">JUnit3Suite</span>&nbsp;<span class="vem">with</span>&nbsp;<span class="typename">Checkers</span>&nbsp;{
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;testUniformElement()&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;check((w:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;w&nbsp;&gt;&nbsp;<span class="literal">0</span>&nbsp;==&gt;&nbsp;(elem(<span class="quotedstring">'x'</span>,&nbsp;w,&nbsp;<span class="literal">3</span>).width&nbsp;==&nbsp;w))
+  &nbsp;&nbsp;&nbsp;&nbsp;check((h:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;h&nbsp;&gt;&nbsp;<span class="literal">0</span>&nbsp;==&gt;&nbsp;(elem(<span class="quotedstring">'x'</span>,&nbsp;<span class="literal">2</span>,&nbsp;h).height&nbsp;==&nbsp;h))
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+
+
+<h5>Listing 14.10 - Checking properties from a JUnit <span class="code">TestCase</span> with <span class="code">Checkers</span>.</h5>
+
+
+<h3><a name="14.7"></a>14.7 Organizing and running tests <span style="font-size: .5em">[<a href="assertions-and-unit-testing.html#14.7">link</a>]</span></h3>
+
+
+<p>Each framework mentioned in this chapter provides some mechanism for organizing and running tests. In this section, we'll give
+a quick overview of ScalaTest's approach. To get the full story on any of these frameworks, however, you'll need to consult
+their documentation.</p>
+
+<p>In ScalaTest, you organize large test suites by nesting <span class="code">Suite</span>s inside
+<span class="code">Suite</span>s.<a id="i-318258231-1"></a> 
+When a <span class="code">Suite</span> is executed, it will execute its nested <span class="code">Suite</span>s as well as its tests. The nested <span class="code">Suite</span>s will
+in turn execute their nested <span class="code">Suite</span>s, and so on. A large test suite, therefore, is represented as a tree of <span class="code">Suite</span> objects.
+When you execute the root <span class="code">Suite</span> in the tree, all <span class="code">Suite</span>s in the tree will be executed.</p>
+
+<p>You can nest suites manually or automatically. To nest manually, you either override the <span class="code">nestedSuites</span> method on your <span class="code">Suite</span>s, 
+or pass the <span class="code">Suite</span>s you want to nest to the constructor of class <span class="code">SuperSuite</span>, which ScalaTest provides for this purpose. To nest automatically,
+you provide package names to ScalaTest's <span class="code">Runner</span>, which will discover <span class="code">Suite</span>s automatically, nest them under a root <span class="code">Suite</span>, and
+execute the root <span class="code">Suite</span>.</p>
+
+<p>You can invoke ScalaTest's <span class="code">Runner</span> application from the command line or an ant task. You must specify which suites you want to run, either by
+naming the suites explicitly or indicating name prefixes with which you want <span class="code">Runner</span> to perform automatic discovery. You can optionally specify a <em>runpath</em>, a list of
+directories and JAR files from with to load class files for the tests and the code they exercise.<a href="assertions-and-unit-testing.html#footnote14-5">[5]</a>
+You can also specify one or more reporters, which will determine how test results will be presented.</p>
+
+<div class="figure"><a name="fig:scalatest-gui"></a>
+
+
+<p><img src="images/scalaTestGUI40.jpg" alt="image images/scalaTestGUI40.jpg"/></p>
+
+</div>
+<h5> Figure 14.1 - ScalaTest's graphical reporter.</h5>
+
+
+<p>For example, the ScalaTest distribution includes the suites that test ScalaTest itself. You can run one of these suites, <span class="code">SuiteSuite</span>,<a href="assertions-and-unit-testing.html#footnote14-6">[6]</a> with the following command:
+<pre>
+  $&nbsp;scala&nbsp;-cp&nbsp;scalatest-0.9.4.jar&nbsp;org.scalatest.tools.Runner
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-p&nbsp;"scalatest-0.9.4-tests.jar"&nbsp;-s&nbsp;org.scalatest.SuiteSuite
+</pre><!-- -->
+With <span class="code">-cp</span> you place ScalaTest's JAR file on the class path. The next token, <span class="code">org.scalatest.tools.Runner</span>, is the fully qualified name of the <span class="code">Runner</span> application. Scala
+will run this application and pass the remaining tokens as command line arguments. The <span class="code">-p</span> specifies the runpath, which in this case is a 
+JAR file that contains the suite classes: <span class="code">scalatest-0.9.4-tests.jar</span>.
+The <span class="code">-s</span> indicates <span class="code">SuiteSuite</span> is the suite to execute. Because you don't explicitly specify a reporter, you will by default get
+the graphical reporter. The result is shown in
+<a href="assertions-and-unit-testing.html#fig:scalatest-gui">Figure 14.1</a>.</p>
+
+<h3><a name="14.8"></a>14.8 Conclusion <span style="font-size: .5em">[<a href="assertions-and-unit-testing.html#14.8">link</a>]</span></h3>
+
+
+<p>In this chapter you saw examples of mixing assertions directly in production code as well as writing them externally 
+in unit tests.  You saw that as a Scala programmer, you can take
+advantage of popular testing tools from the Java community, such as JUnit and
+TestNG, as well as newer tools designed explicitly for Scala, such as ScalaTest, ScalaCheck, and specs. 
+Both in-code assertions and unit testing can help you achieve your software quality goals. We felt that these techniques 
+are important enough to justify the short detour from the Scala tutorial that this chapter represented. In the next chapter,
+however, we'll return to the language tutorial and cover a very useful
+aspect of Scala: pattern
+matching.</p>
+
+<hr/>
+<h4>Footnotes for Chapter 14:</h4>
+
+
+<p><a name="footnote14-1">[1]</a> The <span class="code">assert</span> method is defined in the <span class="code">Predef</span>
+singleton object, whose members are automatically imported into every
+Scala source file.</p>
+
+<p><a name="footnote14-2">[2]</a> You can download ScalaTest from <span class="code">http://www.scalatest.org/</span>.</p>
+
+<p><a name="footnote14-3">[3]</a> You can download specs from <span class="code">http://code.google.com/p/specs/</span>.</p>
+
+<p><a name="footnote14-4">[4]</a> You can download ScalaCheck from <span class="code">http://code.google.com/p/scalacheck/</span>.</p>
+
+<p><a name="footnote14-5">[5]</a> Tests can be anywhere on the runpath or classpath, but
+typically you would keep your tests separate from your production code, in a separate directory hierarchy that mirrors your source tree's directory hierarchy.</p>
+
+<p><a name="footnote14-6">[6]</a> <span class="code">SuiteSuite</span>
+is so-named because it is a suite of tests that test trait <span class="code">Suite</span> itself.</p>
+
+
+
+<br clear="all">
+<p>
+<center>
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/assertions-and-unit-testingP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/packages-and-imports.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/case-classes-and-pattern-matching.html">Next</a>
+</div>
+</center>
+</div>
+<hr width="100%" />
+<center>
+<script type="text/javascript"><!--
+google_ad_client = "pub-3911176865765226";
+google_alternate_color = "ffffff";
+google_ad_width = 728;
+google_ad_height = 15;
+google_ad_format = "728x15_0ads_al";
+google_ad_channel = "";
+google_color_border = "ffffff";
+google_color_bg = "FFFFFF";
+google_color_link = "003090";
+google_color_text = "000000";
+google_color_url = "666666";
+//--></script>
+<script type="text/javascript"
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+<br />
+<br />
+<!-- SiteSearch Google -->
+<form method="get" action="http://www.google.com/custom">
+<table border="0" bgcolor="#ffffff">
+<tr><td nowrap="nowrap" valign="top" align="left" height="32">
+<a href="http://www.google.com/">
+<img src="http://www.google.com/logos/Logo_25wht.gif"
+border="0" alt="Google"></img></a>
+</td>
+<td nowrap="nowrap">
+<input type="hidden" name="domains" value="Artima.com"></input>
+<input type="text" name="q" size="31" maxlength="255" value=""></input>
+<input type="submit" name="sa" value="Search"></input>
+</td></tr>
+<tr>
+<td>&nbsp;</td>
+<td nowrap="nowrap">
+<font size="-1" color="#000000">
+<input type="radio" name="sitesearch" value=""></input> Web
+<input type="radio" name="sitesearch" value="Artima.com" checked="checked"></input>Artima.com
+</font>&nbsp;&nbsp;
+<input type="hidden" name="client" value="pub-3911176865765226"></input>
+<input type="hidden" name="forid" value="1"></input>
+<input type="hidden" name="ie" value="ISO-8859-1"></input>
+<input type="hidden" name="oe" value="ISO-8859-1"></input>
+<input type="hidden" name="cof" value="GALT:#008000;GL:1;DIV:#336699;VLC:663399;AH:center;BGC:FFFFFF;LBGC:FFFFFF;ALC:0000FF;LC:0000FF;T:000000;GFNT:0000FF;GIMP:0000FF;LH:50;LW:150;L:http://www.artima.com/images/artima150.gif;S:http://www.artima.com;FORID:1;"></input>
+<input type="hidden" name="hl" value="en"></input>
+</td></tr></table>
+</form>
+<!-- SiteSearch Google -->
+</center>
+<div class="sp">
+<div style="text-align: center">
+<a href="http://www.artima.com/copyright.html">Copyright</a> &copy; 1996-2014 Artima, Inc. All Rights Reserved.</a> - <a href="http://www.artima.com/privacy.html">Privacy Policy</a> - <a href="http://www.artima.com/termsofuse.html">Terms of Use</a> - <a href="http://www.artima.com/advertising.html">Advertise with Us</a>
+</div>
+</div>
+<br />
+</body>
+</html>

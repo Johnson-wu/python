@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+  <rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://purl.org/rss/1.0/"
+  >
+
+  <channel rdf:about="http://www.artima.com/news/feeds/groups.rss">
+    <title>Artima Enterprise Developer News</title>
+    <link>http://www.artima.com/news/</link>
+    <description>
+News and discussion for enterprise developers.
+    </description>
+    <image rdf:resource="http://www.artima.com/images/artima88x33.gif"/>
+    <items>
+      <rdf:Seq>
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=301940" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=292117" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=290535" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=287782" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=286919" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=286909" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=274497" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=273821" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=268242" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=257984" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=257969" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=257223" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=229923" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=229835" />
+        <rdf:li resource="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=229788" />
+      </rdf:Seq>
+    </items>
+  </channel>
+
+  <image rdf:about="http://www.artima.com/images/artima88x33.gif">
+    <title>Artima.com</title>
+    <url>http://www.artima.com/images/artima88x33.gif</url>
+    <link>http://www.artima.com/</link>
+  </image>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=301940">
+    <title>Oracle Sues Google over Java Patents</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=301940</link>
+    <description>
+This week Oracle filed a lawsuit against Google alleging infringement of Java-related patents and copyrights in Android.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=292117">
+    <title>Directly executing Java bytecodes versus JITing on a RISC</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=292117</link>
+    <description>
+Cliff Click claimed in his Azul blog recently that Just-in-time compiling Java bytecodes on a RISC chip almost always results in faster code that consumes less power.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=290535">
+    <title>Effective C++ in an Embedded Environment</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=290535</link>
+    <description>
+Artima has published a PDF document that contains the presentation materials from Scott Meyers' two-day training course Embedded C++.  It provides an in-depth examination of how C++ can be applied in embedded systems, including costs of language features, ROMing, ISRs, memory management, safety-critical and real-time considerations, and more.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=287782">
+    <title>What does the future hold for the JCP?</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=287782</link>
+    <description>
+In a ZDNet interview, founding JCP executive committee member Tony de la Lama gives his opinions on the future of the JCP.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=286919">
+    <title>Tim Bray on Android versus iPhone</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=286919</link>
+    <description>
+In his first blog post as a Googler, Tim Bray compared the open Android platform (which he'll be focusing on in his new job) with Apple's iPhone.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=286909">
+    <title>Amazon Releases AWS SDK for Java</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=286909</link>
+    <description>
+Amazon has released a Java API to the Amazon Web Services (AWS) infrastructure , the AWS SKD for Java, which makes it easier for Java developers to connect to services such as Amazon Simple Storage Service (S3), Amazon Elastic Compute Cloud (EC2), and Amazon SimpleDB. The SDK includes a toolkit for Eclipse.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=274497">
+    <title>Java To Get Closures in JDK 7</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=274497</link>
+    <description>
+At the Devoxx conference in Antwerp, Belgium, Sun's Mark Reinhold announced that closures would be added to Java in JDK 7. In this interview, Stephen Colebourne, coauthor of the FCM closures proposal, gives his perspective on this surprise announcement.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=273821">
+    <title>Synesis Software Releases The New recls 100% .NET Library</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=273821</link>
+    <description>
+recls 100% .NET is a .NET 2/3 library that provides recursive file-system search. The library supports breadth-first or depth-first search of files and/or directories, hidden and/or system files, specification of multi-part wildcard patterns, marking of directories, error and progress delegates, and other advanced features.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=268242">
+    <title>JIDE Charts Beta Released</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=268242</link>
+    <description>
+JIDE Software has released as beta a new charting package for Swing: JIDE Charts. This package offers many ways to present data in different types of charts that can help users visualize and understand the data.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=257984">
+    <title>FastFormat 0.3.5 released</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=257984</link>
+    <description>
+FastFormat is an open-source C++ formatting library that provides localised text formatting, optionally using resource-based format strings. It's 100% type-safe, flexible, infinitely extensible, and highly efficient. As of 0.3.5 it has production quality support for all built-in types, and the flexibility to support any user-defined types.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=257969">
+    <title>Whither Sockets?</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=257969</link>
+    <description>
+In a recent ACM Queue article, George Neville-Neil writes that the ubiquitous socket API, now almost 30 years old, has not kept up with recent progress in networks, and would need a major overhaul.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=257223">
+    <title>Rich Hickey Releases Clojure 1.0</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=257223</link>
+    <description>
+Clojure is a Lisp dialect for the JVM. Developed mainly by Rich Hickey, Clojure 1.0 was released this week. It supports functional programming, advanced concurrency constructs, such as software transactional memory, multimethods, and interoperability with Java classes and frameworks.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=229923">
+    <title>Xoreax Software Releases IncrediBuild 3.20</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=229923</link>
+    <description>
+Xoreax Software announced today the release of IncrediBuild 3.20. IncrediBuild is an easy-to-use platform for accelerating Windows-based processes such as code/data builds, scripts and tools through advanced Grid Computing technology.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=229835">
+    <title>ZeroTurnaround Releases JavaRebel 1.1</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=229835</link>
+    <description>
+ZeroTurnaround announced the availability of JavaRebel 1.1,  a JVM plugin that enables reloading changes made to Java class files on-the-fly, saving developers the time it takes to redeploy an application or perform a container restart.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=229788">
+    <title>Sun Releases NetBeans 6.1</title>
+    <link>http://www.artima.com/forums/flat.jsp?forum=265&amp;thread=229788</link>
+    <description>
+Sun's latest NetBeans release brings improved performance, faster startup, a preview of a PHP editor, JavaScript support, updates to the Ruby development environment, and extend integration of several Java frameworks.
+    </description>
+  </item>
+
+</rdf:RDF>

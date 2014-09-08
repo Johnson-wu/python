@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+  <rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://purl.org/rss/1.0/"
+  >
+
+  <channel rdf:about="http://www.artima.com/cppsource/feeds/cppsource.rss">
+    <title>Articles published in The C++ Source</title>
+    <link>http://www.artima.com/</link>
+    <description>
+The most recently published articles in Artima's The C++ Source.
+    </description>
+    <image rdf:resource="http://www.artima.com/images/artima88x33.gif"/>
+    <items>
+      <rdf:Seq>
+        <rdf:li resource="http://www.artima.com/cppsource/codefeatures.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/rvalue.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/how_to_go_slow.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/type_erasure.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/safelabels.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/scattered_io.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/subscription_problem.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/boost_con_07_up_close.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/cooperative_visitor.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/boost_con_07.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/xml_data_binding.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/pure_virtual.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/threads_meeting.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/lazy_builder.html" />
+        <rdf:li resource="http://www.artima.com/cppsource/top_cpp_aha_moments.html" />
+      </rdf:Seq>
+    </items>
+  </channel>
+
+  <image rdf:about="http://www.artima.com/images/artima88x33.gif">
+    <title>Artima.com</title>
+    <url>http://www.artima.com/images/artima88x33.gif</url>
+    <link>http://www.artima.com/</link>
+  </image>
+
+  <item rdf:about="http://www.artima.com/cppsource/codefeatures.html">
+    <title>Enforcing Code Feature Requirements in C++</title>
+    <link>http://www.artima.com/cppsource/codefeatures.html</link>
+    <description>
+In this article, Scott Meyers describes a technique that enables the specification of arbitrary combinations of user-defined code features on a per-function basis and that detects violations of feature constraints during compilation.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/rvalue.html">
+    <title>A Brief Introduction to Rvalue References</title>
+    <link>http://www.artima.com/cppsource/rvalue.html</link>
+    <description>
+Rvalue references is a small technical extension to the C++ language. Rvalue references allow programmers to avoid logically unnecessary copying and to provide perfect forwarding functions. They are primarily meant to aid in the design of higher performance and more robust libraries.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/how_to_go_slow.html">
+    <title>How To Go Slow</title>
+    <link>http://www.artima.com/cppsource/how_to_go_slow.html</link>
+    <description>
+Computers make life easier because they're so fast, right? Well, yes and no. Do you write efficient code? The author reveals some disconcerting inefficiencies lurking in commonly used software and development practices.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/type_erasure.html">
+    <title>On the Tension Between Object-Oriented and Generic Programming in C++</title>
+    <link>http://www.artima.com/cppsource/type_erasure.html</link>
+    <description>
+The author discusses how the use of generic programming in C++ can lead to conflicts with object-oriented design principles. He demonstrates how a technique known as type erasure can often be used to resolve these conflicts.
+An in-depth example is presented: any_iterator, a type-safe, heterogeneous C++ iterator.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/safelabels.html">
+    <title>Safe Labels in C++</title>
+    <link>http://www.artima.com/cppsource/safelabels.html</link>
+    <description>
+C++ is a language for writing efficient high-performance programs,
+and bit manipulations are bread and butter of many such programs.
+This article presents a solution to the problem of constraining bit
+operations to allow only safe and legitimate ones, and turn all invalid
+bit manipulations into compile-time errors.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/scattered_io.html">
+    <title>Gathering Scattered I/O in C++</title>
+    <link>http://www.artima.com/cppsource/scattered_io.html</link>
+    <description>
+Have your cake and eat it, too, with STL extensions. In this chapter extract from his latest book, Matthew Wilson shows you how to take full advantage of the STL Iterator abstraction, without sacrificing block-transfer efficiency of Scatter/Gather I/O memory.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/subscription_problem.html">
+    <title>Subscribing Template Classes with Object Factories in C++</title>
+    <link>http://www.artima.com/cppsource/subscription_problem.html</link>
+    <description>
+Object factories provide a useful abstraction for object construction. A special problem with object factories must be considered, however, when subscribing template classes with object factories. This article presents an overview of the &amp;quot;subscription problem&amp;quot; along with several solutions.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/boost_con_07_up_close.html">
+    <title>BoostCon'07 Up Close and Personal (and a Little Sleepy)</title>
+    <link>http://www.artima.com/cppsource/boost_con_07_up_close.html</link>
+    <description>
+This article is a personal, behind-the-scenes look at BoostCon '07 from a veteran who has seen it all.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/cooperative_visitor.html">
+    <title>Cooperative Visitor: A Template Technique for Visitor Creation</title>
+    <link>http://www.artima.com/cppsource/cooperative_visitor.html</link>
+    <description>
+This article presents a flexible and efficient variation of the Visitor design pattern in C++ that accommodates arbitrary argument and return types.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/boost_con_07.html">
+    <title>BoostCon'07 Trip Report</title>
+    <link>http://www.artima.com/cppsource/boost_con_07.html</link>
+    <description>
+Couldn’t make it to BoostCon'07, the inaugural annual Boost Conference? Here’s the next best thing--a lively trip report from one of its presenters.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/xml_data_binding.html">
+    <title>An Introduction to XML Data Binding in C++</title>
+    <link>http://www.artima.com/cppsource/xml_data_binding.html</link>
+    <description>
+XML processing has become a common task that many C++ application developers have to deal with. This article introduces XML Data Binding and shows how it can simplify XML processing in C++.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/pure_virtual.html">
+    <title>Pure Virtual Function Called: An Explanation</title>
+    <link>http://www.artima.com/cppsource/pure_virtual.html</link>
+    <description>
+&amp;quot;Pure virtual function called&amp;quot; is the dying message of the occasional crashed C++ program. What does it mean? This article covers all of the possible explanations.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/threads_meeting.html">
+    <title>Trip Report: Ad-Hoc Meeting on Threads in C++</title>
+    <link>http://www.artima.com/cppsource/threads_meeting.html</link>
+    <description>
+The C++ standardization committee is hard at work standardizing threads for the next version of C++. Some members recently met to discuss the issues, and The C++ Source was there. Read on to learn what the world’s leading experts on concurrency are planning for C++0x.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/lazy_builder.html">
+    <title>The Lazy Builder’s Complexity Lesson</title>
+    <link>http://www.artima.com/cppsource/lazy_builder.html</link>
+    <description>
+This article investigates the complexity guarantees made by the C++ Standard Library. By analyzing and measuring the performance of alternative solutions to the same problem it shows how this library allows us to write code that is both simple and efficient.
+    </description>
+  </item>
+
+  <item rdf:about="http://www.artima.com/cppsource/top_cpp_aha_moments.html">
+    <title>My Most Important C++ Aha! Moments...Ever</title>
+    <link>http://www.artima.com/cppsource/top_cpp_aha_moments.html</link>
+    <description>
+In this article, Scott Meyers shares his picks for the five most meaningful Aha! moments in his involvement with C++, along with why he chose them.
+    </description>
+  </item>
+
+</rdf:RDF>

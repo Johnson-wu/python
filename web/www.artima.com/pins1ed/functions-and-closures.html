@@ -1,0 +1,1043 @@
+<html>
+<head>
+<title>Functions and Closures</title>
+<meta name="description" content="
+" />
+<meta name="keywords" content="scala" />
+<meta name="author" content="Martin Odersky, Lex Spoon, and Bill Venners" />
+<link rel="stylesheet" type="text/css" href="/artima.css" />
+<link rel="shortcut icon" href="/favicon.ico" />
+</head>
+<body><table width="100%" cellspacing="0">
+<tr>
+<td align="left" valign="bottom">
+<a href="/index.jsp"><img src="/images/a7.gif" alt="The Artima Developer Community" border="0" width="550" height="43" /></a>
+</td>
+</table>
+<table width="100%" bgcolor="#333333">
+<tr>
+<td align="center">
+<div class="ml">
+<a href="/articles" class="hl">Articles</a>&nbsp;|
+<a href="/news/index.jsp" class="hl">News</a>&nbsp;|
+<a href="/weblogs/index.jsp" class="hl">Weblogs</a>&nbsp;|
+<a href="/buzz/index.jsp" class="hl">Buzz</a>&nbsp;|
+<a href="/shop/catalog" class="hl">Books</a>&nbsp;|
+<a href="/forums/index.jsp" class="hl">Forums</a>
+</div>
+</td>
+</tr>
+</table>
+<table width="100%" bgcolor="#AACCFF">
+<tr>
+<td align="center">
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/functions-and-closuresP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/builtin-control-structures.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/control-abstraction.html">Next</a>
+</div>
+</td>
+</tr>
+</table>
+<BR>
+<div class="vegies">
+<div class="tc">
+<span class="sts">Chapter 8 of Programming in Scala, First Edition</span><br />
+<span class="ts">Functions and Closures</span><br />
+<span class="as">by Martin Odersky, Lex Spoon, and Bill Venners</span><br />
+<span class="pd">December 10, 2008</span><br />
+</div>
+
+
+
+
+<p>When programs get larger, you need some way to divide them into
+smaller, more manageable pieces.  For dividing up control flow, Scala
+offers an approach familiar to all experienced programmers: divide the
+code into functions.  In fact, Scala offers several ways to define
+functions that are not present in Java. Besides methods, which are
+functions that are members of some object,
+there are also functions nested within functions,
+function literals, and function values.
+This chapter takes you on a tour through all of these flavors
+of functions in Scala.</p>
+
+<h3><a name="8.1"></a>8.1 Methods <span style="font-size: .5em">[<a href="functions-and-closures.html#8.1">link</a>]</span></h3>
+
+
+<p>The most common way to define a function is as a member of some
+object. Such a function is called a <span style="font-style:italic">method</span><a id="i955534258-2"></a>. As an example, <a href="functions-and-closures.html#lst:longlines-methods">Listing 8.1</a> shows two methods that together read a file with a given name and print out
+all lines whose length exceeds a given width. Every printed line is
+prefixed with the name of the file it appears in.</p>
+
+<p><a name="lst:longlines-methods"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;scala.io.Source
+  <br />  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">LongLines</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;processFile(filename:&nbsp;<span class="typename">String</span>,&nbsp;width:&nbsp;<span class="typename">Int</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;source&nbsp;=&nbsp;Source.fromFile(filename)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(line&nbsp;&lt;-&nbsp;source.getLines)&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;processLine(filename,&nbsp;width,&nbsp;line)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">private</span>&nbsp;<span class="vem">def</span>&nbsp;processLine(filename:&nbsp;<span class="typename">String</span>,
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;width:&nbsp;<span class="typename">Int</span>,&nbsp;line:&nbsp;<span class="typename">String</span>)&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(line.length&nbsp;&gt;&nbsp;width)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(filename&nbsp;+<span class="quotedstring">":&nbsp;"</span>+&nbsp;line.trim)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 8.1 - <span class="code">LongLines</span> with a private <span class="code">processLine</span> method.</h5>
+
+
+<p>The <span class="code">processFile</span> method takes a <span class="code">filename</span> and <span class="code">width</span> as parameters. 
+It creates a <span class="code">Source</span> object from the file name and, in the generator of the <span class="code">for</span> expression, calls
+<span class="code">getLines</span> on the source. As mentioned in <a href="next-steps-in-scala.html#step12">Step 12</a> of
+<a href="next-steps-in-scala.html">Chapter 3</a>,
+<span class="code">getLines</span> returns an iterator that provides one
+line from the file on each iteration, including the end-of-line character. The <span class="code">for</span> expression processes
+each of these lines by calling the helper method, <span class="code">processLine</span>.
+The <span class="code">processLine</span> 
+method takes three parameters: a <span class="code">filename</span>, a <span class="code">width</span>, and a <span class="code">line</span>.
+It tests whether the length of the line is greater than the given width, and, if so,
+it prints the filename, a colon, and the line.</p>
+
+<p>To use <span class="code">LongLines</span> from the command line, we'll create an application that
+expects the line width as the first command-line argument, and interprets subsequent arguments as filenames:<a href="functions-and-closures.html#footnote8-1">[1]</a></p>
+
+<pre>
+  <span class="vem">object</span>&nbsp;<span class="typename">FindLongLines</span>&nbsp;{
+  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;main(args:&nbsp;<span class="typename">Array[String]</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;width&nbsp;=&nbsp;args(<span class="literal">0</span>).toInt
+  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(arg&nbsp;&lt;-&nbsp;args.drop(<span class="literal">1</span>))
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LongLines.processFile(arg,&nbsp;width)
+  &nbsp;&nbsp;}&nbsp;
+  }&nbsp;
+</pre><!-- -->
+Here's how you'd use this application to find the lines in <span class="code">LongLines.scala</span> that are over
+45 characters in length (there's just one):
+
+
+<pre>
+  $&nbsp;scala&nbsp;FindLongLines&nbsp;45&nbsp;LongLines.scala
+  <span class="output">LongLines.scala:&nbsp;def&nbsp;processFile(filename:&nbsp;String,&nbsp;width:&nbsp;Int)&nbsp;{</span>
+</pre><!-- -->
+
+
+<p>So far, this is very similar to what you would do in any
+object-oriented language.  However, the concept of a function in Scala
+is more general than a method. Scala's other ways to express functions will be explained in the following sections.</p>
+
+<h3><a name="8.2"></a>8.2 Local functions <span style="font-size: .5em">[<a href="functions-and-closures.html#8.2">link</a>]</span></h3>
+
+
+<p>The construction of the <span class="code">processFile</span> method in the previous
+section demonstrated an important design principle of the
+functional programming style: programs should be decomposed into many
+small functions that each do a well-defined task. Individual
+functions are often quite small. The advantage of this style is that
+it gives a programmer many building blocks that can be flexibly
+composed to do more difficult things.  Each building block should be
+simple enough to be understood individually.</p>
+
+<p>One problem with this approach is that all the helper
+function names can pollute the program namespace. In
+the interpreter this is not so much of a problem, but once
+functions are packaged in reusable classes and objects, it's desirable
+to hide the helper functions from clients of a class.  They
+often do not make sense individually, and you often want to keep
+enough flexibility to delete the helper functions if you later 
+rewrite the class a different way.</p>
+
+<p>In Java, your main tool for this purpose is the private
+method. This private-method approach works in Scala as well, 
+as is demonstrated in <a href="functions-and-closures.html#lst:longlines-methods">Listing 8.1</a>,
+but Scala offers an additional approach: you can define functions inside other
+functions. Just like local variables, such <a href="glossary.html#g43293933"><em>local function</em>s</a> are
+visible only in their enclosing block.<a id="i1082301132-1"></a><a id="i1342112038-1"></a> Here's an example:<a id="i-1153551486-1"></a></p>
+
+<pre>
+  <span class="vem">def</span>&nbsp;processFile(filename:&nbsp;<span class="typename">String</span>,&nbsp;width:&nbsp;<span class="typename">Int</span>)&nbsp;{
+  <br />  &nbsp;&nbsp;<span class="vem">def</span>&nbsp;processLine(filename:&nbsp;<span class="typename">String</span>,
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;width:&nbsp;<span class="typename">Int</span>,&nbsp;line:&nbsp;<span class="typename">String</span>)&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(line.length&nbsp;&gt;&nbsp;width)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(filename&nbsp;+<span class="quotedstring">":&nbsp;"</span>+&nbsp;line)
+  &nbsp;&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;
+  <br />  &nbsp;&nbsp;<span class="vem">val</span>&nbsp;source&nbsp;=&nbsp;Source.fromFile(filename)
+  &nbsp;&nbsp;<span class="vem">for</span>&nbsp;(line&nbsp;&lt;-&nbsp;source.getLines)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;processLine(filename,&nbsp;width,&nbsp;line)
+  &nbsp;&nbsp;}
+  }
+</pre><!-- -->
+
+
+<p>In this example, we refactored the original <span class="code">LongLines</span> version, shown in <a href="functions-and-closures.html#lst:longlines-methods">Listing 8.1</a>,
+by transforming private method, <span class="code">processLine</span>, into a local function of <span class="code">processFile</span>. To do so we removed the
+<span class="code">private</span> modifier, which can only be applied (and is only needed) for methods, and placed the definition
+of <span class="code">processLine</span> inside the definition of <span class="code">processFile</span>.
+As a local function, <span class="code">processLine</span> is in scope inside <span class="code">processFile</span>, but inaccessible outside.</p>
+
+<p>Now that <span class="code">processLine</span> is defined inside <span class="code">processFile</span>, however,
+another improvement becomes possible. Notice how <span class="code">filename</span> and <span class="code">width</span> are 
+passed unchanged into the helper function? This is not necessary, because 
+local functions can access the parameters of their enclosing function.
+You can just
+use the parameters of the outer <span class="code">processLine</span> function, as shown in <a href="functions-and-closures.html#lst:longlines-function">Listing 8.2</a>:
+<a name="lst:longlines-function"></a></p>
+
+<pre>
+  &nbsp;&nbsp;<span class="vem">import</span>&nbsp;scala.io.Source
+  <br />  &nbsp;&nbsp;<span class="vem">object</span>&nbsp;<span class="typename">LongLines</span>&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;processFile(filename:&nbsp;<span class="typename">String</span>,&nbsp;width:&nbsp;<span class="typename">Int</span>)&nbsp;{
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">def</span>&nbsp;processLine(line:&nbsp;<span class="typename">String</span>)&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">if</span>&nbsp;(line.length&nbsp;&gt;&nbsp;width)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(filename&nbsp;+<span class="quotedstring">":&nbsp;"</span>+&nbsp;line)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;
+  <br />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">val</span>&nbsp;source&nbsp;=&nbsp;Source.fromFile(filename)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(line&nbsp;&lt;-&nbsp;source.getLines)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;processLine(line)
+  &nbsp;&nbsp;&nbsp;&nbsp;}
+  &nbsp;&nbsp;}
+</pre><!-- -->
+
+
+<h5>Listing 8.2 - <span class="code">LongLines</span> with a local <span class="code">processLine</span> function.</h5>
+
+
+<p>Simpler, isn't it?  This use of an enclosing function's parameters is
+a common and useful example of the general nesting Scala provides.
+The nesting and scoping described in <a href="builtin-control-structures.html#sec:variable-scope">Section 7.7</a>
+applies to all Scala constructs, including functions.
+It's a simple principle, but very powerful, 
+especially in a language with first-class functions.</p>
+
+<h3><a name="8.3"></a>8.3 First-class functions <span style="font-size: .5em">[<a href="functions-and-closures.html#8.3">link</a>]</span></h3>
+
+
+<p>Scala has <a href="glossary.html#g1589563862"><em>first-class functions</em></a>.<a id="i-1098728772-2"></a> Not only can you define
+functions and call them, but you can write down functions as unnamed
+<em>literals</em> and then pass them around as <em>values</em>.
+We introduced function literals
+in <a href="first-steps-in-scala.html">Chapter 2</a>
+and showed the basic syntax in <a href="first-steps-in-scala.html#fig:function-literal">Figure 2.2</a> <a href="first-steps-in-scala.html#fig:function-literal">here</a>.</p>
+
+<p>A function literal<a id="i-132187383-1"></a> is compiled into a class that<a id="i-1850091418-1"></a><a id="i2141458026-1"></a>
+when instantiated at runtime is a <a href="glossary.html#g1731647273"><em>function value</em></a>.<a href="functions-and-closures.html#footnote8-2">[2]</a>
+Thus the distinction between
+function literals and values is that function literals exist in the source code, whereas function values
+exist as objects at runtime.
+The distinction is much like that between classes (source code) 
+and objects (runtime).</p>
+
+<p>Here is a simple example of a function literal that adds one to a number:  
+<pre>
+  (x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;<span class="literal">1</span>
+</pre><!-- -->
+The <span class="code">=&gt;</span> designates that this function converts the thing on the left
+(any integer <span class="code">x</span>) to the thing on the right (<span class="code">x</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">1</span>).  So, this is a
+function mapping any integer <span class="code">x</span> to <span class="code">x</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">1</span>.</p>
+
+<p>Function values are objects, so you can store them in variables if you like.
+They are functions, too, so you can invoke them using the
+usual parentheses
+function-call notation.  Here is an example of both activities:
+<pre>
+  scala&gt;&nbsp;<span class="vem">var</span>&nbsp;increase&nbsp;=&nbsp;(x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;<span class="literal">1</span>
+  <span class="output">increase:&nbsp;(Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+  <br />  scala&gt;&nbsp;increase(<span class="literal">10</span>)
+  <span class="output">res0:&nbsp;Int&nbsp;=&nbsp;11</span>
+</pre><!-- -->
+Because <span class="code">increase</span>, in this example, is a <span class="code">var</span>, you can reassign it
+a different function value later on.
+<pre>
+  scala&gt;&nbsp;increase&nbsp;=&nbsp;(x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;<span class="literal">9999</span>
+  <span class="output">increase:&nbsp;(Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+  <br />  scala&gt;&nbsp;increase(<span class="literal">10</span>)
+  <span class="output">res2:&nbsp;Int&nbsp;=&nbsp;10009</span>
+</pre><!-- -->
+If you want to have more than one statement in the function literal, 
+surround its body by curly braces and put one statement per line, thus
+forming a <a href="glossary.html#g93832333">block</a>.  Just like
+a method, when the function value is invoked, all of the statements will
+be executed, and the value returned from the function is whatever
+the expression on the last line generates.
+<pre>
+  scala&gt;&nbsp;increase&nbsp;=&nbsp;(x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;{
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"We"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"are"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;println(<span class="quotedstring">"here!"</span>)
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;+&nbsp;<span class="literal">1</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+  <span class="output">increase:&nbsp;(Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+  <br />  scala&gt;&nbsp;increase(<span class="literal">10</span>)
+  <span class="output">We</span>
+  <span class="output">are</span>
+  <span class="output">here!</span>
+  <span class="output">res4:&nbsp;Int&nbsp;=&nbsp;11</span>
+</pre><!-- -->
+So now you have seen the nuts and bolts of function literals and
+function values.
+Many Scala libraries give you opportunities to use them.  For example, a <span class="code">foreach</span> method is available for all
+collections.<a href="functions-and-closures.html#footnote8-3">[3]</a>
+It takes a function as an argument and invokes that
+function on each of its elements.  Here is how it can be used
+to print out all of the elements of a list:<!-- -->
+<a name="exa:someNumbers-def"></a><!-- -->-1
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;someNumbers&nbsp;=&nbsp;<span class="typename">List</span>(-<span class="literal">11</span>,&nbsp;-<span class="literal">10</span>,&nbsp;-<span class="literal">5</span>,&nbsp;<span class="literal">0</span>,&nbsp;<span class="literal">5</span>,&nbsp;<span class="literal">10</span>)
+  <span class="output">someNumbers:&nbsp;List[Int]&nbsp;=&nbsp;List(-11,&nbsp;-10,&nbsp;-5,&nbsp;0,&nbsp;5,&nbsp;10)</span>
+  <br />  scala&gt;&nbsp;someNumbers.foreach((x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;println(x))
+  <span class="output">-11</span>
+  <span class="output">-10</span>
+  <span class="output">-5</span>
+  <span class="output">0</span>
+  <span class="output">5</span>
+  <span class="output">10</span>
+</pre><!-- --></p>
+
+<p>As another example, collection types also have a <span class="code">filter</span> method.
+This method selects those elements of a collection that pass a test
+the user supplies.  That test is supplied using a function.  For
+example, the function <span class="code">(x:</span>&nbsp;<span class="code">Int)</span>&nbsp;<span class="code">=&gt;</span>&nbsp;<span class="code">x</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span> could be used for filtering.
+This function maps positive integers to true and all others to
+false.  Here is how to use it with <span class="code">filter</span>:
+<pre>
+  scala&gt;&nbsp;someNumbers.filter((x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;x&nbsp;&gt;&nbsp;<span class="literal">0</span>)
+  <span class="output">res6:&nbsp;List[Int]&nbsp;=&nbsp;List(5,&nbsp;10)</span>
+</pre><!-- -->
+Methods like <span class="code">foreach</span> and <span class="code">filter</span> are described further
+later in the book.  <a href="working-with-lists.html">Chapter 16</a> talks about their
+use in class <span class="code">List</span>. <a href="collections.html">Chapter 17</a>
+discusses their use with other collection types.</p>
+
+<h3><a name="8.4"></a>8.4 Short forms of function literals <span style="font-size: .5em">[<a href="functions-and-closures.html#8.4">link</a>]</span></h3>
+
+
+<p>Scala provides a number of ways to leave out redundant information and
+write function literals more briefly.  Keep your eyes open for these
+opportunities, because they allow you to remove clutter from your
+code.</p>
+
+<p>One way to make a function literal more brief is to leave off the 
+parameter types.  Thus, the previous example with filter could
+be written like this:
+<pre>
+  scala&gt;&nbsp;someNumbers.filter((x)&nbsp;=&gt;&nbsp;x&nbsp;&gt;&nbsp;<span class="literal">0</span>)
+  <span class="output">res7:&nbsp;List[Int]&nbsp;=&nbsp;List(5,&nbsp;10)</span>
+</pre><!-- -->
+The Scala compiler knows that <span class="code">x</span> must be an integer, because it sees
+that you are immediately using the function to filter a list of
+integers (referred to by <span class="code">someNumbers</span>).  This is called <a href="glossary.html#g-1884158234"><em>target typing</em></a>,
+because the targeted usage of an expression&mdash;in this case an
+argument to <span class="code">someNumbers.filter()</span>&mdash;is allowed to influence
+the typing of that expression&mdash;in this case to determine
+the type of the <span class="code">x</span> parameter.<a id="i-1884158234-1"></a><a id="i1428968692-1"></a>
+The precise details of target typing are not important to study.
+You can simply start by writing 
+a function literal without the argument type, and, if the compiler gets
+confused, add in the type.  Over time you'll get a feel for
+which situations the compiler can and cannot puzzle out.</p>
+
+<p>A second way to remove useless characters is to leave out parentheses
+around a parameter whose type is inferred.  In the previous
+example, the parentheses around <span class="code">x</span> are unnecessary:
+<pre>
+  scala&gt;&nbsp;someNumbers.filter(x&nbsp;=&gt;&nbsp;x&nbsp;&gt;&nbsp;<span class="literal">0</span>)
+  <span class="output">res8:&nbsp;List[Int]&nbsp;=&nbsp;List(5,&nbsp;10)</span>
+</pre><!-- --></p>
+
+<h3><a name="8.5"></a>8.5 Placeholder syntax <span style="font-size: .5em">[<a href="functions-and-closures.html#8.5">link</a>]</span></h3>
+
+
+<p><a name="sec:placeholder-syntax"></a></p>
+
+<p>To make a function literal even more concise, you can use underscores as<a id="i603770043-1"></a><a id="i-383997826-1"></a><a id="i-372979206-1"></a>
+placeholders for one or more parameters, so long
+as each parameter appears only one time within the function
+literal<a id="i788093512-1"></a>.  For example,
+<span class="code">_</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span> is very short notation for a function that checks whether a
+value is greater than zero:<!-- -->
+<pre>
+  scala&gt;&nbsp;someNumbers.filter(_&nbsp;&gt;&nbsp;<span class="literal">0</span>)
+  <span class="output">res9:&nbsp;List[Int]&nbsp;=&nbsp;List(5,&nbsp;10)</span>
+</pre><!-- --></p>
+
+<p>You can think of the underscore as a "blank" in the expression that needs
+to be "filled in." This blank will be filled in with an argument to the function
+each time the function is invoked. For example, given that <span class="code">someNumbers</span> was
+initialized <a href="functions-and-closures.html#exa:someNumbers-def">here</a> to 
+the value <span class="code">List(-11,</span>&nbsp;<span class="code">-10,</span>&nbsp;<span class="code">-5,</span>&nbsp;<span class="code">0,</span>&nbsp;<span class="code">5,</span>&nbsp;<span class="code">10)</span>, the <span class="code">filter</span> method will replace
+the blank in <span class="code">_</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span> first with <span class="code">-11</span>, as in <span class="code">-11</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span>, then
+with <span class="code">-10</span>, as in <span class="code">-10</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span>, then with <span class="code">-5</span>, as in <span class="code">-5</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span>, and so on
+to the end of the <span class="code">List</span>. The function literal <span class="code">_</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span>, therefore, is equivalent
+to the slightly more verbose <span class="code">x</span>&nbsp;<span class="code">=&gt;</span>&nbsp;<span class="code">x</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span>, as demonstrated here:
+<pre>
+  scala&gt;&nbsp;someNumbers.filter(x&nbsp;=&gt;&nbsp;x&nbsp;&gt;&nbsp;<span class="literal">0</span>)
+  <span class="output">res10:&nbsp;List[Int]&nbsp;=&nbsp;List(5,&nbsp;10)</span>
+</pre><!-- --></p>
+
+<p>Sometimes when you use underscores as placeholders for parameters, the compiler might
+not have enough information to infer missing parameter types.  For example,
+suppose you write <span class="code">_</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">_</span> by itself:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;f&nbsp;=&nbsp;_&nbsp;+&nbsp;_
+  <span class="output">&lt;console&gt;:4:&nbsp;error:&nbsp;missing&nbsp;parameter&nbsp;type&nbsp;for&nbsp;expanded&nbsp;</span>
+  <span class="output">function&nbsp;((x$1,&nbsp;x$2)&nbsp;=&gt;&nbsp;x$1.$plus(x$2))</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val&nbsp;f&nbsp;=&nbsp;_&nbsp;+&nbsp;_</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+</pre><!-- --></p>
+
+<p>In such cases, you can specify the types using a colon, like this:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;f&nbsp;=&nbsp;(_:&nbsp;<span class="typename">Int</span>)&nbsp;+&nbsp;(_:&nbsp;<span class="typename">Int</span>)
+  <span class="output">f:&nbsp;(Int,&nbsp;Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+  <br />  scala&gt;&nbsp;f(<span class="literal">5</span>,&nbsp;<span class="literal">10</span>)
+  <span class="output">res11:&nbsp;Int&nbsp;=&nbsp;15</span>
+</pre><!-- -->
+Note that <span class="code">_</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">_</span> expands into a literal for a function that
+takes two parameters. This is why you can 
+use this short form only if each parameter appears in the function literal at most once.
+Multiple underscores mean multiple parameters, not
+reuse of a single parameter repeatedly.
+The first underscore represents the first parameter,
+the second underscore the second parameter, the third underscore the
+third parameter, and so on.</p>
+
+<h3><a name="8.6"></a>8.6 Partially applied functions <span style="font-size: .5em">[<a href="functions-and-closures.html#8.6">link</a>]</span></h3>
+
+
+<p><a name="sec:partially-applied-functions"></a></p>
+
+<p>Although the previous examples substitute underscores in place of
+individual parameters, you can also replace an entire parameter
+list with an underscore.<a id="i1834060518-1"></a><a id="i1842232449-1"></a><a id="i1128745740-1"></a>
+For example, rather than writing <span class="code">println(_)</span>,
+you could write <span class="code">println _</span>.<!-- --> Here's an example:
+<pre>
+  someNumbers.foreach(println&nbsp;_)
+</pre><!-- -->
+Scala treats this short form exactly as if you had written the following:
+<pre>
+  someNumbers.foreach(x&nbsp;=&gt;&nbsp;println(x))
+</pre><!-- -->
+Thus, the underscore in this case is not a placeholder for a single parameter. It
+is a placeholder for an entire parameter list.
+Remember that you need to leave a space between the function name and the
+underscore, because otherwise the compiler will think you are referring to
+a different symbol, such as for example, a method named <span class="code">println_</span>, which likely
+does not exist.</p>
+
+<p>When you use an underscore in this way, you are writing a <a href="glossary.html#g-1880499411"><em>partially applied function</em></a>.
+In Scala, when you invoke a function, passing in any needed arguments, you <em>apply</em> that function <em>to</em> the arguments.<a id="i1914165903-1"></a>
+For example, given the following function:
+<pre>
+  scala&gt;&nbsp;<span class="vem">def</span>&nbsp;sum(a:&nbsp;<span class="typename">Int</span>,&nbsp;b:&nbsp;<span class="typename">Int</span>,&nbsp;c:&nbsp;<span class="typename">Int</span>)&nbsp;=&nbsp;a&nbsp;+&nbsp;b&nbsp;+&nbsp;c
+  <span class="output">sum:&nbsp;(Int,Int,Int)Int</span>
+</pre><!-- -->
+You could apply the function <span class="code">sum</span> to the arguments <span class="code">1</span>, <span class="code">2</span>, and <span class="code">3</span> like this:
+<pre>
+  scala&gt;&nbsp;sum(<span class="literal">1</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  <span class="output">res12:&nbsp;Int&nbsp;=&nbsp;6</span>
+</pre><!-- -->
+A partially applied function is an expression in which you don't supply all of the arguments
+needed by the function. Instead, you supply some, or none, of the needed arguments.
+For example, to create a partially applied function expression involving <span class="code">sum</span>, in which you supply none
+of the three required arguments, you just place an underscore after "<span class="code">sum</span>". The resulting function can
+then be stored in a variable. Here's an example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;a&nbsp;=&nbsp;sum&nbsp;_
+  <span class="output">a:&nbsp;(Int,&nbsp;Int,&nbsp;Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+</pre><!-- -->
+Given this code, the Scala compiler instantiates a function value
+that takes the three integer parameters missing from the partially applied function expression, <span class="code">sum _</span>,
+and assigns a reference to that new function value to the variable <span class="code">a</span>. When you apply three arguments
+to this new function value, it will turn around and invoke <span class="code">sum</span>, passing in those
+same three arguments:
+<pre>
+  scala&gt;&nbsp;a(<span class="literal">1</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  <span class="output">res13:&nbsp;Int&nbsp;=&nbsp;6</span>
+</pre><!-- -->
+Here's what just happened: The variable named <span class="code">a</span> refers to a function value object. This function value is an instance of a class generated automatically by the Scala compiler from <span class="code">sum _</span>,
+the partially applied function expression. The class generated by the compiler has an <span class="code">apply</span> method
+that takes three arguments.<a href="functions-and-closures.html#footnote8-4">[4]</a>
+The generated class's <span class="code">apply</span> method takes three arguments because three is the number of arguments missing in the
+<span class="code">sum _</span> expression. The Scala compiler translates the expression <span class="code">a(1,</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">3)</span> into an invocation of
+the function value's <span class="code">apply</span> method, passing in the three arguments <span class="code">1</span>, <span class="code">2</span>, and <span class="code">3</span>. Thus, <span class="code">a(1,</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">3)</span>
+is a short form for:
+<pre>
+  scala&gt;&nbsp;a.apply(<span class="literal">1</span>,&nbsp;<span class="literal">2</span>,&nbsp;<span class="literal">3</span>)
+  <span class="output">res14:&nbsp;Int&nbsp;=&nbsp;6</span>
+</pre><!-- -->
+This <span class="code">apply</span> method, defined in the class generated automatically by the Scala compiler from
+the expression <span class="code">sum _</span>, simply forwards those three missing parameters to <span class="code">sum</span>, and returns the result.
+In this case <span class="code">apply</span> invokes <span class="code">sum(1,</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">3)</span>, and returns what <span class="code">sum</span> returns, which is <span class="code">6</span>.</p>
+
+<p>Another way to think about this kind of expression, in which an underscore is used to represent an entire parameter list,
+is as a way to transform a <span class="code">def</span> into a function value. For example, if you have a local function,
+such as <span class="code">sum(a:</span>&nbsp;<span class="code">Int,</span>&nbsp;<span class="code">b:</span>&nbsp;<span class="code">Int,</span>&nbsp;<span class="code">c:</span>&nbsp;<span class="code">Int):</span>&nbsp;<span class="code">Int</span>, you can "wrap" it in a function value whose <span class="code">apply</span> method has
+the same parameter list and result types. When you apply this function value to some arguments, it in turn applies <span class="code">sum</span> to those 
+same arguments, and returns the result. Although you can't assign a method or nested function to a variable, or pass it as
+an argument to another function, you
+can do these things if you wrap the method or nested function in a function value by placing an underscore after
+its name.</p>
+
+<p>Now, although <span class="code">sum _</span> is indeed a partially applied function, it may not be obvious to you why it is called this.
+It has this name because you are not applying that function to all of its arguments. In the case of <span class="code">sum _</span>, you
+are applying it to <em>none</em> of its arguments. But you can also express a partially applied function by supplying <em>some</em>
+but not all of the required arguments. Here's 
+an example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;b&nbsp;=&nbsp;sum(<span class="literal">1</span>,&nbsp;_:&nbsp;<span class="typename">Int</span>,&nbsp;<span class="literal">3</span>)
+  <span class="output">b:&nbsp;(Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+</pre><!-- -->
+In this case, you've supplied the first and last argument to <span class="code">sum</span>, but the middle argument is missing. Since only
+one argument is missing, the Scala compiler generates a new function class whose <span class="code">apply</span> method takes
+one argument. When invoked with that one argument, this generated function's <span class="code">apply</span> method invokes <span class="code">sum</span>, passing in <span class="code">1</span>,
+the argument passed to the function, and <span class="code">3</span>. Here's an example:
+<pre>
+  scala&gt;&nbsp;b(<span class="literal">2</span>)
+  <span class="output">res15:&nbsp;Int&nbsp;=&nbsp;6</span>
+</pre><!-- -->
+In this case, <span class="code">b.apply</span> invoked <span class="code">sum(1,</span>&nbsp;<span class="code">2,</span>&nbsp;<span class="code">3)</span>.
+<pre>
+  scala&gt;&nbsp;b(<span class="literal">5</span>)
+  <span class="output">res16:&nbsp;Int&nbsp;=&nbsp;9</span>
+</pre><!-- -->
+And in this case, <span class="code">b.apply</span> invoked <span class="code">sum(1,</span>&nbsp;<span class="code">5,</span>&nbsp;<span class="code">3)</span>.</p>
+
+<p>If you are writing a partially applied function expression in which you leave off all parameters,
+such as <span class="code">println _</span> or <span class="code">sum _</span>, you can express it more concisely by leaving off the underscore if a function is required
+at that point in the code.
+For example, instead of printing out each of the numbers in <span class="code">someNumbers</span> (defined 
+<a href="functions-and-closures.html#exa:someNumbers-def">here</a>) like this:
+<pre>
+  someNumbers.foreach(println&nbsp;_)
+</pre><!-- -->
+You could just write:
+<pre>
+  someNumbers.foreach(println)
+</pre><!-- -->
+This last form is allowed only in places where a function is
+required, such as the invocation of <span class="code">foreach</span> in this example. The compiler
+knows a function is required in this case, because <span class="code">foreach</span> requires that a function
+be passed as an argument.
+In situations where a function is not required, attempting to use this form will cause a compilation error.
+Here's an example:<a id="i732535273-1"></a>
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;c&nbsp;=&nbsp;sum
+  <span class="output">&lt;console&gt;:5:&nbsp;error:&nbsp;missing&nbsp;arguments&nbsp;for&nbsp;method&nbsp;sum...</span>
+  <span class="output">follow&nbsp;this&nbsp;method&nbsp;with&nbsp;`_'&nbsp;if&nbsp;you&nbsp;want&nbsp;to&nbsp;treat&nbsp;it&nbsp;as</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;a&nbsp;partially&nbsp;applied&nbsp;function</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val&nbsp;c&nbsp;=&nbsp;sum</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;d&nbsp;=&nbsp;sum&nbsp;_
+  <span class="output">d:&nbsp;(Int,&nbsp;Int,&nbsp;Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+  <br />  scala&gt;&nbsp;d(<span class="literal">10</span>,&nbsp;<span class="literal">20</span>,&nbsp;<span class="literal">30</span>)
+  <span class="output">res17:&nbsp;Int&nbsp;=&nbsp;60</span>
+</pre><!-- --></p>
+
+<h3><a name="8.7"></a>8.7 Closures <span style="font-size: .5em">[<a href="functions-and-closures.html#8.7">link</a>]</span></h3>
+
+
+<p>So far in this chapter, all the examples of function literals
+have referred only to passed parameters.<a id="i1093320088-1"></a> For example, in 
+<span class="code">(x:</span>&nbsp;<span class="code">Int)</span>&nbsp;<span class="code">=&gt;</span>&nbsp;<span class="code">x</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span>, the only variable used in the function body, <span class="code">x</span>&nbsp;<span class="code">&gt;</span>&nbsp;<span class="code">0</span>,
+is <span class="code">x</span>, which is defined as a parameter to the function. You can, however,
+refer to variables defined elsewhere:
+<pre>
+  (x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;more&nbsp;&nbsp;<span class="comment">//&nbsp;how&nbsp;much&nbsp;more?</span>
+</pre><!-- -->
+This function adds "<span class="code">more</span>" to its argument, but what is <span class="code">more</span>?
+From the point of view of this function, <span class="code">more</span> is a <a href="glossary.html#g-761850448"><em>free variable</em></a>,<a id="i-2142527293-1"></a><a id="i-968704369-1"></a>
+because the function literal does not itself give a meaning to it.
+The <span class="code">x</span> variable, by contrast, is a <a href="glossary.html#g183453406"><em>bound variable</em></a>,<a id="i31167931-2"></a><a id="i1392088405-2"></a> because it
+does have a meaning in the context of the function: it is defined as the function's lone parameter, an <span class="code">Int</span>.
+If you try using this function literal by itself, without any <span class="code">more</span> defined in its scope,
+the compiler will complain:<a id="i138103638-2"></a>
+<pre>
+  scala&gt;&nbsp;(x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;more
+  <span class="output">&lt;console&gt;:5:&nbsp;error:&nbsp;not&nbsp;found:&nbsp;value&nbsp;more</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x:&nbsp;Int)&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;more</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+</pre><!-- --></p>
+
+<div class="aside">
+<h3>Why the trailing underscore?</h3>
+
+
+<p>Scala's syntax for partially applied functions highlights a difference in the design trade-offs of Scala and
+classical functional languages such as Haskell or ML. 
+In these languages, partially applied functions are considered the normal
+case. Furthermore, these languages have a fairly strict static
+type system that will usually highlight every error with partial
+applications that you can make.  Scala bears a much closer relation to
+imperative languages such as Java, 
+where a method that's not applied to all its arguments is
+considered an error. Furthermore, the object-oriented tradition of
+subtyping and a universal root type accepts some
+programs that would be considered erroneous in classical functional
+languages.</p>
+
+<p>For instance, say you mistook the <span class="code">drop(n:</span>&nbsp;<span class="code">Int)</span> method of <span class="code">List</span>
+for <span class="code">tail()</span>, and you therefore forgot you need to pass a number to
+<span class="code">drop</span>. You might write, "<span class="code">println(drop)</span>".
+Had Scala adopted the classical functional tradition that partially applied
+functions are OK everywhere, this code would type check. However, you
+might be surprised to find out that the output printed by this <span class="code">println</span> statement
+would always be <span class="code">&lt;function&gt;</span>! What would have happened is that the expression
+<span class="code">drop</span> would have been treated as a function object.  Because <span class="code">println</span> takes
+objects of any type, this would have compiled OK, but it would have given an
+unexpected result.</p>
+
+<p>To avoid situations like this, Scala normally requires you to specify
+function arguments that are left out explicitly, even if the
+indication is as simple as a `<span class="code">_</span>'.  Scala allows you to
+leave off even the <span class="code">_</span> only when a function type is expected.</p>
+
+</div>
+
+
+<p>On the other hand, the same function literal will work fine so long as there is
+something available named <span class="code">more</span>:
+<pre>
+  scala&gt;&nbsp;<span class="vem">var</span>&nbsp;more&nbsp;=&nbsp;<span class="literal">1</span>
+  <span class="output">more:&nbsp;Int&nbsp;=&nbsp;1</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;addMore&nbsp;=&nbsp;(x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;more
+  <span class="output">addMore:&nbsp;(Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+  <br />  scala&gt;&nbsp;addMore(<span class="literal">10</span>)
+  <span class="output">res19:&nbsp;Int&nbsp;=&nbsp;11</span>
+</pre><!-- -->
+The function value (the object) that's created at runtime from this function
+literal is called a <a href="glossary.html#g866552379"><em>closure</em></a>.<a id="i-940840561-1"></a><a id="i-698028847-1"></a> The name arises from the act of "closing"
+the function literal by "capturing" the bindings of its free variables.
+A function literal with no free variables, such as <span class="code">(x:</span>&nbsp;<span class="code">Int)</span>&nbsp;<span class="code">=&gt;</span>&nbsp;<span class="code">x</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">1</span>,
+is called a <em>closed term</em>, where a <em>term</em> is a bit of source
+code<a id="i1045501329-1"></a>. Thus a function value created at runtime from this function
+literal is not a closure in the strictest sense, because <span class="code">(x:</span>&nbsp;<span class="code">Int)</span>&nbsp;<span class="code">=&gt;</span>&nbsp;<span class="code">x</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">1</span>  is already closed as written. But any function literal with free variables,
+such as <span class="code">(x:</span>&nbsp;<span class="code">Int)</span>&nbsp;<span class="code">=&gt;</span>&nbsp;<span class="code">x</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">more</span>, is an <em>open term</em>. Therefore, any function value created at
+runtime from <span class="code">(x:</span>&nbsp;<span class="code">Int)</span>&nbsp;<span class="code">=&gt;</span>&nbsp;<span class="code">x</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">more</span> will by definition require that a binding for
+its free variable, <span class="code">more</span>, be captured. The resulting function value, which will contain
+a reference to the captured <span class="code">more</span>  variable, is called a closure, therefore, because the function value is
+the end product of the act of closing the open term, <span class="code">(x:</span>&nbsp;<span class="code">Int)</span>&nbsp;<span class="code">=&gt;</span>&nbsp;<span class="code">x</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">more</span>.</p>
+
+<p>This example brings up a question: what happens if
+<span class="code">more</span> changes after the closure is created?  In Scala, the
+answer is that the closure sees the change.  For example:
+<pre>
+  scala&gt;&nbsp;more&nbsp;=&nbsp;<span class="literal">9999</span>
+  <span class="output">more:&nbsp;Int&nbsp;=&nbsp;9999</span>
+  <br />  scala&gt;&nbsp;addMore(<span class="literal">10</span>)
+  <span class="output">res21:&nbsp;Int&nbsp;=&nbsp;10009</span>
+</pre><!-- -->
+Intuitively, Scala's closures capture variables themselves, not the
+value to which variables refer.<a href="functions-and-closures.html#footnote8-5">[5]</a>
+As the previous example demonstrates, the closure created for <span class="code">(x:</span>&nbsp;<span class="code">Int)</span>&nbsp;<span class="code">=&gt;</span>&nbsp;<span class="code">x</span>&nbsp;<span class="code">+</span>&nbsp;<span class="code">more</span>
+sees the change to <span class="code">more</span> made outside the closure. The same is true in the
+opposite direction. Changes made by a closure to a captured variable are
+visible outside the closure. Here's an example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;someNumbers&nbsp;=&nbsp;<span class="typename">List</span>(-<span class="literal">11</span>,&nbsp;-<span class="literal">10</span>,&nbsp;-<span class="literal">5</span>,&nbsp;<span class="literal">0</span>,&nbsp;<span class="literal">5</span>,&nbsp;<span class="literal">10</span>)
+  <span class="output">someNumbers:&nbsp;List[Int]&nbsp;=&nbsp;List(-11,&nbsp;-10,&nbsp;-5,&nbsp;0,&nbsp;5,&nbsp;10)</span>
+  <br />  scala&gt;&nbsp;<span class="vem">var</span>&nbsp;sum&nbsp;=&nbsp;<span class="literal">0</span>
+  <span class="output">sum:&nbsp;Int&nbsp;=&nbsp;0</span>
+  <br />  scala&gt;&nbsp;someNumbers.foreach(sum&nbsp;+=&nbsp;&nbsp;_)
+  <br />  scala&gt;&nbsp;sum
+  <span class="output">res23:&nbsp;Int&nbsp;=&nbsp;-11</span>
+</pre><!-- -->
+This example uses a roundabout way to sum the numbers in a <span class="code">List</span>.
+Variable <span class="code">sum</span> is in a surrounding scope from the function literal <span class="code">sum</span>&nbsp;<span class="code">+=</span>&nbsp;<span class="code">_</span>,
+which adds numbers to <span class="code">sum</span>.
+Even though it is the closure modifying <span class="code">sum</span> at runtime, the resulting total, <span class="code">-11</span>, is still
+visible outside the closure.</p>
+
+<p>What if a closure accesses some variable that has several different copies as the program runs?
+For example, what if a closure uses a local variable of some function,
+and the function is invoked many times?  Which instance of that
+variable gets used at each access?</p>
+
+<p>Only one answer is consistent with the rest of the
+language: the instance used is the one that was active at the time the
+closure was created.  For example, here is a function that creates
+and returns "increase" closures:
+<pre>
+  <span class="vem">def</span>&nbsp;makeIncreaser(more:&nbsp;<span class="typename">Int</span>)&nbsp;=&nbsp;(x:&nbsp;<span class="typename">Int</span>)&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;more
+</pre><!-- -->
+Each time this function is called it will create a new closure.  Each closure will access the <span class="code">more</span> variable that
+was active when the closure was created.
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;inc1&nbsp;=&nbsp;makeIncreaser(<span class="literal">1</span>)
+  <span class="output">inc1:&nbsp;(Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+  <br />  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;inc9999&nbsp;=&nbsp;makeIncreaser(<span class="literal">9999</span>)
+  <span class="output">inc9999:&nbsp;(Int)&nbsp;=&gt;&nbsp;Int&nbsp;=&nbsp;&lt;function&gt;</span>
+</pre><!-- -->
+When you call <span class="code">makeIncreaser(1)</span>, a closure is created and returned that captures
+the value <span class="code">1</span> as the binding for <span class="code">more</span>. Similarly, when you call <span class="code">makeIncreaser(9999)</span>,
+a closure that captures the value <span class="code">9999</span> for <span class="code">more</span> is returned. When you apply these
+closures to arguments (in this case, there's just one argument, <span class="code">x</span>, which must be
+passed in), the result that comes back depends on how <span class="code">more</span> was defined when the
+closure was created:
+<pre>
+  scala&gt;&nbsp;inc1(<span class="literal">10</span>)
+  <span class="output">res24:&nbsp;Int&nbsp;=&nbsp;11</span>
+  <br />  scala&gt;&nbsp;inc9999(<span class="literal">10</span>)
+  <span class="output">res25:&nbsp;Int&nbsp;=&nbsp;10009</span>
+</pre><!-- -->
+It makes no difference that the <span class="code">more</span> in this case is a parameter to
+a method call that has already returned.  The Scala compiler
+rearranges things in cases like this so that the captured parameter
+lives out on the heap, instead of the stack, and thus can outlive the<a id="i-243919082-1"></a><a id="i-1976863198-1"></a>
+method call that created it.  This rearrangement is all taken care of
+automatically, so you don't have to worry about it.  Capture any
+variable you like: <span class="code">val</span>, <span class="code">var</span>, or parameter.</p>
+
+<h3><a name="8.8"></a>8.8 Repeated parameters <span style="font-size: .5em">[<a href="functions-and-closures.html#8.8">link</a>]</span></h3>
+
+
+<p><a name="sec:repeated-parameters"></a></p>
+
+<p>Scala<a id="i1567203046-1"></a><a id="i-580179190-2"></a><a id="i2051741460-1"></a><a id="i-1544402352-2"></a> allows you to indicate that the last parameter to a function may be repeated. This allows
+clients to pass variable length argument lists to the function. To denote a repeated parameter,
+place an asterisk after the type of the parameter. For example:
+<pre>
+  scala&gt;&nbsp;<span class="vem">def</span>&nbsp;echo(args:&nbsp;<span class="typename">String</span>*)&nbsp;=&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vem">for</span>&nbsp;(arg&nbsp;&lt;-&nbsp;args)&nbsp;println(arg)
+  <span class="output">echo:&nbsp;(String*)Unit</span>
+</pre><!-- -->
+Defined this way, <span class="code">echo</span> can be called with zero to many <span class="code">String</span> arguments:
+<pre>
+  scala&gt;&nbsp;echo()
+  <br />  scala&gt;&nbsp;echo(<span class="quotedstring">"one"</span>)
+  <span class="output">one</span>
+  <br />  scala&gt;&nbsp;echo(<span class="quotedstring">"hello"</span>,&nbsp;<span class="quotedstring">"world!"</span>)
+  <span class="output">hello</span>
+  <span class="output">world!</span>
+</pre><!-- --></p>
+
+<p>Inside the function, the type of the repeated parameter is an <span class="code">Array</span> of the declared type of the parameter.
+Thus, the type of <span class="code">args</span> inside the <span class="code">echo</span> function, which is declared as type "<span class="code">String*</span>" is actually <span class="code">Array[String]</span>. 
+Nevertheless, if you have an
+array of the appropriate type, and attempt to pass it as a repeated parameter, you'll get a compiler
+error:<a id="i-677980410-1"></a>
+<pre>
+  scala&gt;&nbsp;<span class="vem">val</span>&nbsp;arr&nbsp;=&nbsp;<span class="typename">Array</span>(<span class="quotedstring">"What's"</span>,&nbsp;<span class="quotedstring">"up"</span>,&nbsp;<span class="quotedstring">"doc?"</span>)
+  <span class="output">arr:&nbsp;Array[java.lang.String]&nbsp;=&nbsp;Array(What's,&nbsp;up,&nbsp;doc?)</span>
+  <br />  scala&gt;&nbsp;echo(arr)
+  <span class="output">&lt;console&gt;:7:&nbsp;error:&nbsp;type&nbsp;mismatch;</span>
+  <span class="output">&nbsp;found&nbsp;&nbsp;&nbsp;:&nbsp;Array[java.lang.String]</span>
+  <span class="output">&nbsp;required:&nbsp;String</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;echo(arr)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^</span>
+</pre><!-- -->
+To accomplish this, you'll need to append the array argument with a colon and an _* symbol,<a id="i-170392618-1"></a> like this:<a id="i433377555-1"></a><a id="i2101376046-1"></a>
+<pre>
+  scala&gt;&nbsp;echo(arr:&nbsp;_*)
+  <span class="output">What's</span>
+  <span class="output">up</span>
+  <span class="output">doc?</span>
+</pre><!-- -->
+This notation tells the compiler to pass each element of
+<span class="code">arr</span> as its own argument to <span class="code">echo</span>, rather than all of
+it as a single argument.</p>
+
+<h3><a name="8.9"></a>8.9 Tail recursion <span style="font-size: .5em">[<a href="functions-and-closures.html#8.9">link</a>]</span></h3>
+
+
+<p><a name="sec:tail-recursion"></a></p>
+
+<p>In <a href="builtin-control-structures.html#sec:while-loops">Section 7.2</a>, we<a id="i1651241320-1"></a><a id="i1113229075-1"></a><a id="i2133301138-1"></a>
+mentioned that to transform a <span class="code">while</span> loop that updates <span class="code">var</span>s into
+a more functional style that uses only <span class="code">val</span>s, you may sometimes need
+to use recursion.
+Here's an example of a
+recursive function that approximates a value by repeatedly improving
+a guess until it is good enough:
+<pre>
+  <span class="vem">def</span>&nbsp;approximate(guess:&nbsp;<span class="typename">Double</span>):&nbsp;<span class="typename">Double</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(isGoodEnough(guess))&nbsp;guess
+  &nbsp;&nbsp;<span class="vem">else</span>&nbsp;approximate(improve(guess))
+</pre><!-- -->
+A function like this is often used in search problems, with appropriate implementations
+for <span class="code">isGoodEnough</span> and <span class="code">improve</span>.
+If you want the <span class="code">approximate</span> function to run faster, you might be tempted to write it with a
+<span class="code">while</span> loop to try and speed it up, like this:
+<pre>
+  <span class="vem">def</span>&nbsp;approximateLoop(initialGuess:&nbsp;<span class="typename">Double</span>):&nbsp;<span class="typename">Double</span>&nbsp;=&nbsp;{
+  &nbsp;&nbsp;<span class="vem">var</span>&nbsp;guess&nbsp;=&nbsp;initialGuess
+  &nbsp;&nbsp;<span class="vem">while</span>&nbsp;(!isGoodEnough(guess))
+  &nbsp;&nbsp;&nbsp;&nbsp;guess&nbsp;=&nbsp;improve(guess)
+  &nbsp;&nbsp;guess
+  }
+</pre><!-- -->
+Which of the two versions of <span class="code">approximate</span> is
+preferable? In terms of brevity and <span class="code">var</span> avoidance, the first, functional one
+wins. But is the imperative approach perhaps more
+efficient? In fact, if we measure execution times it turns out that<a id="i1671917386-1"></a>
+they are almost exactly the same!
+This might seem surprising, because a recursive call looks much more
+expensive than a simple jump from the end of a loop to its beginning.</p>
+
+<p>However, in the case of <span class="code">approximate</span> above, the Scala compiler is able to
+apply an important optimization. Note that the recursive call is the last thing that happens in the evaluation of function <span class="code">approximate</span>'s
+body. Functions like <span class="code">approximate</span>, which call themselves as their
+last action, are called <a href="glossary.html#g2133301346"><em>tail recursive</em></a>.<a id="i-2133336344-1"></a><a id="i1640045089-1"></a> The Scala compiler detects
+tail recursion and replaces it with a jump back to the beginning of
+the function, after updating the function parameters with the new
+values.</p>
+
+<p>The moral is that you should not shy away from using
+recursive algorithms to solve your problem. Often, a recursive
+solution is more elegant and concise than a loop-based one. If the
+solution is tail recursive, there won't be any runtime overhead
+to be paid.</p>
+
+<h4>Tracing tail-recursive functions</h4>
+
+
+<p>A tail-recursive function will not build a new stack frame for
+each call; all calls will execute in a single frame. 
+This may surprise a programmer inspecting a stack trace of a program that failed. For example, this<a id="i10962622-1"></a>
+function calls itself some number of times then throws an exception:
+<pre>
+  <span class="vem">def</span>&nbsp;boom(x:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(x&nbsp;==&nbsp;<span class="literal">0</span>)&nbsp;<span class="vem">throw</span>&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Exception</span>(<span class="quotedstring">"boom!"</span>)
+  &nbsp;&nbsp;<span class="vem">else</span>&nbsp;boom(x&nbsp;-&nbsp;<span class="literal">1</span>)&nbsp;+&nbsp;<span class="literal">1</span>
+</pre><!-- -->
+This function is <span style="font-style:italic">not</span> tail recursive, because it performs an increment
+operation after the recursive call. You'll get what you expect when you run it:</p>
+
+<pre>
+  scala&gt;&nbsp;&nbsp;boom(<span class="literal">3</span>)
+  <span class="output">java.lang.Exception:&nbsp;boom!</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.boom(&lt;console&gt;:5)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.boom(&lt;console&gt;:6)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.boom(&lt;console&gt;:6)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.boom(&lt;console&gt;:6)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.&lt;init&gt;(&lt;console&gt;:6)</span>
+  <span class="output">...</span>
+</pre><!-- -->
+
+
+<p>If you now modify <span class="code">boom</span> so that it does become tail recursive:
+<pre>
+  <span class="vem">def</span>&nbsp;bang(x:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Int</span>&nbsp;=&nbsp;
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(x&nbsp;==&nbsp;<span class="literal">0</span>)&nbsp;<span class="vem">throw</span>&nbsp;<span class="vem">new</span>&nbsp;<span class="typename">Exception</span>(<span class="quotedstring">"bang!"</span>)
+  &nbsp;&nbsp;<span class="vem">else</span>&nbsp;bang(x&nbsp;-&nbsp;<span class="literal">1</span>)
+</pre><!-- --></p>
+
+<div class="aside">
+<h3>Tail call optimization</h3>
+
+
+<p>The compiled code for <span class="code">approximate</span> is essentially the same as
+the compiled code for <span class="code">approximateLoop</span>. Both functions compile down to the 
+same thirteen instructions of Java bytecodes. If you look through the bytecodes
+generated by the Scala compiler for the tail recursive method, <span class="code">approximate</span>, you'll see that although
+both <span class="code">isGoodEnough</span> and <span class="code">improve</span> are invoked in the body of the
+method, <span class="code">approximate</span> is not. The Scala compiler optimized away
+the recursive call<a id="i46846037-1"></a>: 
+<pre>
+  public&nbsp;double&nbsp;approximate(double);
+  &nbsp;&nbsp;Code:
+  &nbsp;&nbsp;&nbsp;0:&nbsp;&nbsp;&nbsp;aload_0
+  &nbsp;&nbsp;&nbsp;1:&nbsp;&nbsp;&nbsp;astore_3
+  &nbsp;&nbsp;&nbsp;2:&nbsp;&nbsp;&nbsp;aload_0
+  &nbsp;&nbsp;&nbsp;3:&nbsp;&nbsp;&nbsp;dload_1
+  &nbsp;&nbsp;&nbsp;4:&nbsp;&nbsp;&nbsp;invokevirtual&nbsp;&nbsp;&nbsp;#24;&nbsp;//Method&nbsp;isGoodEnough:(D)Z
+  &nbsp;&nbsp;&nbsp;7:&nbsp;&nbsp;&nbsp;ifeq&nbsp;&nbsp;&nbsp;&nbsp;12
+  &nbsp;&nbsp;&nbsp;10:&nbsp;&nbsp;dload_1
+  &nbsp;&nbsp;&nbsp;11:&nbsp;&nbsp;dreturn
+  &nbsp;&nbsp;&nbsp;12:&nbsp;&nbsp;aload_0
+  &nbsp;&nbsp;&nbsp;13:&nbsp;&nbsp;dload_1
+  &nbsp;&nbsp;&nbsp;14:&nbsp;&nbsp;invokevirtual&nbsp;&nbsp;&nbsp;#27;&nbsp;//Method&nbsp;improve:(D)D
+  &nbsp;&nbsp;&nbsp;17:&nbsp;&nbsp;dstore_1
+  &nbsp;&nbsp;&nbsp;18:&nbsp;&nbsp;goto&nbsp;&nbsp;&nbsp;&nbsp;2
+</pre><!-- --></p>
+
+</div>
+
+
+<p><!-- -->You'll get:</p>
+
+<pre>
+  scala&gt;&nbsp;bang(<span class="literal">5</span>)
+  <span class="output">java.lang.Exception:&nbsp;bang!</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.bang(&lt;console&gt;:5)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.&lt;init&gt;(&lt;console&gt;:6)</span>
+  <span class="output">...</span>
+</pre><!-- -->
+This time, you see only a single stack frame for <span class="code">bang</span>. You might
+think that <span class="code">bang</span> crashed before it called itself, but this is not
+the case.  If you think you might be confused by tail-call
+optimizations when looking at a stack trace, you can turn them off by
+giving a:<a id="i-1882129636-1"></a><a id="i2131054531-1"></a>
+<pre>
+  -g:notailcalls
+</pre><!-- -->
+argument to the <span class="code">scala</span> shell or to the <span class="code">scalac</span> compiler.
+With that option specified, you will get a longer stack trace:
+
+
+<pre>
+  scala&gt;&nbsp;bang(<span class="literal">5</span>)
+  <span class="output">java.lang.Exception:&nbsp;bang!</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.bang(&lt;console&gt;:5)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.bang(&lt;console&gt;:5)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.bang(&lt;console&gt;:5)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.bang(&lt;console&gt;:5)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.bang(&lt;console&gt;:5)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.bang(&lt;console&gt;:5)</span>
+  <span class="output">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at&nbsp;.&lt;init&gt;(&lt;console&gt;:6)</span>
+  <span class="output">...</span>
+</pre><!-- -->
+
+
+<h4>Limits of tail recursion</h4>
+
+
+<p>The use of tail recursion in Scala is fairly limited, because the JVM<a id="i2022023743-1"></a><a id="i1086960686-1"></a>
+instruction set makes implementing more advanced forms of tail
+recursion very difficult. Scala only optimizes directly recursive calls back
+to the same function making the call.  If the recursion is indirect, as in the
+following example of two mutually recursive functions, no
+optimization is possible:
+<pre>
+  <span class="vem">def</span>&nbsp;isEven(x:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Boolean</span>&nbsp;=
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(x&nbsp;==&nbsp;<span class="literal">0</span>)&nbsp;<span class="vem">true</span>&nbsp;<span class="vem">else</span>&nbsp;isOdd(x&nbsp;-&nbsp;<span class="literal">1</span>)
+  <span class="vem">def</span>&nbsp;isOdd(x:&nbsp;<span class="typename">Int</span>):&nbsp;<span class="typename">Boolean</span>&nbsp;=
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(x&nbsp;==&nbsp;<span class="literal">0</span>)&nbsp;<span class="vem">false</span>&nbsp;<span class="vem">else</span>&nbsp;isEven(x&nbsp;-&nbsp;<span class="literal">1</span>)
+</pre><!-- -->
+You also won't get a tail-call optimization if the final call 
+goes to a function value. Consider for instance the following recursive code:
+<pre>
+  <span class="vem">val</span>&nbsp;funValue&nbsp;=&nbsp;nestedFun&nbsp;_
+  <span class="vem">def</span>&nbsp;nestedFun(x:&nbsp;<span class="typename">Int</span>)&nbsp;{&nbsp;
+  &nbsp;&nbsp;<span class="vem">if</span>&nbsp;(x&nbsp;!=&nbsp;<span class="literal">0</span>)&nbsp;{&nbsp;println(x);&nbsp;funValue(x&nbsp;-&nbsp;<span class="literal">1</span>)&nbsp;}
+  }
+</pre><!-- -->
+The <span class="code">funValue</span> variable refers to a function value that essentially wraps a call to <span class="code">nestedFun</span>. When you
+apply the function value to an argument, it turns around and applies <span class="code">nestedFun</span> to that same
+argument, and returns the result. You might hope, therefore, the Scala compiler would perform a tail-call optimization,
+but in this case it would not.
+Thus, tail-call optimization is limited 
+to situations in which a method or nested function calls itself directly as its last operation, 
+without going through a function value or some other intermediary.
+(If you don't fully understand tail recursion yet, see <a href="functions-and-closures.html#sec:tail-recursion">Section 8.9</a>).</p>
+
+<h3><a name="8.10"></a>8.10 Conclusion <span style="font-size: .5em">[<a href="functions-and-closures.html#8.10">link</a>]</span></h3>
+
+
+<p>This chapter has given you a grand tour of functions in Scala.
+In addition to methods, Scala provides local functions, function
+literals, and function values.  In addition to normal function calls,
+Scala provides partially applied functions and functions with repeated
+parameters.  When possible, function calls are implemented as optimized
+tail calls, and thus many nice-looking recursive functions run just
+as quickly as hand-optimized versions that use <span class="code">while</span> loops.
+The next chapter will build on these foundations and show
+how Scala's rich support for functions helps you abstract
+over control.</p>
+
+<hr/>
+<h4>Footnotes for Chapter 8:</h4>
+
+
+<p><a name="footnote8-1">[1]</a> In this book,
+we usually won't check command-line arguments for validity in example applications, both to save trees and reduce boilerplate code that can obscure the
+example's important code. The trade-off is that instead of producing a helpful error message when given bad input, our example
+applications will throw an exception.</p>
+
+<p><a name="footnote8-2">[2]</a> Every function value is an instance of some class that extends one of several <span class="code">FunctionN</span> traits in package
+<span class="code">scala</span>, such as <span class="code">Function0</span> for functions with no parameters, <span class="code">Function1</span> for
+functions with one parameter, and so on. Each <span class="code">FunctionN</span> trait has an <span class="code">apply</span> method
+used to invoke the function.</p>
+
+<p><a name="footnote8-3">[3]</a> A <span class="code">foreach</span> method is defined in trait <span class="code">Iterable</span>, a common supertrait of <span class="code">List</span>, <span class="code">Set</span>, <span class="code">Array</span>, and <span class="code">Map</span>. See <a href="collections.html">Chapter 17</a>
+for the details.</p>
+
+<p><a name="footnote8-4">[4]</a> The generated class extends trait <span class="code">Function3</span>, which declares a three-arg <span class="code">apply</span> method.</p>
+
+<p><a name="footnote8-5">[5]</a> By contrast, Java's inner classes<a id="i706520282-1"></a>
+do not allow you to access modifiable variables in surrounding scopes
+at all, so there is no difference between capturing a variable
+and capturing its currently held value.</p>
+
+
+
+<br clear="all">
+<p>
+<center>
+<div class="sc">
+<a href="/pins1ed/index.html">Top</a>&nbsp;| 
+<a href="/pins1ed/index.html#TOC">Table of Contents</a>&nbsp;| 
+<a href="/pins1ed/glossary.html">Glossary</a>&nbsp;| 
+<a href="/pins1ed/book-index.html">Index</a>&nbsp;| 
+<a href="/pins1ed/functions-and-closuresP.html">Print</a>&nbsp;| 
+<a href="/pins1ed/builtin-control-structures.html">Previous</a>&nbsp;| 
+<a href="/pins1ed/control-abstraction.html">Next</a>
+</div>
+</center>
+</div>
+<hr width="100%" />
+<center>
+<script type="text/javascript"><!--
+google_ad_client = "pub-3911176865765226";
+google_alternate_color = "ffffff";
+google_ad_width = 728;
+google_ad_height = 15;
+google_ad_format = "728x15_0ads_al";
+google_ad_channel = "";
+google_color_border = "ffffff";
+google_color_bg = "FFFFFF";
+google_color_link = "003090";
+google_color_text = "000000";
+google_color_url = "666666";
+//--></script>
+<script type="text/javascript"
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+<br />
+<br />
+<!-- SiteSearch Google -->
+<form method="get" action="http://www.google.com/custom">
+<table border="0" bgcolor="#ffffff">
+<tr><td nowrap="nowrap" valign="top" align="left" height="32">
+<a href="http://www.google.com/">
+<img src="http://www.google.com/logos/Logo_25wht.gif"
+border="0" alt="Google"></img></a>
+</td>
+<td nowrap="nowrap">
+<input type="hidden" name="domains" value="Artima.com"></input>
+<input type="text" name="q" size="31" maxlength="255" value=""></input>
+<input type="submit" name="sa" value="Search"></input>
+</td></tr>
+<tr>
+<td>&nbsp;</td>
+<td nowrap="nowrap">
+<font size="-1" color="#000000">
+<input type="radio" name="sitesearch" value=""></input> Web
+<input type="radio" name="sitesearch" value="Artima.com" checked="checked"></input>Artima.com
+</font>&nbsp;&nbsp;
+<input type="hidden" name="client" value="pub-3911176865765226"></input>
+<input type="hidden" name="forid" value="1"></input>
+<input type="hidden" name="ie" value="ISO-8859-1"></input>
+<input type="hidden" name="oe" value="ISO-8859-1"></input>
+<input type="hidden" name="cof" value="GALT:#008000;GL:1;DIV:#336699;VLC:663399;AH:center;BGC:FFFFFF;LBGC:FFFFFF;ALC:0000FF;LC:0000FF;T:000000;GFNT:0000FF;GIMP:0000FF;LH:50;LW:150;L:http://www.artima.com/images/artima150.gif;S:http://www.artima.com;FORID:1;"></input>
+<input type="hidden" name="hl" value="en"></input>
+</td></tr></table>
+</form>
+<!-- SiteSearch Google -->
+</center>
+<div class="sp">
+<div style="text-align: center">
+<a href="http://www.artima.com/copyright.html">Copyright</a> &copy; 1996-2014 Artima, Inc. All Rights Reserved.</a> - <a href="http://www.artima.com/privacy.html">Privacy Policy</a> - <a href="http://www.artima.com/termsofuse.html">Terms of Use</a> - <a href="http://www.artima.com/advertising.html">Advertise with Us</a>
+</div>
+</div>
+<br />
+</body>
+</html>

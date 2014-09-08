@@ -26,10 +26,10 @@ class Retriever(object):
 			filepath = os.path.join(filepath, default)
 		linkdir = os.path.dirname(filepath)
 		# print filepath, linkdir
-		if not os.path.isdir(linkdir):
-			if os.path.exists(linkdir):
-				# Remove (delete) the file path. This is the same function as remove(); the unlink() name is its traditional Unix name.
-				os.unlink(linkdir)
+		if not os.path.isdir(linkdir):	
+			# Remove (delete) the file path. This is the same function as remove(); the unlink() name is its traditional Unix name.
+			# os.unlink(linkdir)
+
 			# Recursive directory creation function. 
 			# Like mkdir(), but makes all intermediate-level directories needed to contain the leaf directory.
 			# 对于相对路径，会在当前目录下递归创建目录
@@ -39,6 +39,9 @@ class Retriever(object):
 	# 将下载的url object复制到本地文件中
 	def download(self):
 		try:
+			if os.path.exists(self.file):
+				print self.file
+				return (self.url, self.file)
 			# urllib.urlretrieve(url[, filename[, reporthook[, data]]]) 
 			# 		Copy a network object denoted by a URL to a local file, if necessary.
 			# 		If the URL points to a local file, or a valid cached copy of the object exists, the object is not copied.
@@ -56,6 +59,7 @@ class Retriever(object):
 		data = f.read()
 		f.close()
 		parser = HTMLParser(formatter.AbstractFormatter(formatter.DumbWriter(cStringIO.StringIO())))
+		# parser = MyHTMLParser()
 		parser.feed(data)
 		parser.close()
 		# 没有在模块中找到 anchorlist属性
@@ -67,7 +71,7 @@ class Retriever(object):
 class Crawler(object):
 	count = 0
 
-	def __init__(self, url):
+	def __init__(self, url, logFile):
 		# a queue of links that need to download
 		self.q = [url]
 		# all links that have been downloaded
@@ -78,13 +82,17 @@ class Crawler(object):
 		# print host
 		self.dom = '.'.join(host.split('.')[-2:])
 		# print self.dom
+		self.logFile = logFile
 
 	def get_page(self, url, media=False):
 		# 先将符合要求的页面下载再进行解析
 		r = Retriever(url)
-		fname = r.download()[0]
-		if fname[0] == '*':
+		res = r.download()
+		fname = res[0]
+		# print "Download result : ",res
+		if '***' in fname:
 			# print fname, '... skipping parse'
+			self.logFile.write('Error : Download Failed --- %s \n' % fname)
 			return 
 
 		Crawler.count += 1
@@ -93,11 +101,13 @@ class Crawler(object):
 		# print 'FILE: ', fname
 		self.seen.add(url)
 		ftype = os.path.splitext(fname)[1]
+		# 只下载html文件
 		if ftype not in ('.htm','.html'):
-			return 
+			pass
 		
 		# 对页面中的所有锚点或链接进行分析
-		for link in r.parse_links():
+		links = r.parse_links()
+		for link in links:
 			if link.startswith('mailto:'):
 				# print '... discarded, mailto link'
 				continue
@@ -107,8 +117,8 @@ class Crawler(object):
 					# print '... discarded, media file'
 					continue
 			if not link.startswith('http://'):
-				print link
 				link = urlparse.urljoin(url, link)
+				# print link
 
 			# print '*', link
 			if link not in self.seen:
@@ -117,9 +127,16 @@ class Crawler(object):
 					# print '... discarded, not in domain'
 				else:
 					if link not in self.q:
-						# 对于页面中符合要求的链接放入self.q列表中
-						self.q.append(link)
-						# print '... new, added to Q'
+						if 'html' in link or 'htm' in link:
+							if 'pins1ed' in link and '#' not in link:
+								# 对于页面中符合要求的链接放入self.q列表中
+								self.q.append(link)
+								# print 'new pins1ed : %s, added to Q---len : %s' % (link,len(self.q))
+								self.logFile.write('Url : %s \n === len : %s' % (link,len(self.q)))
+						else:
+							# self.q.append(link)
+							# self.logFile.write('Url : %s \n' % link)
+							pass
 					else:
 						pass
 						# print '... discarded, already in Q'
@@ -130,7 +147,51 @@ class Crawler(object):
 	def go(self, media=False):
 		while self.q:
 			url = self.q.pop()
+			# print url
 			self.get_page(url, media)
+		self.logFile.write('Total Download : %s' % Crawler.count)
+		self.logFile.close()
+
+
+class MyHTMLParser(HTMLParser):
+    __slots__ = ('url','wait_parse')
+
+    def __init__(self, wait_parse, url):
+        HTMLParser.__init__(self)
+        self.wait_parse = wait_parse
+        self.url = url
+ 
+    def handle_starttag(self, tag, attrs):
+        #print "Encountered the beginning of a %s tag" % tag
+        if tag == "a":
+            if len(attrs) == 0: pass
+            else:
+                for (variable, value)  in attrs:
+                    if variable == "href":
+                        if not value.startswith('http://'):
+                             value = urlparse.urljoin(url, value)
+                             # print value
+                        if 'html' in value or 'htm' in value:
+                            if 'pins1ed' in value and '#' not in value and value not in wait_parse:
+                                self.wait_parse.append(value)
+                                # print value
+        elif tag == 'img':
+            if len(attrs) == 0: pass
+            else:
+                for (variable, value)  in attrs:
+                    if variable == "src":
+                        value = urlparse.urljoin(self.url, value)
+                        if value not in wait_parse:
+                            self.wait_parse.append(value)
+        elif tag == 'link':
+            if len(attrs) == 0: pass
+            else:
+                for (variable, value)  in attrs:
+                    if variable == "href":
+                        value = urlparse.urljoin(self.url, value)
+                        if value not in wait_parse:
+                            self.wait_parse.append(value) 
+
 
 def _main():
 	# if len(sys.argv) > 1:
@@ -142,13 +203,13 @@ def _main():
 	# 		url = ''
 	# if not url:
 	# 	return 
-	url = 'www.163.com'
+	url = 'www.artima.com/pins1ed'
 	if not url.startswith('http://') and \
 	    not url.startswith('ftp://'):
 	    url = 'http://%s/' % url 
-	robot = Crawler(url)
+	logFile = open(os.path.join(os.getcwd(),'crawler.log'),'a')
+	robot = Crawler(url,logFile)
 	robot.go()
-
 
 
 
